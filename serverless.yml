@@ -14,11 +14,15 @@ provider:
 functions:
   webhook:
     handler: handler.webhook
+    package:
+      artifact: # https://github.com/serverless/serverless/issues/6752#issuecomment-586960000
     events:
       - http: POST /
 
   set_webhook:
     handler: handler.set_webhook
+    package:
+      artifact: # https://github.com/serverless/serverless/issues/6752#issuecomment-586960000
     events:
       - http: POST /set_webhook
 

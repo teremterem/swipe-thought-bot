@@ -5,6 +5,8 @@ import logging
 
 
 # Logging is cool!
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+
 logger = logging.getLogger()
 if logger.handlers:
     for handler in logger.handlers:
@@ -52,11 +54,24 @@ def webhook(event, context):
         text = update.message.text
 
         if text == '/start':
-            text = """Hello, human! I am an echo bot, built with Python and the Serverless Framework.
-            You can take a look at my source code here: https://github.com/jonatasbaldin/serverless-telegram-bot.
-            If you have any issues, please drop a tweet to my creator: https://twitter.com/jonatsbaldin. Happy botting!"""
+            text = 'Hello, human!'
 
-        bot.sendMessage(chat_id=chat_id, text=text)
+        bot.sendMessage(
+            chat_id=chat_id,
+            text=text,
+            reply_markup=InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [
+                        InlineKeyboardButton(
+                            '🖤', callback_data='right_swipe',
+                        ),
+                        InlineKeyboardButton(
+                            '❌', callback_data='left_swipe',
+                        ),
+                    ],
+                ],
+            ),
+        )
         logger.info('Message sent')
 
         return OK_RESPONSE
