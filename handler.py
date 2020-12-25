@@ -54,15 +54,15 @@ def webhook(event, context):
 
         kbd = [[
             InlineKeyboardButton(
-                '❌', callback_data='left_swipe',
+                '🖤', callback_data='right_swipe',
             ),
             InlineKeyboardButton(
-                '🖤', callback_data='right_swipe',
+                '❌', callback_data='left_swipe',
             ),
         ]]
         if text == '/start':
             text = 'Hello, human!'
-            kdb = reversed(kbd)
+            kbd = reversed(kbd)  # TODO oleksandr: get rid of this
 
         bot.sendMessage(
             chat_id=chat_id,
