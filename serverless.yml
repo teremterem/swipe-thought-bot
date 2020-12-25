@@ -1,9 +1,13 @@
-service: serverless-telegram-bot
+service: swipe-thought-bot
+app: swipe-thought-bot
+org: toporok
 
 provider:
   name: aws
-  runtime: python3.6
-  profile: ckl
+  runtime: python3.8
+#  stage: ${opt:stage, 'dev'}
+  region: ${file(./serverless.env.yml):AWS_REGION, ''}
+  profile: ${file(./serverless.env.yml):AWS_PROFILE, ''}
   environment:
     TELEGRAM_TOKEN: ${file(./serverless.env.yml):TELEGRAM_TOKEN, ''}
 
