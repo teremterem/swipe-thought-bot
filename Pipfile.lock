@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "beddd49476f103c5e507187c89d3cc2e84e0d909807e99019ca66096bbbca165"
+            "sha256": "2397b2bdf0f0e38d616a511e97402ce7ae4a3340d37232a5b831369aa9de9e5d"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -434,6 +434,13 @@
             ],
             "markers": "python_version >= '3.6'",
             "version": "==4.7.0"
+        },
+        "jupyter-kite": {
+            "hashes": [
+                "sha256:71ff160a19290dd94fdc4e4bdde70bb8ebfea3d5237e9a553f16036f98ea21d4"
+            ],
+            "index": "pypi",
+            "version": "==1.2.0"
         },
         "jupyter-server": {
             "hashes": [
