@@ -9,7 +9,10 @@ provider:
   region: ${file(./serverless.env.yml):AWS_REGION, ''}
   profile: ${file(./serverless.env.yml):AWS_PROFILE, ''}
   environment:
-    TELEGRAM_TOKEN: ${file(./serverless.env.yml):TELEGRAM_TOKEN, ''}
+    TELEGRAM_TOKEN: ${self:custom.TELEGRAM_TOKEN}
+
+custom:
+  TELEGRAM_TOKEN: ${file(./serverless.env.yml):TELEGRAM_TOKEN, ''}
 
 functions:
   webhook:
