@@ -1,9 +1,8 @@
 import json
-import telegram
-import os
 import logging
+import os
 
-
+import telegram
 # Logging is cool!
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
@@ -47,29 +46,29 @@ def webhook(event, context):
     bot = configure_telegram()
     logger.info('Event: {}'.format(event))
 
-    if event.get('httpMethod') == 'POST' and event.get('body'): 
+    if event.get('httpMethod') == 'POST' and event.get('body'):
         logger.info('Message received')
         update = telegram.Update.de_json(json.loads(event.get('body')), bot)
         chat_id = update.message.chat.id
         text = update.message.text
 
+        kbd = [[
+            InlineKeyboardButton(
+                '❌', callback_data='left_swipe',
+            ),
+            InlineKeyboardButton(
+                '🖤', callback_data='right_swipe',
+            ),
+        ]]
         if text == '/start':
             text = 'Hello, human!'
+            kdb = reversed(kbd)
 
         bot.sendMessage(
             chat_id=chat_id,
             text=text,
             reply_markup=InlineKeyboardMarkup(
-                inline_keyboard=[
-                    [
-                        InlineKeyboardButton(
-                            '🖤', callback_data='right_swipe',
-                        ),
-                        InlineKeyboardButton(
-                            '❌', callback_data='left_swipe',
-                        ),
-                    ],
-                ],
+                inline_keyboard=kbd,
             ),
         )
         logger.info('Message sent')
