@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 python-telegram-bot = "*"
+elasticsearch = "==7.9"
 
 [dev-packages]
 
