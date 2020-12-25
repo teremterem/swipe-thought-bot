@@ -62,7 +62,7 @@ def webhook(event, context):
         ]]
         if text == '/start':
             text = 'Hello, human!'
-            kbd = reversed(kbd)  # TODO oleksandr: get rid of this
+            kbd[0] = reversed(kbd[0])  # TODO oleksandr: get rid of this
 
         bot.sendMessage(
             chat_id=chat_id,
