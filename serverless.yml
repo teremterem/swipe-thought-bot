@@ -12,6 +12,7 @@ provider:
     TELEGRAM_TOKEN: ${self:custom.TELEGRAM_TOKEN}
 
 custom:
+  SERVICE_SHORT_NAME: stb
   TELEGRAM_TOKEN: ${file(./serverless.env.yml):TELEGRAM_TOKEN, ''}
 
 functions:
@@ -37,7 +38,7 @@ resources:
     ElasticSearchDomainSmall:
       Type: 'AWS::Elasticsearch::Domain'
       Properties:
-        DomainName: es-small-${self:service}-${self:provider.stage}
+        DomainName: es-small-${self:custom.SERVICE_SHORT_NAME}-${self:provider.stage}
         ElasticsearchVersion: '7.9'
         ElasticsearchClusterConfig:
           ZoneAwarenessEnabled: false
