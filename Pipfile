@@ -5,8 +5,14 @@ name = "pypi"
 
 [packages]
 python-telegram-bot = "*"
+elasticsearch = ">=7.0.0,<8.0.0" # https://elasticsearch-py.readthedocs.io/en/latest/#compatibility
+requests-aws4auth = "*"
 
 [dev-packages]
+jupyterlab = "*"
+jupyter-kite = "*"
+pyyaml = "*"
+boto3 = "*"
 
 [requires]
 python_version = "3.8"

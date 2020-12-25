@@ -12,6 +12,7 @@ provider:
     TELEGRAM_TOKEN: ${self:custom.TELEGRAM_TOKEN}
 
 custom:
+  SERVICE_SHORT_NAME: stb
   TELEGRAM_TOKEN: ${file(./serverless.env.yml):TELEGRAM_TOKEN, ''}
 
 functions:
@@ -31,3 +32,19 @@ functions:
 
 plugins:
   - serverless-python-requirements
+
+resources:
+  Resources:
+    ElasticSearchDomainSmall:
+      Type: 'AWS::Elasticsearch::Domain'
+      Properties:
+        DomainName: es-small-${self:custom.SERVICE_SHORT_NAME}-${self:provider.stage}
+        ElasticsearchVersion: '7.9'
+        ElasticsearchClusterConfig:
+          ZoneAwarenessEnabled: false
+          InstanceCount: 1
+          InstanceType: t2.small.elasticsearch
+        EBSOptions:
+          EBSEnabled: true
+          VolumeType: gp2
+          VolumeSize: 10
