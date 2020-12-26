@@ -3,7 +3,6 @@ import logging
 import os
 
 import telegram
-# Logging is cool!
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
 logger = logging.getLogger()
@@ -30,12 +29,12 @@ def configure_telegram():
     Returns a bot instance.
     """
 
-    TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN')
-    if not TELEGRAM_TOKEN:
-        logger.error('The TELEGRAM_TOKEN must be set')
-        raise NotImplementedError
+    telegram_token = os.environ.get('TELEGRAM_TOKEN')
+    if not telegram_token:
+        # TODO oleksandr: define generic SwipeThoughtError
+        raise NotImplementedError('TELEGRAM_TOKEN env var is not set')
 
-    return telegram.Bot(TELEGRAM_TOKEN)
+    return telegram.Bot(telegram_token)
 
 
 def webhook(event, context):
@@ -53,12 +52,8 @@ def webhook(event, context):
         text = update.message.text
 
         kbd = [[
-            InlineKeyboardButton(
-                '🖤', callback_data='right_swipe',
-            ),
-            InlineKeyboardButton(
-                '❌', callback_data='left_swipe',
-            ),
+            InlineKeyboardButton('🖤', callback_data='right_swipe'),
+            InlineKeyboardButton('❌', callback_data='left_swipe'),
         ]]
         if text == '/start':
             text = 'Hello, human!'
@@ -75,23 +70,21 @@ def webhook(event, context):
 
         return OK_RESPONSE
 
-    return ERROR_RESPONSE
+    return ERROR_RESPONSE  # TODO oleksandr: do we really need to let Telegram know that something went wrong ?
 
 
 def set_webhook(event, context):
     """
     Sets the Telegram bot webhook.
     """
-
     logger.info('Event: {}'.format(event))
     bot = configure_telegram()
-    url = 'https://{}/{}/'.format(
-        event.get('headers').get('Host'),
-        event.get('requestContext').get('stage'),
-    )
-    webhook = bot.set_webhook(url)
 
-    if webhook:
+    webhook_token = os.environ['TELEGRAM'].replace(':', '-')
+    url = f"https://{event.get('headers').get('Host')}/{event.get('requestContext').get('stage')}/{webhook_token}"
+    webhook_set = bot.set_webhook(url)
+
+    if webhook_set:
         return OK_RESPONSE
 
     return ERROR_RESPONSE

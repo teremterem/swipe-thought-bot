@@ -30,7 +30,7 @@ functions:
       include:
         - './functions/telegram_webhook.py'
     events:
-      - http: POST /
+      - http: POST /${self:custom.constants.WEBHOOK_TOKEN}
     maximumRetryAttempts: 0
     layers:
       - { Ref: PythonRequirementsLambdaLayer }
@@ -41,7 +41,7 @@ functions:
       include:
         - './functions/telegram_webhook.py'
     events:
-      - http: POST /set_webhook
+      - http: POST /${self:custom.constants.WEBHOOK_TOKEN}/set_webhook
     maximumRetryAttempts: 0
     layers:
       - { Ref: PythonRequirementsLambdaLayer }
