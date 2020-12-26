@@ -80,7 +80,7 @@ def set_webhook(event, context):
     logger.info('Event: {}'.format(event))
     bot = configure_telegram()
 
-    webhook_token = os.environ['TELEGRAM'].replace(':', '_')
+    webhook_token = os.environ['TELEGRAM_TOKEN'].replace(':', '_')
     url = f"https://{event.get('headers').get('Host')}/{event.get('requestContext').get('stage')}/{webhook_token}"
     webhook_set = bot.set_webhook(url)
 
