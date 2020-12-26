@@ -10,9 +10,10 @@ requests-aws4auth = "*"
 
 [dev-packages]
 jupyterlab = "*"
-jupyter-kite = "*"
 pyyaml = "*"
 boto3 = "*"
+jedi = "<0.18.0" # TODO oleksandr: replace this with !=0.18.0 ? (0.18.0 breaks completer in jupyterlab)
+jupyter-kite = "*"
 
 [requires]
 python_version = "3.8"
