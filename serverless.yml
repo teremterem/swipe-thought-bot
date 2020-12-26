@@ -2,43 +2,71 @@ service: swipe-thought-bot
 app: swipe-thought-bot
 org: toporok
 
+#frameworkVersion: '2.16.1'
+
 provider:
   name: aws
   runtime: python3.8
+
   stage: ${opt:stage, '${file(./serverless.env.yml):SLS_STAGE, ''}'}
   region: ${file(./serverless.env.yml):AWS_REGION, ''}
   profile: ${file(./serverless.env.yml):AWS_PROFILE, ''}
-  environment:
-    TELEGRAM_TOKEN: ${self:custom.TELEGRAM_TOKEN}
 
-custom:
-  SERVICE_SHORT_NAME: stb
-  TELEGRAM_TOKEN: ${file(./serverless.env.yml):TELEGRAM_TOKEN, ''}
+  environment:
+    TELEGRAM_TOKEN: ${self:custom.constants.TELEGRAM_TOKEN}
+
+package:
+  individually: true
+  include:
+    - '!./**' # https://github.com/UnitedIncome/serverless-python-requirements#optimising-packaging-time
+    - './functions/common/**'
+  exclude:
+    - '**'
 
 functions:
-  webhook:
-    handler: handler.webhook
+  telegramWebhook:
+    handler: functions/telegram_webhook.webhook
     package:
-      artifact: # https://github.com/serverless/serverless/issues/6752#issuecomment-586960000
+      include:
+        - './functions/telegram_webhook.py'
     events:
-      - http: POST /
+      - http: POST /${self:custom.constants.WEBHOOK_TOKEN}
+    maximumRetryAttempts: 0
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
 
-  set_webhook:
-    handler: handler.set_webhook
+  setTelegramWebhook:
+    handler: functions/telegram_webhook.set_webhook
     package:
-      artifact: # https://github.com/serverless/serverless/issues/6752#issuecomment-586960000
+      include:
+        - './functions/telegram_webhook.py'
     events:
-      - http: POST /set_webhook
+      - http: POST /${self:custom.constants.WEBHOOK_TOKEN}/set_webhook
+    maximumRetryAttempts: 0
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
 
 plugins:
   - serverless-python-requirements
+
+custom:
+  constants:
+    SERVICE_SHORT_NAME: stb
+    TELEGRAM_TOKEN: ${file(./serverless.env.yml):TELEGRAM_TOKEN}
+    WEBHOOK_TOKEN: ${file(./serverless.env.yml):WEBHOOK_TOKEN}
+  pythonRequirements:
+    dockerizePip: false
+    layer:
+      name: ${self:service}-${self:provider.stage}-python-vendor-common
+      compatibleRuntimes:
+        - python3.8
 
 resources:
   Resources:
     ElasticSearchDomainSmall:
       Type: 'AWS::Elasticsearch::Domain'
       Properties:
-        DomainName: es-small-${self:custom.SERVICE_SHORT_NAME}-${self:provider.stage}
+        DomainName: es-small-${self:custom.constants.SERVICE_SHORT_NAME}-${self:provider.stage}
         ElasticsearchVersion: '7.9'
         ElasticsearchClusterConfig:
           ZoneAwarenessEnabled: false
