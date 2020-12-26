@@ -52,7 +52,8 @@ plugins:
 custom:
   constants:
     SERVICE_SHORT_NAME: stb
-    TELEGRAM_TOKEN: ${file(./serverless.env.yml):TELEGRAM_TOKEN, ''}
+    TELEGRAM_TOKEN: ${file(./serverless.env.yml):TELEGRAM_TOKEN}
+    WEBHOOK_TOKEN: ${file(./serverless.env.yml):WEBHOOK_TOKEN}
   pythonRequirements:
     dockerizePip: false
     layer:
