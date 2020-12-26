@@ -56,7 +56,7 @@ def webhook(event, context):
             InlineKeyboardButton('❌', callback_data='left_swipe'),
         ]]
         if text == '/start':
-            text = 'Hello, human! How does it feel to be made primarily of meat and not think in ones and zeros?'
+            text = 'Hello, human! How does it feel to be made predominantly of meat and not think in ones and zeros?'
             kbd[0] = []
 
         bot.sendMessage(
