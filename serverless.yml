@@ -8,12 +8,26 @@ provider:
   name: aws
   runtime: python3.8
 
-  stage: ${opt:stage, '${file(./serverless.env.yml):SLS_STAGE, ''}'}
-  region: ${file(./serverless.env.yml):AWS_REGION, ''}
+  stage: ${opt:stage, '${file(./serverless.env.yml):SLS_STAGE}'}
   profile: ${file(./serverless.env.yml):AWS_PROFILE, ''}
+  region: ${file(./serverless.env.yml):AWS_REGION}
+
+  apiGateway:
+    # https://www.serverless.com/framework/docs/deprecations/#AWS_API_GATEWAY_NAME_STARTING_WITH_SERVICE
+    shouldStartNameWithService: true
 
   environment:
-    TELEGRAM_TOKEN: ${self:custom.constants.TELEGRAM_TOKEN}
+    LOG_LEVEL: ${file(./serverless.env.yml):LOG_LEVEL, 'WARNING'}
+
+    STAGE: ${self:provider.stage}
+    REGION: ${self:provider.region}
+
+    TELEGRAM_TOKEN: ${file(./serverless.env.yml):TELEGRAM_TOKEN}
+
+    ES_REGION: ${file(./serverless.env.yml):ES_REGION, '${self:provider.region}'}
+    ES_HOST: ${file(./serverless.env.yml):ES_HOST}
+
+    THOUGHTS_ES_IDX: ${file(./serverless.env.yml):ES_HOST}
 
 package:
   individually: true
@@ -52,8 +66,8 @@ plugins:
 custom:
   constants:
     SERVICE_SHORT_NAME: stb
-    TELEGRAM_TOKEN: ${file(./serverless.env.yml):TELEGRAM_TOKEN}
     WEBHOOK_TOKEN: ${file(./serverless.env.yml):WEBHOOK_TOKEN}
+
   pythonRequirements:
     dockerizePip: false
     layer:
