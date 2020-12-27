@@ -29,7 +29,7 @@ provider:
 
     THOUGHTS_ES_IDX: ${file(./serverless.env.yml):ES_HOST}
 
-    TELEGRAM_CONV_STATE_DDB_TABLE_NAME: ${self:resources.Resources.telegramConversationStateTable.Properties.TableName}
+    TELEGRAM_CONV_STATE_DDB_TABLE_NAME: ${self:resources.Resources.telegramConvStateTable.Properties.TableName}
 
 package:
   individually: true
@@ -93,10 +93,10 @@ resources:
           VolumeType: gp2
           VolumeSize: 10
 
-    telegramConversationStateTable:
+    telegramConvStateTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: TelegramConversationState-${self:custom.constants.SERVICE_SHORT_NAME}-${self:provider.stage}
+        TableName: TelegramConvState-${self:custom.constants.SERVICE_SHORT_NAME}-${self:provider.stage}
         AttributeDefinitions:
           - AttributeName: chat_id
             AttributeType: N
