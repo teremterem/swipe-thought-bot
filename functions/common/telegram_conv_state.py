@@ -17,9 +17,8 @@ def init_telegram_conv_state(chat_id, bot_id):
         'bot_id': bot_id,
     }
     response = telegram_conv_state_table.get_item(Key=empty_item)
-
     if logger.isEnabledFor(logging.INFO):
-        logger.info('TELEGRAM CONVERSATION STATE (DDB get_item response):\n%s', pformat(response))
+        logger.info('TELEGRAM CONVERSATION STATE - GET_ITEM (DDB):\n%s', pformat(response))
 
     item = response.get('Item')
     if not item:
@@ -27,3 +26,12 @@ def init_telegram_conv_state(chat_id, bot_id):
         return empty_item
 
     return item
+
+
+def replace_telegram_conv_state(telegram_conv_state):
+    # https://stackoverflow.com/questions/43667229/difference-between-dynamodb-putitem-vs-updateitem
+    response = telegram_conv_state_table.put_item(Item=telegram_conv_state)
+    if logger.isEnabledFor(logging.INFO):
+        logger.info('TELEGRAM CONVERSATION STATE - PUT_ITEM (DDB):\n%s', pformat(response))
+
+    return response
