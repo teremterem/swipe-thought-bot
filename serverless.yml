@@ -71,7 +71,7 @@ custom:
   pythonRequirements:
     dockerizePip: false
     layer:
-      name: ${self:service}-${self:provider.stage}-python-vendor-common
+      name: ${self:custom.constants.SERVICE_SHORT_NAME}-${self:provider.stage}-python-vendor-common
       compatibleRuntimes:
         - python3.8
 
@@ -90,3 +90,17 @@ resources:
           EBSEnabled: true
           VolumeType: gp2
           VolumeSize: 10
+
+    telegramChatTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: TelegramChat-${self:custom.constants.SERVICE_SHORT_NAME}-${self:provider.stage}
+        AttributeDefinitions:
+          - AttributeName: chat_id
+            AttributeType: N
+        KeySchema:
+          - AttributeName: chat_id
+            KeyType: HASH
+          # TODO oleksandr: add bot_id (as partition or as sort?)
+        BillingMode: PAY_PER_REQUEST
+      DeletionPolicy: Retain

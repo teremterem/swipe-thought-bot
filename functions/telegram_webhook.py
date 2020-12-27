@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from pprint import pformat
 
 import telegram
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
@@ -48,8 +49,10 @@ def webhook(event, context):
     if event.get('httpMethod') == 'POST' and event.get('body'):
         logger.info('Message received')
         update = telegram.Update.de_json(json.loads(event.get('body')), bot)
-        chat_id = update.message.chat.id
-        text = update.message.text
+        chat_id = update.effective_chat.id
+        text = update.effective_message.text
+
+        text += f"\n\n{pformat(update.effective_chat.to_dict())}\n\n{pformat(update.effective_user.to_dict())}"
 
         kbd = [[
             InlineKeyboardButton('🖤', callback_data='right_swipe'),
