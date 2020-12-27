@@ -6,6 +6,7 @@ import telegram
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
 from functions.common import logging  # force log config of functions/common/__init__.py
+from functions.common.telegram_conv_state import get_telegram_conv_state
 
 logger = logging.getLogger()
 
@@ -35,10 +36,6 @@ def configure_telegram():
     return telegram.Bot(telegram_token)
 
 
-def _save_chat_meta_to_ddb(chat):
-    pass
-
-
 def webhook(event, context):
     """
     Runs the Telegram webhook.
@@ -52,9 +49,12 @@ def webhook(event, context):
         update = telegram.Update.de_json(json.loads(event.get('body')), bot)
 
         chat_id = update.effective_chat.id
-        text = update.effective_message.text
+        text = update.effective_message.text  # TODO oleksandr: this works weirdly when update is callback...
 
-        text += f"\n\n{pformat(update.effective_chat.to_dict())}\n\n{pformat(update.effective_user.to_dict())}"
+        telegram_conf_state = get_telegram_conv_state(chat_id, bot.id)
+
+        # text += f"\n\n{pformat(update.effective_chat.to_dict())}\n\n{pformat(update.effective_user.to_dict())}"
+        text += f"\n\n{pformat(telegram_conf_state)}"
 
         kbd = [[
             InlineKeyboardButton('🖤', callback_data='right_swipe'),
