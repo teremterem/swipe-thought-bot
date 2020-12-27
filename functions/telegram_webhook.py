@@ -6,7 +6,7 @@ import telegram
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
 from functions.common import logging  # force log config of functions/common/__init__.py
-from functions.common.telegram_conv_state import get_telegram_conv_state
+from functions.common.telegram_conv_state import init_telegram_conv_state
 
 logger = logging.getLogger()
 
@@ -51,7 +51,7 @@ def webhook(event, context):
         chat_id = update.effective_chat.id
         text = update.effective_message.text  # TODO oleksandr: this works weirdly when update is callback...
 
-        telegram_conf_state = get_telegram_conv_state(chat_id, bot.id)
+        telegram_conf_state = init_telegram_conv_state(chat_id, bot.id)
 
         # text += f"\n\n{pformat(update.effective_chat.to_dict())}\n\n{pformat(update.effective_user.to_dict())}"
         text += f"\n\n{pformat(telegram_conf_state)}"
