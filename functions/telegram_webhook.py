@@ -1,16 +1,13 @@
 import json
-import logging
 import os
 from pprint import pformat
 
 import telegram
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
+from functions.common import logging  # force log config of functions/common/__init__.py
+
 logger = logging.getLogger()
-if logger.handlers:
-    for handler in logger.handlers:
-        logger.removeHandler(handler)
-logging.basicConfig(level=logging.INFO)
 
 OK_RESPONSE = {
     'statusCode': 200,
@@ -38,6 +35,10 @@ def configure_telegram():
     return telegram.Bot(telegram_token)
 
 
+def _save_chat_meta_to_ddb(chat):
+    pass
+
+
 def webhook(event, context):
     """
     Runs the Telegram webhook.
@@ -49,6 +50,7 @@ def webhook(event, context):
     if event.get('httpMethod') == 'POST' and event.get('body'):
         logger.info('Message received')
         update = telegram.Update.de_json(json.loads(event.get('body')), bot)
+
         chat_id = update.effective_chat.id
         text = update.effective_message.text
 
