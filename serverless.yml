@@ -29,6 +29,8 @@ provider:
 
     THOUGHTS_ES_IDX: ${file(./serverless.env.yml):ES_HOST}
 
+    TELEGRAM_CONV_STATE_DDB_TABLE_NAME: ${self:resources.Resources.telegramConversationStateTable.Properties.TableName}
+
 package:
   individually: true
   include:
