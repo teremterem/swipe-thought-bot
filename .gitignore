@@ -2,6 +2,9 @@
 serverless.env.yml
 nocommit/
 
+### Kite?
+.virtual_documents/
+
 # Created by .ignore support plugin (hsz.mobi)
 ### VirtualEnv template
 # Virtualenv

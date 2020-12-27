@@ -12,10 +12,6 @@ provider:
   profile: ${file(./serverless.env.yml):AWS_PROFILE, ''}
   region: ${file(./serverless.env.yml):AWS_REGION}
 
-  apiGateway:
-    # https://www.serverless.com/framework/docs/deprecations/#AWS_API_GATEWAY_NAME_STARTING_WITH_SERVICE
-    shouldStartNameWithService: true
-
   environment:
     LOG_LEVEL: ${file(./serverless.env.yml):LOG_LEVEL, 'WARNING'}
 
@@ -28,6 +24,21 @@ provider:
     ES_HOST: ${file(./serverless.env.yml):ES_HOST}
 
     THOUGHTS_ES_IDX: ${file(./serverless.env.yml):ES_HOST}
+
+    TELEGRAM_CONV_STATE_DDB_TABLE_NAME: ${self:resources.Resources.telegramConvStateTable.Properties.TableName}
+
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:*"
+        - "s3:*"
+        - "es:*"
+        #- "comprehend:*"
+      Resource: "*"
+
+  apiGateway:
+    # https://www.serverless.com/framework/docs/deprecations/#AWS_API_GATEWAY_NAME_STARTING_WITH_SERVICE
+    shouldStartNameWithService: true
 
 package:
   individually: true
@@ -71,7 +82,7 @@ custom:
   pythonRequirements:
     dockerizePip: false
     layer:
-      name: ${self:service}-${self:provider.stage}-python-vendor-common
+      name: ${self:custom.constants.SERVICE_SHORT_NAME}-${self:provider.stage}-python-vendor-common
       compatibleRuntimes:
         - python3.8
 
@@ -90,3 +101,20 @@ resources:
           EBSEnabled: true
           VolumeType: gp2
           VolumeSize: 10
+
+    telegramConvStateTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: TelegramConvState-${self:custom.constants.SERVICE_SHORT_NAME}-${self:provider.stage}
+        AttributeDefinitions:
+          - AttributeName: chat_id
+            AttributeType: N
+          - AttributeName: bot_id
+            AttributeType: N
+        KeySchema:
+          - AttributeName: chat_id
+            KeyType: HASH
+          - AttributeName: bot_id
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+      DeletionPolicy: Retain

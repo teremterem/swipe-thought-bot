@@ -1,15 +1,14 @@
 import json
-import logging
 import os
+from pprint import pformat
 
 import telegram
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
+from functions.common import logging  # force log config of functions/common/__init__.py
+from functions.common.telegram_conv_state import init_telegram_conv_state, replace_telegram_conv_state
+
 logger = logging.getLogger()
-if logger.handlers:
-    for handler in logger.handlers:
-        logger.removeHandler(handler)
-logging.basicConfig(level=logging.INFO)
 
 OK_RESPONSE = {
     'statusCode': 200,
@@ -48,8 +47,16 @@ def webhook(event, context):
     if event.get('httpMethod') == 'POST' and event.get('body'):
         logger.info('Message received')
         update = telegram.Update.de_json(json.loads(event.get('body')), bot)
-        chat_id = update.message.chat.id
-        text = update.message.text
+
+        chat_id = update.effective_chat.id
+        text = update.effective_message.text  # TODO oleksandr: this works weirdly when update is callback...
+
+        telegram_conf_state = init_telegram_conv_state(chat_id, bot.id)
+        # TODO oleksandr: do stuff
+        replace_telegram_conv_state(telegram_conf_state)
+
+        # text += f"\n\n{pformat(update.effective_chat.to_dict())}\n\n{pformat(update.effective_user.to_dict())}"
+        text += f"\n\n{pformat(telegram_conf_state)}"
 
         kbd = [[
             InlineKeyboardButton('🖤', callback_data='right_swipe'),
