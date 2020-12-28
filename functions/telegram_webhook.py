@@ -7,7 +7,7 @@ from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
 from functions.common import logging  # force log config of functions/common/__init__.py
 from functions.common.telegram_conv_state import init_telegram_conv_state, replace_telegram_conv_state
-from functions.common.thoughts import index_thought, answer_thought
+from functions.common.thoughts import Thoughts
 from functions.common.utils import log_event_and_response, fail_safely
 
 logger = logging.getLogger()
@@ -75,36 +75,39 @@ def webhook(event, context):
                 update.callback_query.answer(text='🖤 Liked')
 
         else:
-            index_thought(text=text, msg_id=msg_id, chat_id=chat_id, bot_id=bot_id)
+            thoughts = Thoughts()
 
-            answer = answer_thought(text)
+            thoughts.index_thought(text=text, msg_id=msg_id, chat_id=chat_id, bot_id=bot_id)
 
-            answer_msg = bot.send_message(
-                chat_id=chat_id,
-                text=answer,
-                reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
+            answer = thoughts.answer_thought(text)
 
-                    # TODO oleksandr: red/black heart for girl/boy or human/bot ? I think, latter!
-                    #  or maybe more like match / no match... (we don't want to disclose bot or human too early)
-                    #  Yes! Match versus No match!
-                    InlineKeyboardButton('🖤', callback_data='right_swipe'),
+            if answer:
+                answer_msg = bot.send_message(
+                    chat_id=chat_id,
+                    text=answer,
+                    reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
 
-                    InlineKeyboardButton('❌', callback_data='left_swipe'),
-                ]]),
-            )
+                        # TODO oleksandr: red/black heart for girl/boy or human/bot ? I think, latter!
+                        #  or maybe more like match / no match... (we don't want to disclose bot or human too early)
+                        #  Yes! Match versus No match!
+                        InlineKeyboardButton('🖤', callback_data='right_swipe'),
 
-            telegram_conv_state['latest_answer_msg_id'] = answer_msg.message_id
-            replace_telegram_conv_state(telegram_conv_state)
+                        InlineKeyboardButton('❌', callback_data='left_swipe'),
+                    ]]),
+                )
 
-            # if latest_answer_msg_id:
-            #     try:
-            #         bot.edit_message_reply_markup(
-            #             message_id=latest_answer_msg_id,
-            #             chat_id=chat_id,
-            #             reply_markup=InlineKeyboardMarkup(inline_keyboard=[]),
-            #         )
-            #     except Exception:
-            #         logger.info('INLINE KEYBOARD DID NOT SEEM TO NEED REMOVAL', exc_info=True)
+                telegram_conv_state['latest_answer_msg_id'] = answer_msg.message_id
+                replace_telegram_conv_state(telegram_conv_state)
+
+                # if latest_answer_msg_id:
+                #     try:
+                #         bot.edit_message_reply_markup(
+                #             message_id=latest_answer_msg_id,
+                #             chat_id=chat_id,
+                #             reply_markup=InlineKeyboardMarkup(inline_keyboard=[]),
+                #         )
+                #     except Exception:
+                #         logger.info('INLINE KEYBOARD DID NOT SEEM TO NEED REMOVAL', exc_info=True)
 
 
 @log_event_and_response
