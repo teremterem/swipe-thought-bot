@@ -23,7 +23,7 @@ provider:
     ES_REGION: ${file(./serverless.env.yml):ES_REGION, '${self:provider.region}'}
     ES_HOST: ${file(./serverless.env.yml):ES_HOST}
 
-    THOUGHTS_ES_IDX: ${file(./serverless.env.yml):ES_HOST}
+    THOUGHTS_ES_IDX: ${file(./serverless.env.yml):THOUGHTS_ES_IDX}
 
     TELEGRAM_CONV_STATE_DDB_TABLE_NAME: ${self:resources.Resources.telegramConvStateTable.Properties.TableName}
 
