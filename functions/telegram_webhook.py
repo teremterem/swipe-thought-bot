@@ -34,7 +34,7 @@ def configure_telegram():
 def _webhook(event, context):
     bot = configure_telegram()
     if logger.isEnabledFor(logging.INFO):
-        logger.info('EVENT:\n%s', pformat(event))
+        logger.info('LAMBDA EVENT:\n%s', pformat(event))
 
     if event.get('httpMethod') == 'POST' and event.get('body'):
         update_json = json.loads(event.get('body'))
@@ -84,15 +84,15 @@ def _webhook(event, context):
             telegram_conv_state['latest_answer_msg_id'] = answer_msg.message_id
             replace_telegram_conv_state(telegram_conv_state)
 
-            if latest_answer_msg_id:
-                try:
-                    bot.edit_message_reply_markup(
-                        message_id=latest_answer_msg_id,
-                        chat_id=chat_id,
-                        reply_markup=InlineKeyboardMarkup(inline_keyboard=[]),
-                    )
-                except Exception:
-                    logger.info('INLINE KEYBOARD DID NOT SEEM TO NEED REMOVAL', exc_info=True)
+            # if latest_answer_msg_id:
+            #     try:
+            #         bot.edit_message_reply_markup(
+            #             message_id=latest_answer_msg_id,
+            #             chat_id=chat_id,
+            #             reply_markup=InlineKeyboardMarkup(inline_keyboard=[]),
+            #         )
+            #     except Exception:
+            #         logger.info('INLINE KEYBOARD DID NOT SEEM TO NEED REMOVAL', exc_info=True)
 
 
 def webhook(event, context):
