@@ -84,7 +84,9 @@ def webhook(event, context):
                 text=answer,
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
 
-                    # TODO oleksandr: red heart when girl ? yellow ? (probably not purple, though)
+                    # TODO oleksandr: red/black heart for girl/boy or human/bot ? I think, latter!
+                    #  or maybe more like match / no match... (we don't want to disclose bot or human too early)
+                    #  Yes! Match versus No match!
                     InlineKeyboardButton('🖤', callback_data='right_swipe'),
 
                     InlineKeyboardButton('❌', callback_data='left_swipe'),
