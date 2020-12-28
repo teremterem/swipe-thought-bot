@@ -34,12 +34,14 @@ class Thoughts:
             'size': 1,
             'query': {
                 'match': {
-                    # 1024 tokens limit can probably be ignored in case of one message -
-                    # telegram limits messages to 4096 chars which isn't likely to contain 1024 separate tokens.
-                    'answer': text,
-                }
+                    'answer': {
+                        # 1024 tokens limit can probably be ignored in case of one message -
+                        # telegram limits messages to 4096 chars which isn't likely to contain 1024 separate tokens.
+                        'query': text,
+                        'fuzziness': 'AUTO',
+                    },
+                },
             },
-            'fuzziness': 'AUTO',
         }
         if logger.isEnabledFor(logging.INFO):
             logger.info('ES SEARCH QUERY:\n%s', pformat(es_query))
