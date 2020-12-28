@@ -11,10 +11,10 @@ TELEGRAM_CONV_STATE_DDB_TABLE_NAME = os.environ['TELEGRAM_CONV_STATE_DDB_TABLE_N
 telegram_conv_state_table = dynamodb.Table(TELEGRAM_CONV_STATE_DDB_TABLE_NAME)
 
 
-def init_telegram_conv_state(chat_id, bot_id):
+def init_telegram_conv_state(bot_id, chat_id):
     empty_item = {
-        'chat_id': chat_id,
         'bot_id': bot_id,
+        'chat_id': chat_id,
     }
     response = telegram_conv_state_table.get_item(Key=empty_item)
     if logger.isEnabledFor(logging.INFO):

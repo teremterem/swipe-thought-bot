@@ -1,12 +1,12 @@
 import json
 import os
-from pprint import pformat
 
 import telegram
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
 from functions.common import logging  # force log config of functions/common/__init__.py
 from functions.common.telegram_conv_state import init_telegram_conv_state, replace_telegram_conv_state
+from functions.common.thoughts import index_thought, answer_thought
 
 logger = logging.getLogger()
 
@@ -48,32 +48,40 @@ def webhook(event, context):
         logger.info('Message received')
         update = telegram.Update.de_json(json.loads(event.get('body')), bot)
 
+        bot_id = bot.id
         chat_id = update.effective_chat.id
+        msg_id = update.effective_message.message_id
         text = update.effective_message.text  # TODO oleksandr: this works weirdly when update is callback...
 
-        telegram_conf_state = init_telegram_conv_state(chat_id, bot.id)
-        # TODO oleksandr: do stuff
-        replace_telegram_conv_state(telegram_conf_state)
-
-        # text += f"\n\n{pformat(update.effective_chat.to_dict())}\n\n{pformat(update.effective_user.to_dict())}"
-        text += f"\n\n{pformat(telegram_conf_state)}"
-
-        kbd = [[
-            InlineKeyboardButton('🖤', callback_data='right_swipe'),
-            InlineKeyboardButton('❌', callback_data='left_swipe'),
-        ]]
         if text == '/start':
             text = 'Hello, human! How does it feel to be made predominantly of meat and not think in ones and zeros?'
-            kbd[0] = []
+            bot.sendMessage(
+                chat_id=chat_id,
+                text=text,
+            )
+        elif update.callback_query:
+            if update.callback_query.data == 'left_swipe':
+                update.callback_query.message.delete()
+            else:
+                update.callback_query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=[]))
+            update.callback_query.answer()
+        else:
+            telegram_conf_state = init_telegram_conv_state(bot_id=bot_id, chat_id=chat_id)
 
-        bot.sendMessage(
-            chat_id=chat_id,
-            text=text,
-            reply_markup=InlineKeyboardMarkup(
-                inline_keyboard=kbd,
-            ),
-        )
-        logger.info('Message sent')
+            index_thought(bot_id=bot_id, chat_id=chat_id, msg_id=msg_id, text=text)
+
+            replace_telegram_conv_state(telegram_conf_state)
+
+            answer = answer_thought(text)
+
+            bot.sendMessage(
+                chat_id=chat_id,
+                text=answer,
+                reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
+                    InlineKeyboardButton('🖤', callback_data='right_swipe'),
+                    InlineKeyboardButton('❌', callback_data='left_swipe'),
+                ]]),
+            )
 
         return OK_RESPONSE
 
