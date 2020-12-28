@@ -62,19 +62,20 @@ def webhook(event, context):
             if update.callback_query.data == 'left_swipe':
                 if update.effective_message.message_id == latest_answer_msg_id:
                     update.effective_message.delete()
+                    update.callback_query.answer(text='❌ Disliked and rejected')
                 else:
                     update.callback_query.edit_message_reply_markup(
                         reply_markup=InlineKeyboardMarkup(inline_keyboard=[])
                     )
-                update.callback_query.answer(text='Disliked')
+                    update.callback_query.answer(text='💔 Disliked')
             else:
                 update.callback_query.edit_message_reply_markup(
                     reply_markup=InlineKeyboardMarkup(inline_keyboard=[])
                 )
-                update.callback_query.answer(text='Liked')
+                update.callback_query.answer(text='🖤 Liked')
 
         else:
-            index_thought(msg_id=msg_id, chat_id=chat_id, bot_id=bot_id, text=text)
+            index_thought(text=text, msg_id=msg_id, chat_id=chat_id, bot_id=bot_id)
 
             answer = answer_thought(text)
 
@@ -82,7 +83,7 @@ def webhook(event, context):
                 chat_id=chat_id,
                 text=answer,
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
-                    InlineKeyboardButton('🖤', callback_data='right_swipe'),
+                    InlineKeyboardButton('🖤', callback_data='right_swipe'),  # TODO oleksandr: red heart when girl ?
                     InlineKeyboardButton('❌', callback_data='left_swipe'),
                 ]]),
             )

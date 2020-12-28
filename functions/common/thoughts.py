@@ -9,7 +9,7 @@ def construct_thought_id(msg_id, chat_id, bot_id):
     return thought_id
 
 
-def index_thought(msg_id, chat_id, bot_id, text):
+def index_thought(text, msg_id, chat_id, bot_id):
     pass
 
 
