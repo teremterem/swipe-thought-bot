@@ -8,6 +8,7 @@ from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 from functions.common import logging  # force log config of functions/common/__init__.py
 from functions.common.telegram_conv_state import init_telegram_conv_state, replace_telegram_conv_state
 from functions.common.thoughts import index_thought, answer_thought
+from functions.common.utils import log_event_and_response, fail_safely
 
 logger = logging.getLogger()
 
@@ -31,7 +32,9 @@ def configure_telegram():
     return telegram.Bot(telegram_token)
 
 
-def _webhook(event, context):
+@log_event_and_response
+@fail_safely(static_response=OK_RESPONSE)
+def webhook(event, context):
     bot = configure_telegram()
     if logger.isEnabledFor(logging.INFO):
         logger.info('LAMBDA EVENT:\n%s', pformat(event))
@@ -95,14 +98,7 @@ def _webhook(event, context):
             #         logger.info('INLINE KEYBOARD DID NOT SEEM TO NEED REMOVAL', exc_info=True)
 
 
-def webhook(event, context):
-    try:
-        _webhook(event, context)
-    except:
-        logger.exception('FAILED TO PROCESS TELEGRAM UPDATED')
-    return OK_RESPONSE
-
-
+@log_event_and_response
 def set_webhook(event, context):
     if logger.isEnabledFor(logging.INFO):
         logger.info('EVENT:\n%s', pformat(event))
