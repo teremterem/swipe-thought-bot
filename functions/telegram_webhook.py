@@ -50,6 +50,7 @@ def webhook(event, context):
 
         telegram_conv_state = init_telegram_conv_state(chat_id=chat_id, bot_id=bot_id)
         latest_answer_msg_id = int(telegram_conv_state.get('latest_answer_msg_id'))
+        # TODO oleksandr: latest_msg_id =
 
         if text == '/start':
             text = 'Hello, human! How does it feel to be made of meat and not think in ones and zeroes?'
