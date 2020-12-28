@@ -43,7 +43,7 @@ def _webhook(event, context):
         msg_id = update.effective_message.message_id
         text = update.effective_message.text  # TODO oleksandr: this works weirdly when update is callback...
 
-        telegram_conv_state = init_telegram_conv_state(bot_id=bot_id, chat_id=chat_id)
+        telegram_conv_state = init_telegram_conv_state(chat_id=chat_id, bot_id=bot_id)
         latest_answer_msg_id = int(telegram_conv_state.get('latest_answer_msg_id'))
 
         if text == '/start':

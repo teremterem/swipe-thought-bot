@@ -9,13 +9,9 @@ def construct_thought_id(msg_id, chat_id, bot_id):
     return thought_id
 
 
-_last_thought_id = None  # TODO oleksandr: get rid of this
-
-
 def index_thought(msg_id, chat_id, bot_id, text):
-    global _last_thought_id
-    _last_thought_id = construct_thought_id(msg_id=msg_id, chat_id=chat_id, bot_id=bot_id)
+    pass
 
 
 def answer_thought(text):
-    return f"yadayadayada\n{_last_thought_id}"
+    return text
