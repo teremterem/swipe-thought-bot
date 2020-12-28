@@ -83,7 +83,10 @@ def webhook(event, context):
                 chat_id=chat_id,
                 text=answer,
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
-                    InlineKeyboardButton('🖤', callback_data='right_swipe'),  # TODO oleksandr: red heart when girl ?
+
+                    # TODO oleksandr: red heart when girl ? yellow ? (probably not purple, though)
+                    InlineKeyboardButton('🖤', callback_data='right_swipe'),
+
                     InlineKeyboardButton('❌', callback_data='left_swipe'),
                 ]]),
             )
