@@ -38,7 +38,8 @@ class Thoughts:
                     # telegram limits messages to 4096 chars which isn't likely to contain 1024 separate tokens.
                     'answer': text,
                 }
-            }
+            },
+            'fuzziness': 'AUTO',
         }
         if logger.isEnabledFor(logging.INFO):
             logger.info('ES SEARCH QUERY:\n%s', pformat(es_query))
