@@ -62,7 +62,7 @@ def webhook(event, context):
             if update.callback_query.data == 'left_swipe':
                 if update.effective_message.message_id == latest_answer_msg_id:
                     update.effective_message.delete()
-                    update.callback_query.answer(text='💔 Disliked and ❌ rejected')
+                    update.callback_query.answer(text='❌ Rejected')
                 else:
                     update.callback_query.edit_message_reply_markup(
                         reply_markup=InlineKeyboardMarkup(inline_keyboard=[])
