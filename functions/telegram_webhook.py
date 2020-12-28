@@ -36,8 +36,6 @@ def configure_telegram():
 @fail_safely(static_response=OK_RESPONSE)
 def webhook(event, context):
     bot = configure_telegram()
-    if logger.isEnabledFor(logging.INFO):
-        logger.info('LAMBDA EVENT:\n%s', pformat(event))
 
     if event.get('httpMethod') == 'POST' and event.get('body'):
         update_json = json.loads(event.get('body'))
