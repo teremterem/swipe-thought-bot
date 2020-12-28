@@ -1,5 +1,6 @@
 import json
 import os
+from pprint import pformat
 
 import telegram
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
@@ -32,11 +33,14 @@ def configure_telegram():
 
 def _webhook(event, context):
     bot = configure_telegram()
-    logger.info('Event: {}'.format(event))
+    if logger.isEnabledFor(logging.INFO):
+        logger.info('EVENT:\n%s', pformat(event))
 
     if event.get('httpMethod') == 'POST' and event.get('body'):
-        logger.info('Message received')
-        update = telegram.Update.de_json(json.loads(event.get('body')), bot)
+        update_json = json.loads(event.get('body'))
+        if logger.isEnabledFor(logging.INFO):
+            logger.info('TELEGRAM UPDATE:\n%s', pformat(update_json))
+        update = telegram.Update.de_json(update_json, bot)
 
         bot_id = bot.id
         chat_id = update.effective_chat.id
@@ -100,7 +104,8 @@ def webhook(event, context):
 
 
 def set_webhook(event, context):
-    logger.info('Event: {}'.format(event))
+    if logger.isEnabledFor(logging.INFO):
+        logger.info('EVENT:\n%s', pformat(event))
     bot = configure_telegram()
 
     webhook_token = os.environ['TELEGRAM_TOKEN'].replace(':', '_')
