@@ -44,14 +44,7 @@ def _webhook(event, context):
         text = update.effective_message.text  # TODO oleksandr: this works weirdly when update is callback...
 
         telegram_conv_state = init_telegram_conv_state(bot_id=bot_id, chat_id=chat_id)
-
         latest_answer_msg_id = int(telegram_conv_state.get('latest_answer_msg_id'))
-        if latest_answer_msg_id:
-            bot.edit_message_reply_markup(
-                message_id=latest_answer_msg_id,
-                chat_id=chat_id,
-                reply_markup=InlineKeyboardMarkup(inline_keyboard=[]),
-            )
 
         if text == '/start':
             text = 'Hello, human! How does it feel to be made of meat and not think in ones and zeroes?'
@@ -61,7 +54,8 @@ def _webhook(event, context):
             )
 
         elif update.callback_query:
-            if update.callback_query.data == 'left_swipe' and update.effective_message == latest_answer_msg_id:
+            if update.callback_query.data == 'left_swipe' and \
+                    update.effective_message.message_id == latest_answer_msg_id:
                 update.effective_message.delete()
             else:
                 update.callback_query.edit_message_reply_markup(
@@ -85,6 +79,16 @@ def _webhook(event, context):
 
             telegram_conv_state['latest_answer_msg_id'] = answer_msg.message_id
             replace_telegram_conv_state(telegram_conv_state)
+
+            if latest_answer_msg_id:
+                try:
+                    bot.edit_message_reply_markup(
+                        message_id=latest_answer_msg_id,
+                        chat_id=chat_id,
+                        reply_markup=InlineKeyboardMarkup(inline_keyboard=[]),
+                    )
+                except Exception:
+                    logger.info('INLINE KEYBOARD DID NOT SEEM TO NEED REMOVAL', exc_info=True)
 
 
 def webhook(event, context):
