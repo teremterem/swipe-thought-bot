@@ -98,12 +98,15 @@ def webhook(event, context):
 
 @log_event_and_response
 def set_webhook(event, context):
-    if logger.isEnabledFor(logging.INFO):
-        logger.info('EVENT:\n%s', pformat(event))
     bot = configure_telegram()
 
     webhook_token = os.environ['TELEGRAM_TOKEN'].replace(':', '_')
     url = f"https://{event.get('headers').get('Host')}/{event.get('requestContext').get('stage')}/{webhook_token}"
+
+    # TODO oleksandr: are you sure it is ok to "flash" this url in logs ?
+    #  it is ok if INFO level is not displayed in production...
+    logger.info('SETTING WEBHOOK IN TELEGRAM: %s', url)
+
     webhook_set = bot.set_webhook(url)
 
     if webhook_set:
