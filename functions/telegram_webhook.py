@@ -59,14 +59,19 @@ def webhook(event, context):
             )
 
         elif update.callback_query:
-            if update.callback_query.data == 'left_swipe' and \
-                    update.effective_message.message_id == latest_answer_msg_id:
-                update.effective_message.delete()
+            if update.callback_query.data == 'left_swipe':
+                if update.effective_message.message_id == latest_answer_msg_id:
+                    update.effective_message.delete()
+                else:
+                    update.callback_query.edit_message_reply_markup(
+                        reply_markup=InlineKeyboardMarkup(inline_keyboard=[])
+                    )
+                update.callback_query.answer(text='Disliked')
             else:
                 update.callback_query.edit_message_reply_markup(
                     reply_markup=InlineKeyboardMarkup(inline_keyboard=[])
                 )
-            update.callback_query.answer()
+                update.callback_query.answer(text='Liked')
 
         else:
             index_thought(msg_id=msg_id, chat_id=chat_id, bot_id=bot_id, text=text)
