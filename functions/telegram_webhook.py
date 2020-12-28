@@ -7,7 +7,8 @@ from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
 from functions.common import logging  # force log config of functions/common/__init__.py
 from functions.common.telegram_conv_state import init_telegram_conv_state, replace_telegram_conv_state
-from functions.common.thoughts import index_thought, answer_thought
+from functions.common.thoughts import Thoughts
+from functions.common.utils import log_event_and_response, fail_safely
 
 logger = logging.getLogger()
 
@@ -31,10 +32,10 @@ def configure_telegram():
     return telegram.Bot(telegram_token)
 
 
-def _webhook(event, context):
+@log_event_and_response
+@fail_safely(static_response=OK_RESPONSE)
+def webhook(event, context):
     bot = configure_telegram()
-    if logger.isEnabledFor(logging.INFO):
-        logger.info('LAMBDA EVENT:\n%s', pformat(event))
 
     if event.get('httpMethod') == 'POST' and event.get('body'):
         update_json = json.loads(event.get('body'))
@@ -58,58 +59,68 @@ def _webhook(event, context):
             )
 
         elif update.callback_query:
-            if update.callback_query.data == 'left_swipe' and \
-                    update.effective_message.message_id == latest_answer_msg_id:
-                update.effective_message.delete()
+            if update.callback_query.data == 'left_swipe':
+                if update.effective_message.message_id == latest_answer_msg_id:
+                    update.effective_message.delete()
+                    update.callback_query.answer(text='❌ Rejected💔')
+                else:
+                    update.callback_query.edit_message_reply_markup(
+                        reply_markup=InlineKeyboardMarkup(inline_keyboard=[])
+                    )
+                    update.callback_query.answer(text='❌ Disliked')
             else:
                 update.callback_query.edit_message_reply_markup(
                     reply_markup=InlineKeyboardMarkup(inline_keyboard=[])
                 )
-            update.callback_query.answer()
+                update.callback_query.answer(text='🖤 Liked')
 
         else:
-            index_thought(msg_id=msg_id, chat_id=chat_id, bot_id=bot_id, text=text)
+            thoughts = Thoughts()
 
-            answer = answer_thought(text)
+            thoughts.index_thought(text=text, msg_id=msg_id, chat_id=chat_id, bot_id=bot_id)
 
-            answer_msg = bot.send_message(
-                chat_id=chat_id,
-                text=answer,
-                reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
-                    InlineKeyboardButton('🖤', callback_data='right_swipe'),
-                    InlineKeyboardButton('❌', callback_data='left_swipe'),
-                ]]),
-            )
+            answer = thoughts.answer_thought(text)
 
-            telegram_conv_state['latest_answer_msg_id'] = answer_msg.message_id
-            replace_telegram_conv_state(telegram_conv_state)
+            if answer:
+                answer_msg = bot.send_message(
+                    chat_id=chat_id,
+                    text=answer,
+                    reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
 
-            # if latest_answer_msg_id:
-            #     try:
-            #         bot.edit_message_reply_markup(
-            #             message_id=latest_answer_msg_id,
-            #             chat_id=chat_id,
-            #             reply_markup=InlineKeyboardMarkup(inline_keyboard=[]),
-            #         )
-            #     except Exception:
-            #         logger.info('INLINE KEYBOARD DID NOT SEEM TO NEED REMOVAL', exc_info=True)
+                        # TODO oleksandr: red/black heart for girl/boy or human/bot ? I think, latter!
+                        #  or maybe more like match / no match... (we don't want to disclose bot or human too early)
+                        #  Yes! Match versus No match!
+                        InlineKeyboardButton('🖤', callback_data='right_swipe'),
+
+                        InlineKeyboardButton('❌', callback_data='left_swipe'),
+                    ]]),
+                )
+
+                telegram_conv_state['latest_answer_msg_id'] = answer_msg.message_id
+                replace_telegram_conv_state(telegram_conv_state)
+
+                # if latest_answer_msg_id:
+                #     try:
+                #         bot.edit_message_reply_markup(
+                #             message_id=latest_answer_msg_id,
+                #             chat_id=chat_id,
+                #             reply_markup=InlineKeyboardMarkup(inline_keyboard=[]),
+                #         )
+                #     except Exception:
+                #         logger.info('INLINE KEYBOARD DID NOT SEEM TO NEED REMOVAL', exc_info=True)
 
 
-def webhook(event, context):
-    try:
-        _webhook(event, context)
-    except:
-        logger.exception('FAILED TO PROCESS TELEGRAM UPDATED')
-    return OK_RESPONSE
-
-
+@log_event_and_response
 def set_webhook(event, context):
-    if logger.isEnabledFor(logging.INFO):
-        logger.info('EVENT:\n%s', pformat(event))
     bot = configure_telegram()
 
     webhook_token = os.environ['TELEGRAM_TOKEN'].replace(':', '_')
     url = f"https://{event.get('headers').get('Host')}/{event.get('requestContext').get('stage')}/{webhook_token}"
+
+    # TODO oleksandr: are you sure it is ok to "flash" this url in logs ?
+    #  it is ok if INFO level is not displayed in production...
+    logger.info('SETTING WEBHOOK IN TELEGRAM: %s', url)
+
     webhook_set = bot.set_webhook(url)
 
     if webhook_set:
