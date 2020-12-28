@@ -45,7 +45,7 @@ def _webhook(event, context):
 
         telegram_conv_state = init_telegram_conv_state(bot_id=bot_id, chat_id=chat_id)
 
-        latest_answer_msg_id = telegram_conv_state.get('latest_answer_msg_id')
+        latest_answer_msg_id = int(telegram_conv_state.get('latest_answer_msg_id'))
         if latest_answer_msg_id:
             bot.edit_message_reply_markup(
                 message_id=latest_answer_msg_id,
