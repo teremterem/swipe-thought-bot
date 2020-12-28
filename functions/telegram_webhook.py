@@ -22,12 +22,6 @@ ERROR_RESPONSE = {
 
 
 def configure_telegram():
-    """
-    Configures the bot with a Telegram Token.
-
-    Returns a bot instance.
-    """
-
     telegram_token = os.environ.get('TELEGRAM_TOKEN')
     if not telegram_token:
         # TODO oleksandr: define generic SwipeThoughtError
@@ -36,11 +30,7 @@ def configure_telegram():
     return telegram.Bot(telegram_token)
 
 
-def webhook(event, context):
-    """
-    Runs the Telegram webhook.
-    """
-
+def _webhook(event, context):
     bot = configure_telegram()
     logger.info('Event: {}'.format(event))
 
@@ -53,28 +43,38 @@ def webhook(event, context):
         msg_id = update.effective_message.message_id
         text = update.effective_message.text  # TODO oleksandr: this works weirdly when update is callback...
 
+        telegram_conv_state = init_telegram_conv_state(bot_id=bot_id, chat_id=chat_id)
+
+        latest_answer_msg_id = telegram_conv_state.get('latest_answer_msg_id')
+        if latest_answer_msg_id:
+            bot.edit_message_reply_markup(
+                message_id=latest_answer_msg_id,
+                chat_id=chat_id,
+                reply_markup=InlineKeyboardMarkup(inline_keyboard=[]),
+            )
+
         if text == '/start':
-            text = 'Hello, human! How does it feel to be made predominantly of meat and not think in ones and zeros?'
+            text = 'Hello, human! How does it feel to be made of meat and not think in ones and zeroes?'
             bot.sendMessage(
                 chat_id=chat_id,
                 text=text,
             )
+
         elif update.callback_query:
-            if update.callback_query.data == 'left_swipe':
-                update.callback_query.message.delete()
+            if update.callback_query.data == 'left_swipe' and update.effective_message == latest_answer_msg_id:
+                update.effective_message.delete()
             else:
-                update.callback_query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=[]))
+                update.callback_query.edit_message_reply_markup(
+                    reply_markup=InlineKeyboardMarkup(inline_keyboard=[])
+                )
             update.callback_query.answer()
+
         else:
-            telegram_conf_state = init_telegram_conv_state(bot_id=bot_id, chat_id=chat_id)
-
-            index_thought(bot_id=bot_id, chat_id=chat_id, msg_id=msg_id, text=text)
-
-            replace_telegram_conv_state(telegram_conf_state)
+            index_thought(msg_id=msg_id, chat_id=chat_id, bot_id=bot_id, text=text)
 
             answer = answer_thought(text)
 
-            bot.sendMessage(
+            answer_msg = bot.send_message(
                 chat_id=chat_id,
                 text=answer,
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
@@ -83,15 +83,19 @@ def webhook(event, context):
                 ]]),
             )
 
-        return OK_RESPONSE
+            telegram_conv_state['latest_answer_msg_id'] = answer_msg.message_id
+            replace_telegram_conv_state(telegram_conv_state)
 
-    return ERROR_RESPONSE  # TODO oleksandr: do we really need to let Telegram know that something went wrong ?
+
+def webhook(event, context):
+    try:
+        _webhook(event, context)
+    except:
+        logger.exception('FAILED TO PROCESS TELEGRAM UPDATED')
+    return OK_RESPONSE
 
 
 def set_webhook(event, context):
-    """
-    Sets the Telegram bot webhook.
-    """
     logger.info('Event: {}'.format(event))
     bot = configure_telegram()
 
