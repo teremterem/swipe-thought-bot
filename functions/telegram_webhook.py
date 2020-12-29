@@ -62,6 +62,7 @@ def webhook(event, context):
         elif update.callback_query:
             if update.callback_query.data == 'left_swipe':
                 if update.effective_message.message_id == latest_answer_msg_id:
+                    # TODO oleksandr: it should be latest_msg_id instead
                     update.effective_message.delete()
                     update.callback_query.answer(text='❌ Rejected💔')
                 else:
@@ -118,9 +119,8 @@ def set_webhook(event, context):
     webhook_token = os.environ['TELEGRAM_TOKEN'].replace(':', '_')
     url = f"https://{event.get('headers').get('Host')}/{event.get('requestContext').get('stage')}/{webhook_token}"
 
-    # TODO oleksandr: are you sure it is ok to "flash" this url in logs ?
-    #  it is ok if INFO level is not displayed in production...
-    logger.info('SETTING WEBHOOK IN TELEGRAM: %s', url)
+    # # Uncomment the following line at your own risk ? Better not to flash our secret url in logs ?
+    # logger.info('SETTING WEBHOOK IN TELEGRAM: %s', url)
 
     webhook_set = bot.set_webhook(url)
 
