@@ -6,6 +6,7 @@ import telegram
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
 from functions.common import logging  # force log config of functions/common/__init__.py
+from functions.common.swiper_telegram import bot
 from functions.common.telegram_conv_state import init_telegram_conv_state, replace_telegram_conv_state
 from functions.common.thoughts import Thoughts
 from functions.common.utils import log_event_and_response, fail_safely
@@ -23,20 +24,9 @@ ERROR_RESPONSE = {
 }
 
 
-def configure_telegram():
-    telegram_token = os.environ.get('TELEGRAM_TOKEN')
-    if not telegram_token:
-        # TODO oleksandr: define generic SwipeThoughtError
-        raise NotImplementedError('TELEGRAM_TOKEN env var is not set')
-
-    return telegram.Bot(telegram_token)
-
-
 @log_event_and_response
 @fail_safely(static_response=OK_RESPONSE)
 def webhook(event, context):
-    bot = configure_telegram()
-
     if event.get('httpMethod') == 'POST' and event.get('body'):
         update_json = json.loads(event.get('body'))
         if logger.isEnabledFor(logging.INFO):
@@ -114,8 +104,6 @@ def webhook(event, context):
 
 @log_event_and_response
 def set_webhook(event, context):
-    bot = configure_telegram()
-
     webhook_token = os.environ['TELEGRAM_TOKEN'].replace(':', '_')
     url = f"https://{event.get('headers').get('Host')}/{event.get('requestContext').get('stage')}/{webhook_token}"
 

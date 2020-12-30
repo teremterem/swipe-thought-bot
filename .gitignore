@@ -1,5 +1,6 @@
 ### Project specific
 serverless.env.yml
+serverless.env-local.yml
 nocommit/
 
 ### Kite?

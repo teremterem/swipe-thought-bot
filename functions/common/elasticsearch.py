@@ -5,12 +5,12 @@ import boto3
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
 
+logger = logging.getLogger(__name__)
+
 THOUGHTS_ES_IDX = os.environ['THOUGHTS_ES_IDX']
 
 ES_REGION = os.environ['ES_REGION']
 ES_HOST = os.environ['ES_HOST']
-
-logger = logging.getLogger(__name__)
 
 
 def create_es_client():
