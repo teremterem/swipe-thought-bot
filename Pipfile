@@ -14,6 +14,7 @@ pyyaml = "*"
 boto3 = "*"
 jedi = "<0.18.0" # TODO oleksandr: replace this with !=0.18.0 ? (0.18.0 breaks completer in jupyterlab)
 jupyter-kite = "*"
+flask = "*"
 
 [requires]
 python_version = "3.8"

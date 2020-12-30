@@ -6,6 +6,7 @@ import telegram
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
 from functions.common import logging  # force log config of functions/common/__init__.py
+from functions.common.swiper_telegram import bot
 from functions.common.telegram_conv_state import init_telegram_conv_state, replace_telegram_conv_state
 from functions.common.thoughts import Thoughts
 from functions.common.utils import log_event_and_response, fail_safely
@@ -23,20 +24,9 @@ ERROR_RESPONSE = {
 }
 
 
-def configure_telegram():
-    telegram_token = os.environ.get('TELEGRAM_TOKEN')
-    if not telegram_token:
-        # TODO oleksandr: define generic SwipeThoughtError
-        raise NotImplementedError('TELEGRAM_TOKEN env var is not set')
-
-    return telegram.Bot(telegram_token)
-
-
 @log_event_and_response
 @fail_safely(static_response=OK_RESPONSE)
 def webhook(event, context):
-    bot = configure_telegram()
-
     if event.get('httpMethod') == 'POST' and event.get('body'):
         update_json = json.loads(event.get('body'))
         if logger.isEnabledFor(logging.INFO):
@@ -49,7 +39,13 @@ def webhook(event, context):
         text = update.effective_message.text  # TODO oleksandr: this works weirdly when update is callback...
 
         telegram_conv_state = init_telegram_conv_state(chat_id=chat_id, bot_id=bot_id)
-        latest_answer_msg_id = int(telegram_conv_state.get('latest_answer_msg_id'))
+
+        latest_answer_msg_id_decimal = telegram_conv_state.get('latest_answer_msg_id')
+        latest_answer_msg_id = None
+        if latest_answer_msg_id_decimal is not None:
+            latest_answer_msg_id = int(latest_answer_msg_id_decimal)
+
+        # TODO oleksandr: latest_msg_id =
 
         if text == '/start':
             text = 'Hello, human! How does it feel to be made of meat and not think in ones and zeroes?'
@@ -61,6 +57,7 @@ def webhook(event, context):
         elif update.callback_query:
             if update.callback_query.data == 'left_swipe':
                 if update.effective_message.message_id == latest_answer_msg_id:
+                    # TODO oleksandr: it should be latest_msg_id instead
                     update.effective_message.delete()
                     update.callback_query.answer(text='❌ Rejected💔')
                 else:
@@ -112,14 +109,11 @@ def webhook(event, context):
 
 @log_event_and_response
 def set_webhook(event, context):
-    bot = configure_telegram()
-
     webhook_token = os.environ['TELEGRAM_TOKEN'].replace(':', '_')
     url = f"https://{event.get('headers').get('Host')}/{event.get('requestContext').get('stage')}/{webhook_token}"
 
-    # TODO oleksandr: are you sure it is ok to "flash" this url in logs ?
-    #  it is ok if INFO level is not displayed in production...
-    logger.info('SETTING WEBHOOK IN TELEGRAM: %s', url)
+    # # Uncomment the following line at your own risk ? Better not to flash our secret url in logs ?
+    # logger.info('SETTING WEBHOOK IN TELEGRAM: %s', url)
 
     webhook_set = bot.set_webhook(url)
 

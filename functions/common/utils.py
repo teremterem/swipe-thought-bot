@@ -41,3 +41,7 @@ def fail_safely(static_response=None):
         return wrapper
 
     return decorator
+
+
+class SwiperError(Exception):
+    ...

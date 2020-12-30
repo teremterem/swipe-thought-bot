@@ -1,0 +1,2 @@
+#!/bin/sh
+FLASK_APP=helper_tools/local_webhook.py  FLASK_ENV=development pipenv run flask run "$@"

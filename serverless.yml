@@ -8,9 +8,9 @@ provider:
   name: aws
   runtime: python3.8
 
-  stage: ${opt:stage, '${file(./serverless.env.yml):SLS_STAGE}'}
-  profile: ${file(./serverless.env.yml):AWS_PROFILE, ''}
-  region: ${file(./serverless.env.yml):AWS_REGION}
+  stage: ${opt:stage, '${file(./serverless.env.yml):STAGE}'}
+  profile: ${file(./serverless.env.yml):PROFILE, ''}
+  region: ${file(./serverless.env.yml):REGION}
 
   environment:
     LOG_LEVEL: ${file(./serverless.env.yml):LOG_LEVEL, 'WARNING'}
