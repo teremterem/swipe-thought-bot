@@ -1,4 +1,3 @@
-import json
 import os
 import sys
 from threading import Thread
@@ -45,10 +44,7 @@ def set_local_webhook():
 
 @app.route(WEBHOOK_PATH, methods=['POST'])
 def local_webhook():
-    event = {
-        'httpMethod': 'POST',
-        'body': json.dumps(request.json),
-    }
+    event = {'body': request.json}
     thread = Thread(target=webhook, args=(event, None))
     thread.start()
 
