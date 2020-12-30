@@ -1,9 +1,8 @@
 import json
 import os
 import sys
-from pprint import pprint
 
-from flask import Flask, request, Response
+from flask import Flask, request
 
 sys.path.insert(0, os.getcwd())
 
@@ -12,6 +11,7 @@ from helper_tools.helper_utils import set_env_vars
 set_env_vars(for_local=True, project_dir='./')
 
 from functions.common.swiper_telegram import bot
+from functions.telegram_webhook import webhook
 
 app = Flask(__name__)
 
@@ -38,8 +38,13 @@ def set_local_webhook():
 
 @app.route(WEBHOOK_PATH, methods=['POST'])
 def local_webhook():
-    pprint(request.json)
+    event = {
+        'httpMethod': 'POST',
+        'body': json.dumps(request.json),
+    }
+    response = webhook(event, None)
 
-    response = Response(json.dumps('ok'), status=200)
-    response.headers['Content-Type'] = 'application/json'
-    return response
+    # response = Response(json.dumps('ok'), status=200)
+    # response.headers['Content-Type'] = 'application/json'
+    # return response
+    return ''  # 200 with no body

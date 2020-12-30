@@ -9,6 +9,7 @@ def set_env_vars(for_local=False, project_dir='../'):
         set_env_vars_from_yml(f"{project_dir}serverless.env-local.yml")
 
     os.environ.setdefault('ES_REGION', os.environ['REGION'])
+    os.environ.setdefault('TELEGRAM_CONV_STATE_DDB_TABLE_NAME', f"TelegramConvState-stb-{os.environ['STAGE']}")
 
 
 def set_env_vars_from_yml(yml_filename):
