@@ -12,6 +12,9 @@ set_env_vars(for_local=True, project_dir='./')
 
 from functions.common.swiper_telegram import bot
 from functions.telegram_webhook import webhook
+from functions.common import logging, LOG_LEVEL
+
+logging.basicConfig(level=LOG_LEVEL)
 
 app = Flask(__name__)
 
