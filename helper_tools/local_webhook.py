@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+from threading import Thread
 
 from flask import Flask, request
 
@@ -15,6 +16,9 @@ from functions.telegram_webhook import webhook
 from functions.common import logging, LOG_LEVEL
 
 logging.basicConfig(level=LOG_LEVEL)
+
+werkzeug_logger = logging.getLogger('werkzeug')
+werkzeug_logger.setLevel(logging.ERROR)
 
 app = Flask(__name__)
 
@@ -45,7 +49,8 @@ def local_webhook():
         'httpMethod': 'POST',
         'body': json.dumps(request.json),
     }
-    response = webhook(event, None)
+    thread = Thread(target=webhook, args=(event, None))
+    thread.start()
 
     # response = Response(json.dumps('ok'), status=200)
     # response.headers['Content-Type'] = 'application/json'
