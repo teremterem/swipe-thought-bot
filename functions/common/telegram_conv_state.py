@@ -1,3 +1,4 @@
+# TODO oleksandr: rename to swiper_conv_state
 import logging
 import os
 from pprint import pformat

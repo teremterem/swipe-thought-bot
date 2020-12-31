@@ -4,28 +4,28 @@ from pprint import pformat
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 
 from functions.common import logging  # force log config of functions/common/__init__.py
-from functions.common.swiper_telegram import configure_telegram_bot, SwiperConversation
+from functions.common.swiper_telegram import SwiperConversation
 from functions.common.telegram_conv_state import init_telegram_conv_state, replace_telegram_conv_state
 from functions.common.thoughts import Thoughts
 from functions.common.utils import log_event_and_response
 
 logger = logging.getLogger()
 
+# TODO oleksandr: do we need to load-test the lambda to make sure this singleton is ok ?
+swiper_conversation = SwiperConversation()
+
 
 @log_event_and_response
 def webhook(event, context):
-    swiper_conversation = SwiperConversation()
     update_json = event['body']
     swiper_conversation.process_update_json(update_json)
     # return
 
-    bot = swiper_conversation.bot
-
     if logger.isEnabledFor(logging.INFO):
         logger.info('TELEGRAM UPDATE:\n%s', pformat(update_json))
-    update = Update.de_json(update_json, bot)
+    update = Update.de_json(update_json, swiper_conversation.bot)
 
-    bot_id = bot.id
+    bot_id = swiper_conversation.bot.id
     chat_id = update.effective_chat.id
     msg_id = update.effective_message.message_id
     text = update.effective_message.text  # TODO oleksandr: this works weirdly when update is callback...
@@ -41,7 +41,7 @@ def webhook(event, context):
 
     if text == '/start':
         text = 'Hello, human! How does it feel to be made of meat and not think in ones and zeroes?'
-        bot.sendMessage(
+        swiper_conversation.bot.sendMessage(
             chat_id=chat_id,
             text=text,
         )
@@ -71,7 +71,7 @@ def webhook(event, context):
         answer = thoughts.answer_thought(text)
 
         if answer:
-            answer_msg = bot.send_message(
+            answer_msg = swiper_conversation.bot.send_message(
                 chat_id=chat_id,
                 text=answer,
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
@@ -101,15 +101,13 @@ def webhook(event, context):
 
 @log_event_and_response
 def set_webhook(event, context):
-    bot = configure_telegram_bot()
-
     webhook_token = os.environ['TELEGRAM_TOKEN'].replace(':', '_')
     url = f"https://{event.get('headers').get('Host')}/{event.get('requestContext').get('stage')}/{webhook_token}"
 
     # # Uncomment the following line at your own risk ? Better not to flash our secret url in logs ?
     # logger.info('SETTING WEBHOOK IN TELEGRAM: %s', url)
 
-    webhook_set = bot.set_webhook(url)
+    webhook_set = swiper_conversation.bot.set_webhook(url)
 
     if webhook_set:
         return {
