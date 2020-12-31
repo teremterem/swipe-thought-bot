@@ -10,7 +10,7 @@ from helper_tools.helper_utils import set_env_vars
 
 set_env_vars(for_local=True, project_dir='./')
 
-from functions.common.swiper_telegram import bot
+from functions.common.swiper_telegram import configure_telegram_bot
 from functions.telegram_webhook import webhook
 from functions.common import logging, LOG_LEVEL
 
@@ -36,6 +36,7 @@ def set_local_webhook():
     url += WEBHOOK_PATH
     print(url)
 
+    bot = configure_telegram_bot()
     webhook_set = bot.set_webhook(url)
     if webhook_set:
         return url

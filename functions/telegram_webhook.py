@@ -5,7 +5,7 @@ import telegram
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
 from functions.common import logging  # force log config of functions/common/__init__.py
-from functions.common.swiper_telegram import bot
+from functions.common.swiper_telegram import configure_telegram_bot, SwiperConversation
 from functions.common.telegram_conv_state import init_telegram_conv_state, replace_telegram_conv_state
 from functions.common.thoughts import Thoughts
 from functions.common.utils import log_event_and_response
@@ -15,7 +15,13 @@ logger = logging.getLogger()
 
 @log_event_and_response
 def webhook(event, context):
+    swiper_conversation = SwiperConversation()
     update_json = event['body']
+    swiper_conversation.process_update_json(update_json)
+    return
+
+    bot = swiper_conversation.bot
+
     if logger.isEnabledFor(logging.INFO):
         logger.info('TELEGRAM UPDATE:\n%s', pformat(update_json))
     update = telegram.Update.de_json(update_json, bot)
@@ -96,6 +102,8 @@ def webhook(event, context):
 
 @log_event_and_response
 def set_webhook(event, context):
+    bot = configure_telegram_bot()
+
     webhook_token = os.environ['TELEGRAM_TOKEN'].replace(':', '_')
     url = f"https://{event.get('headers').get('Host')}/{event.get('requestContext').get('stage')}/{webhook_token}"
 
