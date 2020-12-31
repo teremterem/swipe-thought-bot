@@ -1,8 +1,7 @@
 import os
 from pprint import pformat
 
-import telegram
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 
 from functions.common import logging  # force log config of functions/common/__init__.py
 from functions.common.swiper_telegram import configure_telegram_bot, SwiperConversation
@@ -24,7 +23,7 @@ def webhook(event, context):
 
     if logger.isEnabledFor(logging.INFO):
         logger.info('TELEGRAM UPDATE:\n%s', pformat(update_json))
-    update = telegram.Update.de_json(update_json, bot)
+    update = Update.de_json(update_json, bot)
 
     bot_id = bot.id
     chat_id = update.effective_chat.id
