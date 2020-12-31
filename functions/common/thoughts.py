@@ -57,6 +57,8 @@ class Thoughts:  # TODO oleksandr: rename to ConversationState(?) and combine wi
         hits = response['hits']['hits']
         if hits:
             return hits[0]['_source']['answer']
+
+        logger.info('ZERO ELASTICSEARCH HITS')
         return None
 
     @staticmethod

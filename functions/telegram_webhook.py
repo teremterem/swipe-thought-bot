@@ -18,7 +18,7 @@ def webhook(event, context):
     swiper_conversation = SwiperConversation()
     update_json = event['body']
     swiper_conversation.process_update_json(update_json)
-    return
+    # return
 
     bot = swiper_conversation.bot
 
