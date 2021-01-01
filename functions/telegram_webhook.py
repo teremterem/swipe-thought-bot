@@ -4,14 +4,13 @@ from pprint import pformat
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 
 from functions.common import logging  # force log config of functions/common/__init__.py
-from functions.common.swiper_telegram import SwiperConversation
 from functions.common.swiper_chat_data import read_swiper_chat_data, write_swiper_chat_data
+from functions.common.swiper_telegram import SwiperConversation
 from functions.common.thoughts import Thoughts
 from functions.common.utils import log_event_and_response
 
 logger = logging.getLogger()
 
-# TODO oleksandr: do we need to load-test the lambda to make sure this singleton is ok ?
 swiper_conversation = SwiperConversation()
 
 

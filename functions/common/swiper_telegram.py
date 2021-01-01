@@ -7,7 +7,8 @@ from telegram import Bot, Update
 from telegram.ext import Dispatcher, CommandHandler, ConversationHandler, BasePersistence
 from telegram.utils.types import ConversationDict
 
-from functions.common.swiper_chat_data import read_swiper_chat_data, write_swiper_chat_data
+from functions.common.swiper_chat_data import read_swiper_chat_data, write_swiper_chat_data, CHAT_ID_KEY, \
+    PTB_CONVERSATIONS_KEY, PTB_CHAT_DATA_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ class SwiperConversation:
             swiper_presentation = SwiperPresentation(swiper_conversation=self)
         self.swiper_presentation = swiper_presentation
 
-        self.swiper_persistence = SwiperPersistence(self)
+        self.swiper_persistence = SwiperPersistence()
         self.dispatcher = self._configure_dispatcher()
 
     def process_update_json(self, update_json):
@@ -123,59 +124,58 @@ class SwiperPresentation:
 
 
 class SwiperPersistence(BasePersistence):
-    def __init__(self, swiper_conversation):
+    def __init__(self):
         super().__init__(
             store_chat_data=True,
             store_user_data=False,
             store_bot_data=False,
         )
-        self.swiper_conversation = swiper_conversation
-
-        self.swiper_chat_data = None
-        self.current_chat_id = None
-        self.swiper_conv_dict = {}
+        self._swiper_chat_data = None
+        self._ptb_conversations = {}
+        self._ptb_chat_data = defaultdict(dict)
 
     def init_from_swiper_chat_data(self, swiper_chat_data):
         """
-        Here we assume single-threaded environment with sequential (non-async) update processing.
+        SwiperPersistence expects single-threaded environment with sequential (non-async) update processing.
         """
-        self.swiper_chat_data = swiper_chat_data
-        self.current_chat_id = swiper_chat_data['chat_id']
+        self._swiper_chat_data = swiper_chat_data
+        chat_id = swiper_chat_data[CHAT_ID_KEY]
 
-        # TODO TODO TODO
-        self.swiper_conv_dict.clear()
-        # self.swiper_conv_dict[(self.current_chat_id,)] = \
-        #     self.swiper_conv_state.setdefault('conversations', {}).setdefault(self.MAIN_CONV_NAME, {})
+        for ptb_conv_states in self._ptb_conversations.values():
+            ptb_conv_states.clear()
+
+        for conv_name, swiper_conv_states in swiper_chat_data.setdefault(PTB_CONVERSATIONS_KEY, {}).items():
+            ptb_conv_states = self._ptb_conversations.setdefault(conv_name, {})
+
+            for conv_state_key, swiper_conv_state in swiper_conv_states.items():
+                conv_state_key = eval(conv_state_key)  # from str to tuple
+                ptb_conv_states[conv_state_key] = swiper_conv_state
+
+        self._ptb_chat_data.clear()
+        self._ptb_chat_data[chat_id] = swiper_chat_data.setdefault(PTB_CHAT_DATA_KEY, {})
 
     def get_conversations(self, name: str) -> ConversationDict:
-        # TODO TODO TODO
-        return self.swiper_conv_dict
-
-    def get_chat_data(self) -> DefaultDict[int, Dict[Any, Any]]:
-        """
-        Python-telegram-bot framework thinks chat_data dict contains all chats of all users,
-        but that's not the case in our environment. We are faking their protocol...
-        """
-        chat_data = defaultdict(None)  # WARNING! protocol violation
-
-        if self.swiper_chat_data is None:
-            current_chat_data = None  # WARNING! protocol violation
-        else:
-            current_chat_data = self.swiper_chat_data.setdefault('chat_data', {})
-
-        chat_data[self.current_chat_id] = current_chat_data
-        return chat_data
-
-    def get_user_data(self) -> DefaultDict[int, Dict[Any, Any]]:
-        return None  # WARNING! protocol violation
-
-    def get_bot_data(self) -> Dict[Any, Any]:
-        return None  # WARNING! protocol violation
+        return self._ptb_conversations.setdefault(name, {})
 
     def update_conversation(self, name: str, key: Tuple[int, ...], new_state: Optional[object]) -> None:
-        ...
+        key = repr(key)  # from tuple to str
+        if new_state is None:
+            self._swiper_chat_data.get(PTB_CONVERSATIONS_KEY, {}).get(name, {}).pop(key, None)
+        else:
+            self._swiper_chat_data.setdefault(PTB_CONVERSATIONS_KEY, {}).setdefault(name, {})[key] = new_state
+
+    def get_chat_data(self) -> DefaultDict[int, Dict[Any, Any]]:
+        return self._ptb_chat_data
+
+    def get_user_data(self) -> DefaultDict[int, Dict[Any, Any]]:
+        return None  # we are violating ptb protocol to be alerted should ptb actually try to use this data
+
+    def get_bot_data(self) -> Dict[Any, Any]:
+        return None  # we are violating ptb protocol to be alerted should ptb actually try to use this data
 
     def update_chat_data(self, chat_id: int, data: Dict) -> None:
+        # self.ptb_chat_data dict is part of swiper_chat_data and will be persisted automatically when
+        # write_swiper_chat_data is called by SwiperConversation - no code is needed here
         ...
 
     def update_user_data(self, user_id: int, data: Dict) -> None:
