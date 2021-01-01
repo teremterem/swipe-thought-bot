@@ -7,7 +7,7 @@ from telegram import Bot, Update
 from telegram.ext import Dispatcher, BasePersistence
 from telegram.utils.types import ConversationDict
 
-from functions.common.swiper_chat_data import read_swiper_chat_data, write_swiper_chat_data, CHAT_ID_KEY, \
+from .swiper_chat_data import read_swiper_chat_data, write_swiper_chat_data, CHAT_ID_KEY, \
     PTB_CONVERSATIONS_KEY, PTB_CHAT_DATA_KEY
 
 logger = logging.getLogger(__name__)

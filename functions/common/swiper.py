@@ -3,11 +3,15 @@
 #  and also rename swiper_telegram.py to something else ?
 import logging
 
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Filters
 
-from functions.common.swiper_telegram import BaseSwiperConversation, StateAwareHandlers, BaseSwiperPresentation
+from .swiper_telegram import BaseSwiperConversation, StateAwareHandlers, BaseSwiperPresentation
+from .thoughts import Thoughts
 
 logger = logging.getLogger(__name__)
+
+thoughts = Thoughts()
 
 
 class ConvState:
@@ -55,10 +59,25 @@ class CommonStateHandlers(StateAwareHandlers):
 
     def start(self, update, context):
         self.swiper_presentation.say_hello(update, context, self.conv_state)
-        return ConvState.BOT_REPLIED
 
     def user_thought(self, update, context):
-        self.swiper_presentation.say_test(update, context, self.conv_state)
+        bot_id = context.bot.id
+        chat_id = update.effective_chat.id
+        msg_id = update.effective_message.message_id
+
+        text = update.effective_message.text
+
+        thoughts.index_thought(text=text, msg_id=msg_id, chat_id=chat_id, bot_id=bot_id)
+        answer = thoughts.answer_thought(text)
+
+        if answer:
+            answer_msg = self.swiper_presentation.answer_thought(update, context, answer)
+
+            context.chat_data['latest_answer_msg_id'] = answer_msg.message_id
+            context.chat_data['latest_msg_id'] = answer_msg.message_id
+            return ConvState.BOT_REPLIED
+
+        context.chat_data['latest_msg_id'] = msg_id
         return ConvState.USER_REPLIED
 
 
@@ -66,11 +85,30 @@ class SwiperPresentation(BaseSwiperPresentation):
     def say_hello(self, update, context, conv_state):
         update.effective_chat.send_message(
             f"Hello, human!\n"
-            f"The last state of our conversation was: {conv_state}"
+            f"\n"
+            f"Current state is: {conv_state}"
         )
 
-    def say_test(self, update, context, conv_state):
-        update.effective_chat.send_message(
-            f"TEST!\n"
-            f"The last state of our conversation was: {conv_state}"
+    def answer_thought(self, update, context, answer):
+        answer_msg = update.effective_chat.send_message(
+            text=answer,
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
+
+                # TODO oleksandr: red/black heart for girl/boy or human/bot ? I think, the latter!
+                #  or maybe more like match / no match ? (we don't want to disclose bot or human too early, right?)
+                #  Yes! Match versus No match!
+                InlineKeyboardButton('🖤', callback_data='like'),
+
+                InlineKeyboardButton('❌', callback_data='dislike'),
+            ]]),
         )
+        # if context.chat_data.get('latest_answer_msg_id'):
+        #     try:
+        #         bot.edit_message_reply_markup(
+        #             message_id=latest_answer_msg_id,
+        #             chat_id=chat_id,
+        #             reply_markup=InlineKeyboardMarkup(inline_keyboard=[]),
+        #         )
+        #     except Exception:
+        #         logger.info('INLINE KEYBOARD DID NOT SEEM TO NEED REMOVAL', exc_info=True)
+        return answer_msg
