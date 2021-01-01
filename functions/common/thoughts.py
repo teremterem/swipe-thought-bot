@@ -6,7 +6,7 @@ from functions.common.elasticsearch import create_es_client, THOUGHTS_ES_IDX
 logger = logging.getLogger(__name__)
 
 
-class Thoughts:  # TODO oleksandr: rename to ConversationState(?) and combine with telegram_conv_state.py
+class Thoughts:
     def __init__(self):
         self.es = create_es_client()
         self.idx = THOUGHTS_ES_IDX
@@ -57,6 +57,8 @@ class Thoughts:  # TODO oleksandr: rename to ConversationState(?) and combine wi
         hits = response['hits']['hits']
         if hits:
             return hits[0]['_source']['answer']
+
+        logger.info('ZERO ELASTICSEARCH HITS')
         return None
 
     @staticmethod

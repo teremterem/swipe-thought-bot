@@ -5,6 +5,12 @@ from pprint import pformat
 logger = logging.getLogger(__name__)
 
 
+def safe_int(value):
+    if value is None:
+        return None
+    return int(value)
+
+
 def log_event_and_response(lambda_handler):
     @wraps(lambda_handler)
     def wrapper(event, *args, **kwargs):

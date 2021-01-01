@@ -55,8 +55,11 @@ functions:
       include:
         - './functions/telegram_webhook.py'
     events:
-      - http: POST /${self:custom.constants.WEBHOOK_TOKEN}
-    timeout: 30 # seconds (default is 6) # TODO oleksandr: better just call one lambda from another asynchronously
+      - http:
+          method: POST
+          path: /${self:custom.constants.WEBHOOK_TOKEN}
+          async: true
+    timeout: 30 # seconds (default is 6) # TODO oleksandr: is this timeout too long ?
     maximumRetryAttempts: 0
     layers:
       - { Ref: PythonRequirementsLambdaLayer }
@@ -103,7 +106,7 @@ resources:
           VolumeType: gp2
           VolumeSize: 10
 
-    telegramConvStateTable:
+    telegramConvStateTable: # TODO oleksandr: rename to SwiperChatData
       Type: AWS::DynamoDB::Table
       Properties:
         TableName: TelegramConvState-${self:custom.constants.SERVICE_SHORT_NAME}-${self:provider.stage}
