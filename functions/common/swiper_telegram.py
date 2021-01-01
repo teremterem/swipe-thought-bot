@@ -7,7 +7,7 @@ from telegram import Bot, Update
 from telegram.ext import Dispatcher, CommandHandler, ConversationHandler, BasePersistence
 from telegram.utils.types import ConversationDict
 
-from functions.common.telegram_conv_state import init_telegram_conv_state, replace_telegram_conv_state
+from functions.common.swiper_chat_data import read_swiper_chat_data, write_swiper_chat_data
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,9 @@ class ConvState:
 
 class SwiperConversation:
     """
-    NOTE: Instances of this class work only in single-threaded environments that process telegram updates sequentially.
+    SwiperConversation instances are designed to work only in single-threaded environments that process telegram updates
+    sequentially (meaning, no asynchronous processing either). This is due to the way SwiperPersistence is implemented
+    which SwiperConversation uses under the hood.
     """
 
     MAIN_CONV_NAME = 'swiper_main'
@@ -40,32 +42,20 @@ class SwiperConversation:
             swiper_presentation = SwiperPresentation(swiper_conversation=self)
         self.swiper_presentation = swiper_presentation
 
-        # here we assume single-threaded environment with sequential (non-async) update processing
-        self.current_chat_id = None
-        self.swiper_conv_state = None
-        self.swiper_conv_dict = {}
-
         self.swiper_persistence = SwiperPersistence(self)
         self.dispatcher = self._configure_dispatcher()
 
     def process_update_json(self, update_json):
         update = Update.de_json(update_json, self.bot)
 
-        # here we assume single-threaded environment with sequential (non-async) update processing
-        self.current_chat_id = update.effective_chat.id
-        self.swiper_conv_state = init_telegram_conv_state(
-            chat_id=self.current_chat_id,
-            bot_id=self.bot.id,
-        )
-        self.swiper_conv_dict.clear()
-        self.swiper_conv_dict[(self.current_chat_id,)] = \
-            self.swiper_conv_state.setdefault('conversations', {}).setdefault(self.MAIN_CONV_NAME, {})
+        swiper_chat_data = read_swiper_chat_data(chat_id=update.effective_chat.id, bot_id=self.bot.id)
+        self.swiper_persistence.init_from_swiper_chat_data(swiper_chat_data)
 
         self.dispatcher.process_update(update)
 
         self.dispatcher.update_persistence()
         self.swiper_persistence.flush()  # this effectively does nothing
-        replace_telegram_conv_state(self.swiper_conv_state)
+        write_swiper_chat_data(swiper_chat_data)
 
     def _configure_dispatcher(self):
         dispatcher = Dispatcher(
@@ -141,9 +131,25 @@ class SwiperPersistence(BasePersistence):
         )
         self.swiper_conversation = swiper_conversation
 
+        self.swiper_chat_data = None
+        self.current_chat_id = None
+        self.swiper_conv_dict = {}
+
+    def init_from_swiper_chat_data(self, swiper_chat_data):
+        """
+        Here we assume single-threaded environment with sequential (non-async) update processing.
+        """
+        self.swiper_chat_data = swiper_chat_data
+        self.current_chat_id = swiper_chat_data['chat_id']
+
+        # TODO TODO TODO
+        self.swiper_conv_dict.clear()
+        # self.swiper_conv_dict[(self.current_chat_id,)] = \
+        #     self.swiper_conv_state.setdefault('conversations', {}).setdefault(self.MAIN_CONV_NAME, {})
+
     def get_conversations(self, name: str) -> ConversationDict:
-        # TODO oleksandr: any "cleaner" way of maintaining this dict ?
-        return self.swiper_conversation.swiper_conv_dict
+        # TODO TODO TODO
+        return self.swiper_conv_dict
 
     def get_chat_data(self) -> DefaultDict[int, Dict[Any, Any]]:
         """
@@ -152,10 +158,10 @@ class SwiperPersistence(BasePersistence):
         """
         chat_data = defaultdict(None)  # WARNING! protocol violation
 
-        if self.swiper_conversation.swiper_conv_state is None:
+        if self.swiper_chat_data is None:
             current_chat_data = None  # WARNING! protocol violation
         else:
-            current_chat_data = self.swiper_conversation.swiper_conv_state.setdefault('chat_data', {})
+            current_chat_data = self.swiper_chat_data.setdefault('chat_data', {})
 
         chat_data[self.swiper_conversation.current_chat_id] = current_chat_data
         return chat_data

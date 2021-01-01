@@ -5,7 +5,7 @@ from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 
 from functions.common import logging  # force log config of functions/common/__init__.py
 from functions.common.swiper_telegram import SwiperConversation
-from functions.common.telegram_conv_state import init_telegram_conv_state, replace_telegram_conv_state
+from functions.common.swiper_chat_data import read_swiper_chat_data, write_swiper_chat_data
 from functions.common.thoughts import Thoughts
 from functions.common.utils import log_event_and_response
 
@@ -30,7 +30,7 @@ def webhook(event, context):
     msg_id = update.effective_message.message_id
     text = update.effective_message.text  # TODO oleksandr: this works weirdly when update is callback...
 
-    telegram_conv_state = init_telegram_conv_state(chat_id=chat_id, bot_id=bot_id)
+    telegram_conv_state = read_swiper_chat_data(chat_id=chat_id, bot_id=bot_id)
 
     latest_answer_msg_id_decimal = telegram_conv_state.get('latest_answer_msg_id')
     latest_answer_msg_id = None
@@ -86,7 +86,7 @@ def webhook(event, context):
             )
 
             telegram_conv_state['latest_answer_msg_id'] = answer_msg.message_id
-            replace_telegram_conv_state(telegram_conv_state)
+            write_swiper_chat_data(telegram_conv_state)
 
             # if latest_answer_msg_id:
             #     try:

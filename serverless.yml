@@ -106,7 +106,7 @@ resources:
           VolumeType: gp2
           VolumeSize: 10
 
-    telegramConvStateTable: # TODO oleksandr: rename to SwiperConvState
+    telegramConvStateTable: # TODO oleksandr: rename to SwiperChatData
       Type: AWS::DynamoDB::Table
       Properties:
         TableName: TelegramConvState-${self:custom.constants.SERVICE_SHORT_NAME}-${self:provider.stage}
