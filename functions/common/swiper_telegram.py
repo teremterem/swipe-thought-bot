@@ -45,6 +45,8 @@ class BaseSwiperConversation:
         """To be overridden by child classes."""
 
     def process_update_json(self, update_json):
+        # if logger.isEnabledFor(logging.INFO):
+        #     logger.info('TELEGRAM UPDATE:\n%s', pformat(update_json))
         update = Update.de_json(update_json, self.bot)
 
         swiper_chat_data = read_swiper_chat_data(chat_id=update.effective_chat.id, bot_id=self.bot.id)

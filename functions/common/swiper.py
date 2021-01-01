@@ -4,7 +4,7 @@
 import logging
 
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
-from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Filters
+from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
 
 from .swiper_telegram import BaseSwiperConversation, StateAwareHandlers, BaseSwiperPresentation
 from .thoughts import Thoughts
@@ -22,6 +22,11 @@ class ConvState:
     BOT_REPLIED = 'BOT_REPLIED'
 
     FALLBACK_STATE = 'FALLBACK_STATE'
+
+
+class DataKeys:
+    LATEST_MSG_ID = 'latest_msg_id'  # this can be either a user thought or a bot answer to it
+    LATEST_ANSWER_MSG_ID = 'latest_answer_msg_id'
 
 
 class SwiperConversation(BaseSwiperConversation):
@@ -54,6 +59,8 @@ class CommonStateHandlers(StateAwareHandlers):
         handlers = [
             CommandHandler('start', self.start),
             MessageHandler(Filters.text & ~Filters.command, self.user_thought),
+            CallbackQueryHandler(self.like, pattern=r'like'),
+            CallbackQueryHandler(self.dislike, pattern=r'dislike'),
         ]
         return handlers
 
@@ -73,12 +80,32 @@ class CommonStateHandlers(StateAwareHandlers):
         if answer:
             answer_msg = self.swiper_presentation.answer_thought(update, context, answer)
 
-            context.chat_data['latest_answer_msg_id'] = answer_msg.message_id
-            context.chat_data['latest_msg_id'] = answer_msg.message_id
+            context.chat_data[DataKeys.LATEST_ANSWER_MSG_ID] = answer_msg.message_id
+            context.chat_data[DataKeys.LATEST_MSG_ID] = answer_msg.message_id
             return ConvState.BOT_REPLIED
 
-        context.chat_data['latest_msg_id'] = msg_id
+        # # Move the following code to SwiperPresentation if you decide to uncomment it...
+        # if previous_latest_answer_msg_id:
+        #     try:
+        #         bot.edit_message_reply_markup(
+        #             message_id=latest_answer_msg_id,
+        #             chat_id=chat_id,
+        #             reply_markup=InlineKeyboardMarkup(inline_keyboard=[]),
+        #         )
+        #     except Exception:
+        #         logger.info('INLINE KEYBOARD DID NOT SEEM TO NEED REMOVAL', exc_info=True)
+
+        context.chat_data[DataKeys.LATEST_MSG_ID] = msg_id
         return ConvState.USER_REPLIED
+
+    def like(self, update, context):
+        self.swiper_presentation.like(update, context)
+
+    def dislike(self, update, context):
+        if update.effective_message.message_id == context.chat_data.get(DataKeys.LATEST_MSG_ID):
+            self.swiper_presentation.reject(update, context)
+        else:
+            self.swiper_presentation.dislike(update, context)
 
 
 class SwiperPresentation(BaseSwiperPresentation):
@@ -102,13 +129,20 @@ class SwiperPresentation(BaseSwiperPresentation):
                 InlineKeyboardButton('❌', callback_data='dislike'),
             ]]),
         )
-        # if context.chat_data.get('latest_answer_msg_id'):
-        #     try:
-        #         bot.edit_message_reply_markup(
-        #             message_id=latest_answer_msg_id,
-        #             chat_id=chat_id,
-        #             reply_markup=InlineKeyboardMarkup(inline_keyboard=[]),
-        #         )
-        #     except Exception:
-        #         logger.info('INLINE KEYBOARD DID NOT SEEM TO NEED REMOVAL', exc_info=True)
         return answer_msg
+
+    def like(self, update, context):
+        update.callback_query.edit_message_reply_markup(
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[])
+        )
+        update.callback_query.answer(text='🖤 Liked')
+
+    def dislike(self, update, context):
+        update.callback_query.edit_message_reply_markup(
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[])
+        )
+        update.callback_query.answer(text='❌ Disliked')
+
+    def reject(self, update, context):
+        update.effective_message.delete()
+        update.callback_query.answer(text='❌ Rejected💔')
