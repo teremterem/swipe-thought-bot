@@ -4,7 +4,7 @@ from collections import defaultdict
 from typing import Dict, Any, DefaultDict, Tuple, Optional
 
 from telegram import Bot, Update
-from telegram.ext import Dispatcher, CommandHandler, ConversationHandler, BasePersistence
+from telegram.ext import Dispatcher, BasePersistence
 from telegram.utils.types import ConversationDict
 
 from functions.common.swiper_chat_data import read_swiper_chat_data, write_swiper_chat_data, CHAT_ID_KEY, \
@@ -15,36 +15,34 @@ logger = logging.getLogger(__name__)
 TELEGRAM_TOKEN = os.environ['TELEGRAM_TOKEN']
 
 
-class ConvState:
-    # using plain str constants because json lib doesn't serialize Enum
-    ENTRY_STATE = 'ENTRY_STATE'
-
-    USER_REPLIED = 'USER_REPLIED'
-    BOT_REPLIED = 'BOT_REPLIED'
-
-    FALLBACK_STATE = 'FALLBACK_STATE'
-
-
-class SwiperConversation:
+class BaseSwiperConversation:
     """
-    SwiperConversation instances are designed to work only in single-threaded environments that process telegram updates
+    BaseSwiperConversation is designed to work only in single-threaded environments that process telegram updates
     sequentially (meaning, no asynchronous processing either). This is due to the way SwiperPersistence is implemented
     which SwiperConversation uses under the hood.
     """
-
-    MAIN_CONV_NAME = 'swiper_main'
 
     def __init__(self, bot=None, swiper_presentation=None):
         if not bot:
             bot = Bot(TELEGRAM_TOKEN)
         self.bot = bot
-
-        if not swiper_presentation:
-            swiper_presentation = SwiperPresentation(swiper_conversation=self)
-        self.swiper_presentation = swiper_presentation
+        self.swiper_presentation = self.init_swiper_presentation(swiper_presentation)
 
         self.swiper_persistence = SwiperPersistence()
-        self.dispatcher = self._configure_dispatcher()
+        self.dispatcher = Dispatcher(
+            self.bot,
+            None,
+            workers=0,
+            persistence=self.swiper_persistence,
+        )
+        self.configure_dispatcher(self.dispatcher)
+
+    def init_swiper_presentation(self, swiper_presentation):
+        """To be overridden by child classes, if special swiper_presentation initialization is needed."""
+        return swiper_presentation
+
+    def configure_dispatcher(self, dispatcher):
+        """To be overridden by child classes."""
 
     def process_update_json(self, update_json):
         update = Update.de_json(update_json, self.bot)
@@ -58,43 +56,17 @@ class SwiperConversation:
         self.swiper_persistence.flush()  # this effectively does nothing
         write_swiper_chat_data(swiper_chat_data)
 
-    def _configure_dispatcher(self):
-        dispatcher = Dispatcher(
-            self.bot,
-            None,
-            workers=0,
-            persistence=self.swiper_persistence,
-        )
 
-        conv_state_dict = {}
-        CommonStateHandlers(ConvState.USER_REPLIED, self).register_state_handlers(conv_state_dict)
-        CommonStateHandlers(ConvState.BOT_REPLIED, self).register_state_handlers(conv_state_dict)
-
-        conv_handler = ConversationHandler(
-            per_chat=True,
-            per_user=False,
-            per_message=False,
-            entry_points=CommonStateHandlers(ConvState.ENTRY_STATE, self).handlers,
-            allow_reentry=False,
-            states=conv_state_dict,
-            fallbacks=CommonStateHandlers(ConvState.FALLBACK_STATE, self).handlers,
-            name=self.MAIN_CONV_NAME,
-            persistent=True,
-        )
-        dispatcher.add_handler(conv_handler)
-
-        return dispatcher
-
-
-class CommonStateHandlers:
-    # TODO oleksandr: split into more abstraction layers to support different kinds of sets of handlers ?
+class StateAwareHandlers:
     def __init__(self, conv_state, swiper_conversation):
         self.conv_state = conv_state
         self.swiper_conversation = swiper_conversation
 
-        self.handlers = [
-            CommandHandler('start', self.start),
-        ]
+        self.handlers = self.configure_handlers()
+
+    def configure_handlers(self):
+        """To be overridden by child classes."""
+        return []
 
     def register_state_handlers(self, conv_state_dict):
         conv_state_dict[self.conv_state] = self.handlers
@@ -103,24 +75,16 @@ class CommonStateHandlers:
     def swiper_presentation(self):
         return self.swiper_conversation.swiper_presentation
 
-    def start(self, update, context):
-        self.swiper_presentation.say_hello(update, context, self.conv_state)
-        return ConvState.BOT_REPLIED
 
-
-class SwiperPresentation:
+class BaseSwiperPresentation:
+    # TODO oleksandr: rename this class to SwiperBotAware ? or SwiperConversationAware ?
+    #  or, maybe, get rid of it completely and rely on bot instance from ptb CallbackContext ?
     def __init__(self, swiper_conversation=None):
         self.swiper_conversation = swiper_conversation
 
     @property
     def bot(self):
         return self.swiper_conversation.bot
-
-    def say_hello(self, update, context, conv_state):
-        update.effective_chat.send_message(
-            f"Hello, human!\n"
-            f"The last state of our conversation was: {conv_state}"
-        )
 
 
 class SwiperPersistence(BasePersistence):
@@ -168,6 +132,7 @@ class SwiperPersistence(BasePersistence):
         return self._ptb_chat_data
 
     def get_user_data(self) -> DefaultDict[int, Dict[Any, Any]]:
+        # TODO oleksandr: implement this ?
         return None  # we are violating ptb protocol to be alerted should ptb actually try to use this data
 
     def get_bot_data(self) -> Dict[Any, Any]:
