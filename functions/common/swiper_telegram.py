@@ -163,7 +163,7 @@ class SwiperPersistence(BasePersistence):
         else:
             current_chat_data = self.swiper_chat_data.setdefault('chat_data', {})
 
-        chat_data[self.swiper_conversation.current_chat_id] = current_chat_data
+        chat_data[self.current_chat_id] = current_chat_data
         return chat_data
 
     def get_user_data(self) -> DefaultDict[int, Dict[Any, Any]]:
