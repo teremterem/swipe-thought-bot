@@ -3,7 +3,7 @@
 #  and also rename swiper_telegram.py to something else ?
 import logging
 
-from telegram.ext import ConversationHandler, CommandHandler
+from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Filters
 
 from functions.common.swiper_telegram import BaseSwiperConversation, StateAwareHandlers, BaseSwiperPresentation
 
@@ -49,6 +49,7 @@ class CommonStateHandlers(StateAwareHandlers):
     def configure_handlers(self):
         handlers = [
             CommandHandler('start', self.start),
+            MessageHandler(Filters.text & ~Filters.command, self.user_thought),
         ]
         return handlers
 
@@ -56,10 +57,20 @@ class CommonStateHandlers(StateAwareHandlers):
         self.swiper_presentation.say_hello(update, context, self.conv_state)
         return ConvState.BOT_REPLIED
 
+    def user_thought(self, update, context):
+        self.swiper_presentation.say_test(update, context, self.conv_state)
+        return ConvState.USER_REPLIED
+
 
 class SwiperPresentation(BaseSwiperPresentation):
     def say_hello(self, update, context, conv_state):
         update.effective_chat.send_message(
             f"Hello, human!\n"
+            f"The last state of our conversation was: {conv_state}"
+        )
+
+    def say_test(self, update, context, conv_state):
+        update.effective_chat.send_message(
+            f"TEST!\n"
             f"The last state of our conversation was: {conv_state}"
         )
