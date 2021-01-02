@@ -1,9 +1,9 @@
 import logging
 from pprint import pformat
 
-from .constants import DataKey, EsKey
+from .constants import DataKey, EsKey, AnswererMode
 from .elasticsearch import create_es_client, THOUGHTS_ES_IDX
-from .utils import timestamp_now_ms
+from .utils import timestamp_now_ms, SwiperError
 
 logger = logging.getLogger(__name__)
 
@@ -48,38 +48,45 @@ class Answerer:
         self.idx = THOUGHTS_ES_IDX
         # TODO oleksandr: create index if doesn't exist ?
 
-    def index_thought(self, text, thought_id, thought_ctx):
+    def index_thought(self, answer, answer_thought_id, thought_ctx):
         doc_body = {
-            EsKey.ANSWER: text,
-            EsKey.ANSWER_THOUGHT_ID: thought_id,
+            EsKey.ANSWER: answer,
+            EsKey.ANSWER_THOUGHT_ID: answer_thought_id,
             EsKey.CTX1: thought_ctx.latest_thoughts_for_idx(1),
             EsKey.CTX3: thought_ctx.latest_thoughts_for_idx(3),
             EsKey.CTX8: thought_ctx.latest_thoughts_for_idx(8),
         }
         if logger.isEnabledFor(logging.INFO):
-            logger.info('INDEXING THOUGHT IN ES:\n%s', pformat(doc_body))
+            logger.info('INDEX THOUGHT IN ES:\n%s', pformat(doc_body))
 
         response = self.es.index(
             index=self.idx,
-            id=thought_id,
+            id=answer_thought_id,
             body=doc_body,
         )
 
         if logger.isEnabledFor(logging.INFO):
-            logger.info('INDEX THOUGHT ES RESPONSE:\n%s', pformat(response))
+            logger.info('THOUGHT INDEXING ES RESPONSE:\n%s', pformat(response))
         return response
 
-    def answer_thought(self, text):  # TODO oleksandr: def answer(self, thought_ctx):
+    def answer(self, thought_ctx, answerer_mode):
+        if answerer_mode != AnswererMode.SIMPLEST_QUESTION_MATCH:
+            raise SwiperError(f"unsupported answerer mode: {answerer_mode}")
+
+        # TODO oleksandr: are you sure this shouldn't be maintained outside of Answerer
+        thought_ctx.ptb_ctx.chat_data[DataKey.ANSWERER_MODE] = answerer_mode
+        logger.info('ANSWERER MODE: %s', answerer_mode)
+
         # https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-match-query.html
         es_query = {
             # 'explain': ES_EXPLAIN_MATCHING,
             'size': 1,
             'query': {
                 'match': {
-                    EsKey.ANSWER: {
+                    EsKey.CTX1: {
                         # 1024 tokens limit can probably be ignored in case of one message -
                         # telegram limits messages to 4096 chars which isn't likely to contain 1024 separate tokens.
-                        'query': text,
+                        'query': thought_ctx.latest_thoughts_for_idx(1),
                         'fuzziness': 'AUTO',
                     },
                 },

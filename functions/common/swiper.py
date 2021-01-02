@@ -7,7 +7,7 @@ from pprint import pformat
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
 
-from .constants import ConvState, DataKey, EsKey
+from .constants import ConvState, DataKey, EsKey, AnswererMode
 from .swiper_telegram import BaseSwiperConversation, StateAwareHandlers, BaseSwiperPresentation
 from .thoughts import Answerer, ThoughtContext, construct_thought_id
 
@@ -64,19 +64,19 @@ class CommonStateHandlers(StateAwareHandlers):
 
         thought_ctx = ThoughtContext(context)
 
+        answerer.index_thought(answer=text, answer_thought_id=thought_id, thought_ctx=thought_ctx)
+
         who_replied = ConvState.USER_REPLIED
         thought_ctx.append_thought(
             text=text,
             thought_id=thought_id,
             conv_state=who_replied,
         )
+        answer_dict = answerer.answer(thought_ctx, AnswererMode.SIMPLEST_QUESTION_MATCH)
 
-        answerer.index_thought(text=text, thought_id=thought_id, thought_ctx=thought_ctx)
-        answer = answerer.answer_thought(text)
-
-        if answer:
-            answer_text = answer[EsKey.ANSWER]
-            answer_thought_id = answer[EsKey.ANSWER_THOUGHT_ID]
+        if answer_dict:
+            answer_text = answer_dict[EsKey.ANSWER]
+            answer_thought_id = answer_dict[EsKey.ANSWER_THOUGHT_ID]
 
             who_replied = ConvState.BOT_REPLIED
             thought_ctx.append_thought(

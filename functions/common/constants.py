@@ -27,3 +27,7 @@ class EsKey:
     CTX1 = 'ctx1'
     CTX3 = 'ctx3'
     CTX8 = 'ctx8'
+
+
+class AnswererMode:
+    SIMPLEST_QUESTION_MATCH = 'simplest_question_match'
