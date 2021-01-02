@@ -1,43 +1,75 @@
 import logging
 from pprint import pformat
 
-from functions.common.elasticsearch import create_es_client, THOUGHTS_ES_IDX
+from .constants import DataKey, EsKey
+from .elasticsearch import create_es_client, THOUGHTS_ES_IDX
+from .utils import timestamp_now_ms
 
 logger = logging.getLogger(__name__)
 
 
-class EsKey:
-    ANSWER = 'answer'
-    ANSWER_THOUGHT_ID = 'answer_thought_id'
+def construct_thought_id(msg_id, chat_id, bot_id):
+    thought_id = f"m{msg_id}:c{chat_id}:b{bot_id}"
+    logger.info('THOUGHT ID CONSTRUCTED: %s', thought_id)
+    return thought_id
 
 
-class Thoughts:
+class ThoughtContext:
+    def __init__(self, ptb_context):
+        self.ptb_ctx = ptb_context
+
+    def get_list(self):
+        return self.ptb_ctx.chat_data.setdefault(DataKey.THOUGHT_CTX, [])
+
+    def append_thought(self, text, thought_id, conv_state):
+        self.get_list().append({
+            DataKey.TEXT: text,
+            DataKey.THOUGHT_ID: thought_id,
+            DataKey.CONV_STATE: conv_state,
+            DataKey.TIMESTAMP_MS: timestamp_now_ms(),
+        })
+
+    def trim_context(self, max_thought_ctx_len=10):
+        self.ptb_ctx.chat_data[DataKey.THOUGHT_CTX] = self.get_list()[-max_thought_ctx_len:]
+
+    def _latest_thoughts(self, num_of_thoughts):
+        return self.get_list()[-num_of_thoughts:]
+
+    def latest_thoughts_for_idx(self, num_of_thoughts):
+        return '\n.\n'.join([t[DataKey.TEXT] for t in self._latest_thoughts(num_of_thoughts)])
+
+    def latest_thought_ids(self, num_of_thoughts):
+        return [t[DataKey.THOUGHT_ID] for t in self._latest_thoughts(num_of_thoughts)]
+
+
+class Answerer:
     def __init__(self):
         self.es = create_es_client()
         self.idx = THOUGHTS_ES_IDX
         # TODO oleksandr: create index if doesn't exist ?
 
-    @staticmethod
-    def construct_thought_id(msg_id, chat_id, bot_id):
-        thought_id = f"m{msg_id}:c{chat_id}:b{bot_id}"
-        logger.info('THOUGHT ID CONSTRUCTED: %s', thought_id)
-        return thought_id
+    def index_thought(self, text, thought_id, thought_ctx):
+        doc_body = {
+            EsKey.ANSWER: text,
+            EsKey.ANSWER_THOUGHT_ID: thought_id,
+            EsKey.CTX1: thought_ctx.latest_thoughts_for_idx(1),
+            EsKey.CTX3: thought_ctx.latest_thoughts_for_idx(3),
+            EsKey.CTX8: thought_ctx.latest_thoughts_for_idx(8),
+        }
+        if logger.isEnabledFor(logging.INFO):
+            logger.info('INDEXING THOUGHT IN ES:\n%s', pformat(doc_body))
 
-    def index_thought(self, text, thought_id):
         response = self.es.index(
             index=self.idx,
             id=thought_id,
-            body={
-                EsKey.ANSWER: text,
-                EsKey.ANSWER_THOUGHT_ID: thought_id,
-            }
+            body=doc_body,
         )
 
         if logger.isEnabledFor(logging.INFO):
             logger.info('INDEX THOUGHT ES RESPONSE:\n%s', pformat(response))
         return response
 
-    def answer_thought(self, text):
+    def answer_thought(self, text):  # TODO oleksandr: def answer(self, thought_ctx):
         # https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-match-query.html
         es_query = {
             # 'explain': ES_EXPLAIN_MATCHING,
