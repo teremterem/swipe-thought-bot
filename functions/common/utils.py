@@ -1,4 +1,5 @@
 import logging
+import time
 from functools import wraps
 from pprint import pformat
 
@@ -9,6 +10,10 @@ def safe_int(value):
     if value is None:
         return None
     return int(value)
+
+
+def timestamp_now_ms():
+    return int(time.time() * 1000)
 
 
 def log_event_and_response(lambda_handler):

@@ -9,6 +9,7 @@ from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Fi
 
 from .swiper_telegram import BaseSwiperConversation, StateAwareHandlers, BaseSwiperPresentation
 from .thoughts import Thoughts, EsKey
+from .utils import timestamp_now_ms
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,7 @@ class DataKey:
     TEXT = 'text'
     THOUGHT_ID = 'thought_id'
     CONV_STATE = 'conv_state'
-    TIMESTAMP = 'timestamp'
+    TIMESTAMP_MS = 'timestamp_ms'
 
 
 class SwiperConversation(BaseSwiperConversation):
@@ -79,6 +80,7 @@ class CommonStateHandlers(StateAwareHandlers):
             DataKey.TEXT: text,
             DataKey.THOUGHT_ID: thought_id,
             DataKey.CONV_STATE: conv_state,
+            DataKey.TIMESTAMP_MS: timestamp_now_ms(),
         })
 
     def _trim_thought_ctx(self, context, max_thought_ctx_len=10):
