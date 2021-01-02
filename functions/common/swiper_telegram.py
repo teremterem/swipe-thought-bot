@@ -100,6 +100,14 @@ class SwiperPersistence(BasePersistence):
         self._ptb_conversations = {}
         self._ptb_chat_data = defaultdict(dict)
 
+    def insert_bot(self, obj: object) -> object:
+        # do not clone dictionaries - we rely on ability to modify dict content when processing telegram update
+        return obj
+
+    def replace_bot(cls, obj: object) -> object:
+        # do not clone dictionaries - we rely on ability to modify dict content when processing telegram update
+        return obj
+
     def init_from_swiper_chat_data(self, swiper_chat_data):
         """
         SwiperPersistence expects single-threaded environment with sequential (non-async) update processing.
@@ -133,20 +141,20 @@ class SwiperPersistence(BasePersistence):
     def get_chat_data(self) -> DefaultDict[int, Dict[Any, Any]]:
         return self._ptb_chat_data
 
-    def get_user_data(self) -> DefaultDict[int, Dict[Any, Any]]:
-        # TODO oleksandr: implement this ?
-        return None  # we are violating ptb protocol to be alerted should ptb actually try to use this data
-
-    def get_bot_data(self) -> Dict[Any, Any]:
-        return None  # we are violating ptb protocol to be alerted should ptb actually try to use this data
-
     def update_chat_data(self, chat_id: int, data: Dict) -> None:
         # self.ptb_chat_data dict is part of swiper_chat_data and will be persisted automatically when
         # write_swiper_chat_data is called by SwiperConversation - no code is needed here
         ...
 
+    def get_user_data(self) -> DefaultDict[int, Dict[Any, Any]]:
+        # TODO oleksandr: implement this ?
+        return None  # we are violating ptb protocol to be alerted should ptb actually try to use this data
+
     def update_user_data(self, user_id: int, data: Dict) -> None:
         ...
+
+    def get_bot_data(self) -> Dict[Any, Any]:
+        return None  # we are violating ptb protocol to be alerted should ptb actually try to use this data
 
     def update_bot_data(self, data: Dict) -> None:
         ...
