@@ -64,12 +64,13 @@ class CommonStateHandlers(StateAwareHandlers):
 
         thought_ctx = ThoughtContext(context)
 
-        answerer.index_thought(answer=text, answer_thought_id=thought_id, thought_ctx=thought_ctx)
+        answerer.index_thought(answer_text=text, answer_thought_id=thought_id, thought_ctx=thought_ctx)
 
         who_replied = ConvState.USER_REPLIED
         thought_ctx.append_thought(
             text=text,
             thought_id=thought_id,
+            msg_id=user_msg_id,
             conv_state=who_replied,
         )
         answer_dict = answerer.answer(thought_ctx, AnswererMode.SIMPLEST_QUESTION_MATCH)
@@ -78,14 +79,15 @@ class CommonStateHandlers(StateAwareHandlers):
             answer_text = answer_dict[EsKey.ANSWER]
             answer_thought_id = answer_dict[EsKey.ANSWER_THOUGHT_ID]
 
+            bot_msg = self.swiper_presentation.answer_thought(update, context, answer_text)
+
             who_replied = ConvState.BOT_REPLIED
             thought_ctx.append_thought(
                 text=answer_text,
                 thought_id=answer_thought_id,
+                msg_id=bot_msg.message_id,
                 conv_state=who_replied,
             )
-
-            bot_msg = self.swiper_presentation.answer_thought(update, context, answer_text)
 
             context.chat_data[DataKey.LATEST_ANSWER_MSG_ID] = bot_msg.message_id
             context.chat_data[DataKey.LATEST_MSG_ID] = bot_msg.message_id
@@ -112,6 +114,7 @@ class CommonStateHandlers(StateAwareHandlers):
 
     def dislike(self, update, context):
         if update.effective_message.message_id == context.chat_data.get(DataKey.LATEST_MSG_ID):
+            ThoughtContext(context).reject_latest_thought(validate_msg_id=update.effective_message.message_id)
             self.swiper_presentation.reject(update, context)
         else:
             self.swiper_presentation.dislike(update, context)

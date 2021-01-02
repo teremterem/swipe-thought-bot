@@ -21,16 +21,35 @@ class ThoughtContext:
     def get_list(self):
         return self.ptb_ctx.chat_data.setdefault(DataKey.THOUGHT_CTX, [])
 
-    def append_thought(self, text, thought_id, conv_state):
+    def append_thought(self, text, thought_id, msg_id, conv_state):
         self.get_list().append({
             DataKey.TEXT: text,
             DataKey.THOUGHT_ID: thought_id,
+            DataKey.MSG_ID: msg_id,
             DataKey.CONV_STATE: conv_state,
             DataKey.TIMESTAMP_MS: timestamp_now_ms(),
         })
 
     def trim_context(self, max_thought_ctx_len=10):
         self.ptb_ctx.chat_data[DataKey.THOUGHT_CTX] = self.get_list()[-max_thought_ctx_len:]
+
+    def reject_latest_thought(self, validate_msg_id):
+        thoughts = self.get_list()
+        if not thoughts:
+            raise SwiperError('cannot reject latest thought from context - thought context is empty')
+
+        latest_thought = thoughts[-1]
+        latest_thought_msg_id = latest_thought[DataKey.MSG_ID]
+        if latest_thought_msg_id != validate_msg_id:
+            raise SwiperError(
+                f"failed to reject latest thought from context - message id validation failed: "
+                f"{validate_msg_id} expected to be latest thought msg id but actual latest was {latest_thought_msg_id}"
+            )
+
+        logger.info(
+            'REJECTING THOUGHT FROM CONTEXT (msg_id=%s):\n%s', latest_thought_msg_id, latest_thought[DataKey.TEXT]
+        )
+        del thoughts[-1]
 
     def _latest_thoughts(self, num_of_thoughts):
         return self.get_list()[-num_of_thoughts:]
@@ -48,9 +67,9 @@ class Answerer:
         self.idx = THOUGHTS_ES_IDX
         # TODO oleksandr: create index if doesn't exist ?
 
-    def index_thought(self, answer, answer_thought_id, thought_ctx):
+    def index_thought(self, answer_text, answer_thought_id, thought_ctx):
         doc_body = {
-            EsKey.ANSWER: answer,
+            EsKey.ANSWER: answer_text,
             EsKey.ANSWER_THOUGHT_ID: answer_thought_id,
             EsKey.CTX1: thought_ctx.latest_thoughts_for_idx(1),
             EsKey.CTX3: thought_ctx.latest_thoughts_for_idx(3),

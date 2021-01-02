@@ -15,6 +15,7 @@ class DataKey:
     THOUGHT_CTX = 'thought_ctx'
     TEXT = 'text'
     THOUGHT_ID = 'thought_id'
+    MSG_ID = 'msg_id'
     CONV_STATE = 'conv_state'
     TIMESTAMP_MS = 'timestamp_ms'
 
