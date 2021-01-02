@@ -26,8 +26,11 @@ class EsKey:
     ANSWER = 'answer'
     ANSWER_THOUGHT_ID = 'answer_thought_id'
     CTX1 = 'ctx1'
+    CTX2 = 'ctx2'
     CTX3 = 'ctx3'
+    CTX5 = 'ctx5'
     CTX8 = 'ctx8'
+    CTX13 = 'ctx13'
 
 
 class AnswererMode:

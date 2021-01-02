@@ -78,8 +78,11 @@ class Answerer:
             EsKey.ANSWER: answer_text,
             EsKey.ANSWER_THOUGHT_ID: answer_thought_id,
             EsKey.CTX1: thought_ctx.latest_thoughts_for_idx(1),
+            EsKey.CTX2: thought_ctx.latest_thoughts_for_idx(2),
             EsKey.CTX3: thought_ctx.latest_thoughts_for_idx(3),
+            EsKey.CTX5: thought_ctx.latest_thoughts_for_idx(5),
             EsKey.CTX8: thought_ctx.latest_thoughts_for_idx(8),
+            EsKey.CTX13: thought_ctx.latest_thoughts_for_idx(13),
         }
         if logger.isEnabledFor(logging.INFO):
             logger.info('INDEX THOUGHT IN ES:\n%s', pformat(doc_body))
