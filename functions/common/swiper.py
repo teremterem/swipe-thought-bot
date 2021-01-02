@@ -2,31 +2,18 @@
 #  give it a more descriptive name, too ?
 #  and also rename swiper_telegram.py to something else ?
 import logging
+from pprint import pformat
 
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
 
+from .constants import ConvState, DataKey, EsKey, AnswererMode
 from .swiper_telegram import BaseSwiperConversation, StateAwareHandlers, BaseSwiperPresentation
-from .thoughts import Thoughts
+from .thoughts import Answerer, ThoughtContext, construct_thought_id
 
 logger = logging.getLogger(__name__)
 
-thoughts = Thoughts()
-
-
-class ConvState:
-    # using plain str constants because json lib doesn't serialize Enum
-    ENTRY_STATE = 'ENTRY_STATE'
-
-    USER_REPLIED = 'USER_REPLIED'
-    BOT_REPLIED = 'BOT_REPLIED'
-
-    FALLBACK_STATE = 'FALLBACK_STATE'
-
-
-class DataKeys:
-    LATEST_MSG_ID = 'latest_msg_id'  # this can be either a user thought or a bot answer to it
-    LATEST_ANSWER_MSG_ID = 'latest_answer_msg_id'
+answerer = Answerer()
 
 
 class SwiperConversation(BaseSwiperConversation):
@@ -70,19 +57,44 @@ class CommonStateHandlers(StateAwareHandlers):
     def user_thought(self, update, context):
         bot_id = context.bot.id
         chat_id = update.effective_chat.id
-        msg_id = update.effective_message.message_id
+        user_msg_id = update.effective_message.message_id
 
         text = update.effective_message.text
+        thought_id = construct_thought_id(msg_id=user_msg_id, chat_id=chat_id, bot_id=bot_id)
 
-        thoughts.index_thought(text=text, msg_id=msg_id, chat_id=chat_id, bot_id=bot_id)
-        answer = thoughts.answer_thought(text)
+        thought_ctx = ThoughtContext(context)
 
-        if answer:
-            answer_msg = self.swiper_presentation.answer_thought(update, context, answer)
+        answerer.index_thought(answer_text=text, answer_thought_id=thought_id, thought_ctx=thought_ctx)
 
-            context.chat_data[DataKeys.LATEST_ANSWER_MSG_ID] = answer_msg.message_id
-            context.chat_data[DataKeys.LATEST_MSG_ID] = answer_msg.message_id
-            return ConvState.BOT_REPLIED
+        who_replied = ConvState.USER_REPLIED
+        thought_ctx.append_thought(
+            text=text,
+            thought_id=thought_id,
+            msg_id=user_msg_id,
+            conv_state=who_replied,
+        )
+        answer_dict = answerer.answer(thought_ctx, AnswererMode.SIMPLEST_QUESTION_MATCH)
+
+        if answer_dict:
+            answer_text = answer_dict[EsKey.ANSWER]
+            answer_thought_id = answer_dict[EsKey.ANSWER_THOUGHT_ID]
+
+            bot_msg = self.swiper_presentation.answer_thought(update, context, answer_text)
+
+            who_replied = ConvState.BOT_REPLIED
+            thought_ctx.append_thought(
+                text=answer_text,
+                thought_id=answer_thought_id,
+                msg_id=bot_msg.message_id,
+                conv_state=who_replied,
+            )
+
+            context.chat_data[DataKey.LATEST_ANSWER_MSG_ID] = bot_msg.message_id
+            context.chat_data[DataKey.LATEST_MSG_ID] = bot_msg.message_id
+        else:
+            context.chat_data[DataKey.LATEST_MSG_ID] = user_msg_id
+
+        thought_ctx.trim_context()
 
         # # Move the following code to SwiperPresentation if you decide to uncomment it...
         # if previous_latest_answer_msg_id:
@@ -95,15 +107,25 @@ class CommonStateHandlers(StateAwareHandlers):
         #     except Exception:
         #         logger.info('INLINE KEYBOARD DID NOT SEEM TO NEED REMOVAL', exc_info=True)
 
-        context.chat_data[DataKeys.LATEST_MSG_ID] = msg_id
-        return ConvState.USER_REPLIED
+        return who_replied
 
     def like(self, update, context):
         self.swiper_presentation.like(update, context)
 
     def dislike(self, update, context):
-        if update.effective_message.message_id == context.chat_data.get(DataKeys.LATEST_MSG_ID):
+        if update.effective_message.message_id == context.chat_data.get(DataKey.LATEST_MSG_ID):
+            thought_ctx = ThoughtContext(context)
+
+            thought_ctx.reject_latest_thought(validate_msg_id=update.effective_message.message_id)
+
+            previous_state = thought_ctx.get_latest_conv_state()
+            if not previous_state:
+                # empty previous_state is unlikely
+                previous_state = ConversationHandler.END  # I assume this would clear conversation state
+
             self.swiper_presentation.reject(update, context)
+
+            return previous_state
         else:
             self.swiper_presentation.dislike(update, context)
 
@@ -113,7 +135,9 @@ class SwiperPresentation(BaseSwiperPresentation):
         update.effective_chat.send_message(
             f"Hello, human!\n"
             f"\n"
-            f"Current state is: {conv_state}"
+            f"Current state is: {conv_state}\n"
+            f"\n"
+            f"{pformat(context.chat_data)}"
         )
 
     def answer_thought(self, update, context, answer):
