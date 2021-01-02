@@ -114,8 +114,18 @@ class CommonStateHandlers(StateAwareHandlers):
 
     def dislike(self, update, context):
         if update.effective_message.message_id == context.chat_data.get(DataKey.LATEST_MSG_ID):
-            ThoughtContext(context).reject_latest_thought(validate_msg_id=update.effective_message.message_id)
+            thought_ctx = ThoughtContext(context)
+
+            thought_ctx.reject_latest_thought(validate_msg_id=update.effective_message.message_id)
+
+            previous_state = thought_ctx.get_latest_conv_state()
+            if not previous_state:
+                # empty previous_state is unlikely
+                previous_state = ConversationHandler.END  # I assume this would clear conversation state
+
             self.swiper_presentation.reject(update, context)
+
+            return previous_state
         else:
             self.swiper_presentation.dislike(update, context)
 

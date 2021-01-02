@@ -51,6 +51,12 @@ class ThoughtContext:
         )
         del thoughts[-1]
 
+    def get_latest_conv_state(self):
+        thoughts = self.get_list()
+        if not thoughts:
+            return None
+        return thoughts[-1][DataKey.CONV_STATE]
+
     def _latest_thoughts(self, num_of_thoughts):
         return self.get_list()[-num_of_thoughts:]
 
