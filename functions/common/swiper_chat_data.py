@@ -36,6 +36,7 @@ def read_swiper_chat_data(chat_id, bot_id):
 
 def write_swiper_chat_data(swiper_chat_data):
     # https://stackoverflow.com/questions/43667229/difference-between-dynamodb-putitem-vs-updateitem
+    # TODO oleksandr: implement optimistic locking using conditional DDB writing (and exception if condition not met)
     response = swiper_chat_data_table.put_item(Item=swiper_chat_data)
     if logger.isEnabledFor(logging.INFO):
         logger.info('SWIPER CHAT DATA - PUT_ITEM (DDB):\n%s', pformat(response))
