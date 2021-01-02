@@ -30,7 +30,7 @@ class ThoughtContext:
             DataKey.TIMESTAMP_MS: timestamp_now_ms(),
         })
 
-    def trim_context(self, max_thought_ctx_len=10):
+    def trim_context(self, max_thought_ctx_len=15):
         self.ptb_ctx.chat_data[DataKey.THOUGHT_CTX] = self.get_list()[-max_thought_ctx_len:]
 
     def reject_latest_thought(self, validate_msg_id):
