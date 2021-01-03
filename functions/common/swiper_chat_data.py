@@ -7,7 +7,7 @@ from .dynamodb import dynamodb
 
 logger = logging.getLogger(__name__)
 
-SWIPER_CHAT_DATA_DDB_TABLE_NAME = os.environ['TELEGRAM_CONV_STATE_DDB_TABLE_NAME']
+SWIPER_CHAT_DATA_DDB_TABLE_NAME = os.environ['SWIPER_CHAT_DATA_DDB_TABLE_NAME']
 
 CHAT_ID_KEY = 'chat_id'
 BOT_ID_KEY = 'bot_id'
