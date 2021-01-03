@@ -133,10 +133,12 @@ class CommonStateHandlers(StateAwareHandlers):
 
 class SwiperPresentation(BaseSwiperPresentation):
     def say_hello(self, update, context, conv_state):
+        thought_ctx_len = len(ThoughtContext(context).get_list())
         send_partitioned_text(
             update.effective_chat,
             f"{pformat(context.chat_data)}\n"
             f"\n"
+            f"THOUGHT CTX LENGTH: {thought_ctx_len}\n"
             f"CONVERSATION STATE: {conv_state}"
         )
 
