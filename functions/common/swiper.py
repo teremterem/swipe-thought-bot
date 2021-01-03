@@ -9,12 +9,10 @@ from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Fi
 
 from .constants import ConvState, DataKey, EsKey, AnswererMode
 from .swiper_telegram import BaseSwiperConversation, StateAwareHandlers, BaseSwiperPresentation
-from .thoughts import Answerer, ThoughtContext, construct_thought_id
+from .thoughts import ThoughtContext, construct_thought_id, Answerer
 from .utils import send_partitioned_text
 
 logger = logging.getLogger(__name__)
-
-answerer = Answerer()
 
 
 class SwiperConversation(BaseSwiperConversation):
@@ -65,6 +63,7 @@ class CommonStateHandlers(StateAwareHandlers):
 
         thought_ctx = ThoughtContext(context)
 
+        answerer = Answerer()  # TODO oleksandr: introduce some sort of UpdateScope object and move answerer over there
         answerer.index_thought(answer_text=text, answer_thought_id=thought_id, thought_ctx=thought_ctx)
 
         who_replied = ConvState.USER_REPLIED
