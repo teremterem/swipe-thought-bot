@@ -100,9 +100,6 @@ class Answerer:
     def answer(self, thought_ctx, answerer_mode):
         if answerer_mode != AnswererMode.SIMPLEST_QUESTION_MATCH:
             raise SwiperError(f"unsupported answerer mode: {answerer_mode}")
-
-        # TODO oleksandr: are you sure this shouldn't be maintained outside of Answerer
-        thought_ctx.ptb_ctx.chat_data[DataKey.ANSWERER_MODE] = answerer_mode
         logger.info('ANSWERER MODE: %s', answerer_mode)
 
         # https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-match-query.html

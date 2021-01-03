@@ -73,6 +73,9 @@ class CommonStateHandlers(StateAwareHandlers):
             msg_id=user_msg_id,
             conv_state=who_replied,
         )
+
+
+        answerer_mode = context.chat_data.setdefault(DataKey.ANSWERER_MODE, AnswererMode.DEFAULT)
         answer_dict = answerer.answer(thought_ctx, AnswererMode.SIMPLEST_QUESTION_MATCH)
 
         if answer_dict:
