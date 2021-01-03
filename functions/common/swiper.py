@@ -10,6 +10,7 @@ from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Fi
 from .constants import ConvState, DataKey, EsKey, AnswererMode
 from .swiper_telegram import BaseSwiperConversation, StateAwareHandlers, BaseSwiperPresentation
 from .thoughts import Answerer, ThoughtContext, construct_thought_id
+from .utils import send_partitioned_text
 
 logger = logging.getLogger(__name__)
 
@@ -132,12 +133,11 @@ class CommonStateHandlers(StateAwareHandlers):
 
 class SwiperPresentation(BaseSwiperPresentation):
     def say_hello(self, update, context, conv_state):
-        update.effective_chat.send_message(
-            f"Hello, human!\n"
+        send_partitioned_text(
+            update.effective_chat,
+            f"{pformat(context.chat_data)}\n"
             f"\n"
-            f"Current state is: {conv_state}\n"
-            f"\n"
-            f"{pformat(context.chat_data)}"
+            f"CONVERSATION STATE: {conv_state}"
         )
 
     def answer_thought(self, update, context, answer):
