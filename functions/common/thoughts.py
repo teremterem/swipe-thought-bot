@@ -1,7 +1,7 @@
 import logging
 from pprint import pformat
 
-from .constants import DataKey, EsKey, AnswererMode
+from .constants import DataKey, EsKey, AnswererMode, ConvState
 from .elasticsearch import create_es_client, THOUGHTS_ES_IDX
 from .utils import timestamp_now_ms, SwiperError
 
@@ -57,14 +57,17 @@ class ThoughtContext:
             return None
         return thoughts[-1][DataKey.CONV_STATE]
 
-    def _latest_thoughts(self, num_of_thoughts):
-        return self.get_list()[-num_of_thoughts:]
+    def get_latest_thoughts(self, context_size):
+        return self.get_list()[-context_size:]
 
-    def latest_thoughts_for_idx(self, num_of_thoughts):
-        return '\n.\n'.join([t[DataKey.TEXT] for t in self._latest_thoughts(num_of_thoughts)])
+    def concat_latest_thoughts(self, context_size):
+        return '\n.\n'.join([t[DataKey.TEXT] for t in self.get_latest_thoughts(context_size)])
 
-    def latest_thought_ids(self, num_of_thoughts):
-        return [t[DataKey.THOUGHT_ID] for t in self._latest_thoughts(num_of_thoughts)]
+    def get_latest_user_thought_ids(self, context_size):
+        return [
+            t[DataKey.THOUGHT_ID] for t in self.get_latest_thoughts(context_size)
+            if t[DataKey.CONV_STATE] == ConvState.USER_REPLIED
+        ]
 
 
 class Answerer:
@@ -75,14 +78,14 @@ class Answerer:
 
     def index_thought(self, answer_text, answer_thought_id, thought_ctx):
         doc_body = {
-            EsKey.ANSWER: answer_text,
             EsKey.ANSWER_THOUGHT_ID: answer_thought_id,
-            EsKey.CTX1: thought_ctx.latest_thoughts_for_idx(1),
-            EsKey.CTX2: thought_ctx.latest_thoughts_for_idx(2),
-            EsKey.CTX3: thought_ctx.latest_thoughts_for_idx(3),
-            EsKey.CTX5: thought_ctx.latest_thoughts_for_idx(5),
-            EsKey.CTX8: thought_ctx.latest_thoughts_for_idx(8),
-            EsKey.CTX13: thought_ctx.latest_thoughts_for_idx(13),
+            EsKey.ANSWER: answer_text,
+            EsKey.CTX1: thought_ctx.concat_latest_thoughts(1),
+            EsKey.CTX2: thought_ctx.concat_latest_thoughts(2),
+            EsKey.CTX3: thought_ctx.concat_latest_thoughts(3),
+            EsKey.CTX5: thought_ctx.concat_latest_thoughts(5),
+            EsKey.CTX8: thought_ctx.concat_latest_thoughts(8),
+            EsKey.CTX13: thought_ctx.concat_latest_thoughts(13),
         }
         if logger.isEnabledFor(logging.INFO):
             logger.info('INDEX THOUGHT IN ES:\n%s', pformat(doc_body))
@@ -98,32 +101,76 @@ class Answerer:
         return response
 
     def answer(self, thought_ctx, answerer_mode):
-        if answerer_mode != AnswererMode.SIMPLEST_QUESTION_MATCH:
-            raise SwiperError(f"unsupported answerer mode: {answerer_mode}")
         logger.info('ANSWERER MODE: %s', answerer_mode)
 
-        # https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-match-query.html
-        es_query = {
-            # 'explain': ES_EXPLAIN_MATCHING,
-            'size': 1,
-            'query': {
-                'match': {
-                    EsKey.CTX1: {
-                        # 1024 tokens limit can probably be ignored in case of one message -
-                        # telegram limits messages to 4096 chars which isn't likely to contain 1024 separate tokens.
-                        'query': thought_ctx.latest_thoughts_for_idx(1),
-                        'fuzziness': 'AUTO',
+        if answerer_mode == AnswererMode.SIMPLEST_QUESTION_MATCH:
+            # https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-match-query.html
+            es_query = {
+                'query': {
+                    'match': {
+                        EsKey.CTX1: {
+                            # 1024 tokens limit can probably be ignored in case of one message -
+                            # telegram limits messages to 4096 chars which isn't likely to contain 1024 separate tokens.
+                            'query': thought_ctx.concat_latest_thoughts(1),
+                            'fuzziness': 'AUTO',
+                        },
                     },
                 },
-            },
-        }
+            }
+        elif answerer_mode == AnswererMode.CTX8_CTX3_CTX1_BOOST2:
+            es_query = {
+                'query': {
+                    'bool': {
+                        # TODO oleksandr: handle hitting 1024 tokens limit gracefully ?
+                        'should': [
+                            {
+                                'match': {
+                                    EsKey.CTX1: {
+                                        'query': thought_ctx.concat_latest_thoughts(1),
+                                        'fuzziness': 'AUTO',
+                                        'boost': 2,
+                                    },
+                                },
+                            },
+                            {
+                                'match': {
+                                    EsKey.CTX3: {
+                                        'query': thought_ctx.concat_latest_thoughts(3),
+                                        'fuzziness': 'AUTO',
+                                    },
+                                },
+                            },
+                            {
+                                'match': {
+                                    EsKey.CTX8: {
+                                        'query': thought_ctx.concat_latest_thoughts(8),
+                                        'fuzziness': 'AUTO',
+                                    },
+                                },
+                            },
+                        ],
+                        'must_not': {
+                            # https://stackoverflow.com/a/42646653/2040370
+                            'terms': {
+                                EsKey.ANSWER_THOUGHT_ID: thought_ctx.get_latest_user_thought_ids(12),
+                            },
+                        },
+                    },
+                },
+            }
+        else:
+            raise SwiperError(f"unsupported answerer mode: {answerer_mode}")
+
+        es_query['size'] = 1
+        # es_query['explain'] = True
+
         if logger.isEnabledFor(logging.INFO):
             logger.info('ES SEARCH QUERY:\n%s', pformat(es_query))
 
         response = self.es.search(
             index=self.idx,
             body=es_query,
-            # request_timeout=25,  # seconds
+            # request_timeout=15,  # or  # timeout=15,  # seconds
         )
         if logger.isEnabledFor(logging.INFO):
             logger.info('ES SEARCH RESPONSE:\n%s', pformat(response, width=140))

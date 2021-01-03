@@ -37,4 +37,4 @@ class AnswererMode:
     SIMPLEST_QUESTION_MATCH = 'simplest-question-match'
     CTX8_CTX3_CTX1_BOOST2 = 'ctx8-ctx3-ctx1-boost2'
 
-    DEFAULT = SIMPLEST_QUESTION_MATCH  # TODO oleksandr: change this
+    DEFAULT = CTX8_CTX3_CTX1_BOOST2
