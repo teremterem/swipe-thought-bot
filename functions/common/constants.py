@@ -35,6 +35,6 @@ class EsKey:
 
 class AnswererMode:
     SIMPLEST_QUESTION_MATCH = 'simplest-question-match'
-    CTX8_CTX3_CTX1 = 'ctx8-ctx3-ctx1'
+    CTX13_CTX3B2_CTX1 = 'ctx13-ctx3b2-ctx1'
 
-    DEFAULT = CTX8_CTX3_CTX1
+    DEFAULT = CTX13_CTX3B2_CTX1

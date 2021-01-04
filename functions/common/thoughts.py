@@ -120,7 +120,7 @@ class Answerer:
                     },
                 },
             }
-        elif answerer_mode == AnswererMode.CTX8_CTX3_CTX1:
+        elif answerer_mode == AnswererMode.CTX13_CTX3B2_CTX1:
             es_query = {
                 'query': {
                     'bool': {
@@ -131,7 +131,7 @@ class Answerer:
                                     EsKey.CTX1: {
                                         'query': thought_ctx.concat_latest_thoughts(1, user_only=True),
                                         'fuzziness': 'AUTO',
-                                        'boost': 8,
+                                        'boost': 13,
                                     },
                                 },
                             },
@@ -140,14 +140,14 @@ class Answerer:
                                     EsKey.CTX3: {
                                         'query': thought_ctx.concat_latest_thoughts(3, user_only=True),
                                         'fuzziness': 'AUTO',
-                                        'boost': 3,
+                                        'boost': 2,
                                     },
                                 },
                             },
                             {
                                 'match': {
-                                    EsKey.CTX8: {
-                                        'query': thought_ctx.concat_latest_thoughts(8, user_only=True),
+                                    EsKey.CTX13: {
+                                        'query': thought_ctx.concat_latest_thoughts(13, user_only=True),
                                         'fuzziness': 'AUTO',
                                         'boost': 1,
                                     },
@@ -157,7 +157,7 @@ class Answerer:
                         'must_not': {
                             # https://stackoverflow.com/a/42646653/2040370
                             'terms': {
-                                EsKey.ANSWER_THOUGHT_ID: thought_ctx.get_latest_thought_ids(7, user_only=True),
+                                EsKey.ANSWER_THOUGHT_ID: thought_ctx.get_latest_thought_ids(12, user_only=True),
                             },
                         },
                     },
