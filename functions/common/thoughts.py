@@ -57,17 +57,17 @@ class ThoughtContext:
             return None
         return thoughts[-1][DataKey.CONV_STATE]
 
-    def get_latest_thoughts(self, context_size):
-        return self.get_list()[-context_size:]
+    def get_latest_thoughts(self, context_size, user_only=False):
+        thoughts = self.get_list()[-context_size:]
+        if user_only:
+            thoughts = [t for t in thoughts if t[DataKey.CONV_STATE] == ConvState.USER_REPLIED]
+        return thoughts
 
-    def concat_latest_thoughts(self, context_size):
-        return '\n.\n'.join([t[DataKey.TEXT] for t in self.get_latest_thoughts(context_size)])
+    def concat_latest_thoughts(self, context_size, user_only=False):
+        return '\n.\n'.join([t[DataKey.TEXT] for t in self.get_latest_thoughts(context_size, user_only=user_only)])
 
-    def get_latest_user_thought_ids(self, context_size):
-        return [
-            t[DataKey.THOUGHT_ID] for t in self.get_latest_thoughts(context_size)
-            if t[DataKey.CONV_STATE] == ConvState.USER_REPLIED
-        ]
+    def get_latest_thought_ids(self, context_size, user_only=False):
+        return [t[DataKey.THOUGHT_ID] for t in self.get_latest_thoughts(context_size, user_only=user_only)]
 
 
 class Answerer:
@@ -80,6 +80,9 @@ class Answerer:
         doc_body = {
             EsKey.ANSWER_THOUGHT_ID: answer_thought_id,
             EsKey.ANSWER: answer_text,
+
+            # TODO oleksandr: should we index user thoughts only (skip bot replies) ?
+            #  well, I think indexing both - user thoughts and bot replies - is fine...
             EsKey.CTX1: thought_ctx.concat_latest_thoughts(1),
             EsKey.CTX2: thought_ctx.concat_latest_thoughts(2),
             EsKey.CTX3: thought_ctx.concat_latest_thoughts(3),
@@ -126,7 +129,7 @@ class Answerer:
                             {
                                 'match': {
                                     EsKey.CTX1: {
-                                        'query': thought_ctx.concat_latest_thoughts(1),
+                                        'query': thought_ctx.concat_latest_thoughts(1, user_only=True),
                                         'fuzziness': 'AUTO',
                                         'boost': 2,
                                     },
@@ -135,7 +138,7 @@ class Answerer:
                             {
                                 'match': {
                                     EsKey.CTX3: {
-                                        'query': thought_ctx.concat_latest_thoughts(3),
+                                        'query': thought_ctx.concat_latest_thoughts(3, user_only=True),
                                         'fuzziness': 'AUTO',
                                     },
                                 },
@@ -143,7 +146,7 @@ class Answerer:
                             {
                                 'match': {
                                     EsKey.CTX8: {
-                                        'query': thought_ctx.concat_latest_thoughts(8),
+                                        'query': thought_ctx.concat_latest_thoughts(8, user_only=True),
                                         'fuzziness': 'AUTO',
                                     },
                                 },
@@ -152,7 +155,7 @@ class Answerer:
                         'must_not': {
                             # https://stackoverflow.com/a/42646653/2040370
                             'terms': {
-                                EsKey.ANSWER_THOUGHT_ID: thought_ctx.get_latest_user_thought_ids(12),
+                                EsKey.ANSWER_THOUGHT_ID: thought_ctx.get_latest_thought_ids(7, user_only=True),
                             },
                         },
                     },
