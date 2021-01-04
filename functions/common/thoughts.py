@@ -131,7 +131,7 @@ class Answerer:
                                     EsKey.CTX1: {
                                         'query': thought_ctx.concat_latest_thoughts(1, user_only=True),
                                         'fuzziness': 'AUTO',
-                                        'boost': 2,
+                                        'boost': 3,  # TODO oleksandr: should we rename answerer mode accordingly ?
                                     },
                                 },
                             },
