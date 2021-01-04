@@ -120,7 +120,7 @@ class Answerer:
                     },
                 },
             }
-        elif answerer_mode == AnswererMode.CTX8_CTX3B2_CTX1B13:
+        elif answerer_mode == AnswererMode.CTX8_CTX1B13:
             es_query = {
                 'query': {
                     'bool': {
@@ -132,15 +132,6 @@ class Answerer:
                                         'query': thought_ctx.concat_latest_thoughts(1, user_only=True),
                                         'fuzziness': 'AUTO',
                                         'boost': 13,
-                                    },
-                                },
-                            },
-                            {
-                                'match': {
-                                    EsKey.CTX3: {
-                                        'query': thought_ctx.concat_latest_thoughts(3, user_only=True),
-                                        'fuzziness': 'AUTO',
-                                        'boost': 2,
                                     },
                                 },
                             },
@@ -160,6 +151,9 @@ class Answerer:
                                 EsKey.ANSWER_THOUGHT_ID: thought_ctx.get_latest_thought_ids(7, user_only=True),
                             },
                         },
+                        # TODO oleksandr: also maintain a "queue" (last 15, for ex.) of shown thoughts to exclude them ?
+                        #  no! not until we start matching people!
+                        #  (by then we will see if anything like this is still needed)
                     },
                 },
             }
