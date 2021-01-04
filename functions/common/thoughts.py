@@ -81,7 +81,7 @@ class Answerer:
             EsKey.ANSWER_THOUGHT_ID: answer_thought_id,
             EsKey.ANSWER: answer_text,
 
-            # TODO oleksandr: should we index user thoughts only (skip bot replies) ?
+            # TODO oleksandr: should we index bot replies only (skip user thoughts) ?
             #  well, I think indexing both - user thoughts and bot replies - is fine...
             EsKey.CTX1: thought_ctx.concat_latest_thoughts(1),
             EsKey.CTX2: thought_ctx.concat_latest_thoughts(2),
@@ -120,7 +120,7 @@ class Answerer:
                     },
                 },
             }
-        elif answerer_mode == AnswererMode.CTX13_CTX3B2_CTX1:
+        elif answerer_mode == AnswererMode.CTX8_CTX3B2_CTX1B13:
             es_query = {
                 'query': {
                     'bool': {
@@ -146,8 +146,8 @@ class Answerer:
                             },
                             {
                                 'match': {
-                                    EsKey.CTX13: {
-                                        'query': thought_ctx.concat_latest_thoughts(13, user_only=True),
+                                    EsKey.CTX8: {
+                                        'query': thought_ctx.concat_latest_thoughts(8, user_only=True),
                                         'fuzziness': 'AUTO',
                                         'boost': 1,
                                     },
@@ -157,7 +157,7 @@ class Answerer:
                         'must_not': {
                             # https://stackoverflow.com/a/42646653/2040370
                             'terms': {
-                                EsKey.ANSWER_THOUGHT_ID: thought_ctx.get_latest_thought_ids(12, user_only=True),
+                                EsKey.ANSWER_THOUGHT_ID: thought_ctx.get_latest_thought_ids(7, user_only=True),
                             },
                         },
                     },
