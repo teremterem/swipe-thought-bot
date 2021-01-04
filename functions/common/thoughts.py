@@ -120,7 +120,7 @@ class Answerer:
                     },
                 },
             }
-        elif answerer_mode == AnswererMode.CTX8_CTX3_CTX1_BOOST2:
+        elif answerer_mode == AnswererMode.CTX8_CTX3_CTX1:
             es_query = {
                 'query': {
                     'bool': {
@@ -131,7 +131,7 @@ class Answerer:
                                     EsKey.CTX1: {
                                         'query': thought_ctx.concat_latest_thoughts(1, user_only=True),
                                         'fuzziness': 'AUTO',
-                                        'boost': 3,  # TODO oleksandr: should we rename answerer mode accordingly ?
+                                        'boost': 8,
                                     },
                                 },
                             },
@@ -140,6 +140,7 @@ class Answerer:
                                     EsKey.CTX3: {
                                         'query': thought_ctx.concat_latest_thoughts(3, user_only=True),
                                         'fuzziness': 'AUTO',
+                                        'boost': 3,
                                     },
                                 },
                             },
@@ -148,6 +149,7 @@ class Answerer:
                                     EsKey.CTX8: {
                                         'query': thought_ctx.concat_latest_thoughts(8, user_only=True),
                                         'fuzziness': 'AUTO',
+                                        'boost': 1,
                                     },
                                 },
                             },
