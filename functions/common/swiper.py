@@ -9,11 +9,10 @@ from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Fi
 
 from .constants import ConvState, DataKey, EsKey, AnswererMode
 from .swiper_telegram import BaseSwiperConversation, StateAwareHandlers, BaseSwiperPresentation
-from .thoughts import Answerer, ThoughtContext, construct_thought_id
+from .thoughts import ThoughtContext, construct_thought_id, Answerer
+from .utils import send_partitioned_text
 
 logger = logging.getLogger(__name__)
-
-answerer = Answerer()
 
 
 class SwiperConversation(BaseSwiperConversation):
@@ -64,6 +63,7 @@ class CommonStateHandlers(StateAwareHandlers):
 
         thought_ctx = ThoughtContext(context)
 
+        answerer = Answerer()  # TODO oleksandr: introduce some sort of UpdateScope object and move answerer over there
         answerer.index_thought(answer_text=text, answer_thought_id=thought_id, thought_ctx=thought_ctx)
 
         who_replied = ConvState.USER_REPLIED
@@ -73,7 +73,9 @@ class CommonStateHandlers(StateAwareHandlers):
             msg_id=user_msg_id,
             conv_state=who_replied,
         )
-        answer_dict = answerer.answer(thought_ctx, AnswererMode.SIMPLEST_QUESTION_MATCH)
+
+        answerer_mode = context.chat_data.setdefault(DataKey.ANSWERER_MODE, AnswererMode.DEFAULT)
+        answer_dict = answerer.answer(thought_ctx, answerer_mode)
 
         if answer_dict:
             answer_text = answer_dict[EsKey.ANSWER]
@@ -132,12 +134,13 @@ class CommonStateHandlers(StateAwareHandlers):
 
 class SwiperPresentation(BaseSwiperPresentation):
     def say_hello(self, update, context, conv_state):
-        update.effective_chat.send_message(
-            f"Hello, human!\n"
+        thought_ctx_len = len(ThoughtContext(context).get_list())
+        send_partitioned_text(
+            update.effective_chat,
+            f"{pformat(context.chat_data)}\n"
             f"\n"
-            f"Current state is: {conv_state}\n"
-            f"\n"
-            f"{pformat(context.chat_data)}"
+            f"THOUGHT CTX LENGTH: {thought_ctx_len}\n"
+            f"CONVERSATION STATE: {conv_state}"
         )
 
     def answer_thought(self, update, context, answer):

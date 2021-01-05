@@ -19,7 +19,7 @@ def create_es_client():
         credentials.access_key, credentials.secret_key, ES_REGION, 'es', session_token=credentials.token
     )
 
-    es = Elasticsearch(
+    es = Elasticsearch(  # this cannot go to global scope because credentials will eventually expire
         hosts=[{'host': ES_HOST}],
         scheme="https",
         port=443,
