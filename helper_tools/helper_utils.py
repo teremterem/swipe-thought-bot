@@ -10,6 +10,7 @@ def set_env_vars(for_local=False, project_dir='../'):
 
     os.environ.setdefault('ES_REGION', os.environ['REGION'])
     os.environ.setdefault('SWIPER_CHAT_DATA_DDB_TABLE_NAME', f"SwiperChatData-stb-{os.environ['STAGE']}")
+    os.environ.setdefault('MAIN_S3_BUCKET_NAME', f"stb-{os.environ['STAGE']}")
 
 
 def set_env_vars_from_yml(yml_filename):
