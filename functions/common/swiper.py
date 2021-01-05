@@ -1,6 +1,7 @@
 # TODO oleksandr: move this module outside of common ?
 #  give it a more descriptive name, too ?
 #  and also rename swiper_telegram.py to something else ?
+import json
 import logging
 from pprint import pformat
 
@@ -8,6 +9,7 @@ from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
 
 from .constants import ConvState, DataKey, EsKey, AnswererMode
+from .s3 import main_bucket
 from .swiper_telegram import BaseSwiperConversation, StateAwareHandlers, BaseSwiperPresentation
 from .thoughts import ThoughtContext, construct_thought_id, Answerer
 from .utils import send_partitioned_text
@@ -155,6 +157,13 @@ class SwiperPresentation(BaseSwiperPresentation):
 
                 InlineKeyboardButton('❌', callback_data='dislike'),
             ]]),
+        )
+        answer_msg_dict = answer_msg.to_dict()
+        if logger.isEnabledFor(logging.INFO):
+            logger.info('ANSWER FROM BOT:\n%s', pformat(answer_msg_dict))
+        main_bucket.put_object(
+            Key=f"audit/{self.swiper_conversation.update_scope[DataKey.UPDATE_FILENAME]}.bot-answer.json",
+            Body=json.dumps(answer_msg_dict).encode('utf8'),
         )
         return answer_msg
 
