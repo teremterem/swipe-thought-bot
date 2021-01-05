@@ -31,7 +31,7 @@ provider:
 
     SWIPER_CHAT_DATA_DDB_TABLE_NAME: ${self:resources.Resources.swiperChatDataTable.Properties.TableName}
 
-    MAIN_S3_BUCKET_NAME: ${self:provider.s3.mainBucket.name}
+    MAIN_S3_BUCKET_NAME: ${self:resources.Resources.mainBucket.Properties.BucketName}
 
   iamRoleStatements:
     - Effect: "Allow"
@@ -41,10 +41,6 @@ provider:
         - "es:*"
         #- "comprehend:*"
       Resource: "*"
-
-  s3:
-    mainBucket:
-      name: ${self:custom.constants.SERVICE_SHORT_NAME}-${self:provider.stage}
 
 package:
   individually: true
@@ -128,3 +124,8 @@ resources:
             KeyType: RANGE
         BillingMode: PAY_PER_REQUEST
       DeletionPolicy: Retain
+
+    mainBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.constants.SERVICE_SHORT_NAME}-${self:provider.stage}
