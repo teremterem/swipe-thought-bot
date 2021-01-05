@@ -12,6 +12,10 @@ provider:
   profile: ${file(./serverless.env.yml):PROFILE, ''}
   region: ${file(./serverless.env.yml):REGION}
 
+  apiGateway:
+    # https://www.serverless.com/framework/docs/deprecations/#AWS_API_GATEWAY_NAME_STARTING_WITH_SERVICE
+    shouldStartNameWithService: true
+
   environment:
     LOG_LEVEL: ${file(./serverless.env.yml):LOG_LEVEL, 'WARNING'}
 
@@ -27,6 +31,8 @@ provider:
 
     SWIPER_CHAT_DATA_DDB_TABLE_NAME: ${self:resources.Resources.swiperChatDataTable.Properties.TableName}
 
+    MAIN_S3_BUCKET_NAME: ${self:provider.s3.mainBucket.name}
+
   iamRoleStatements:
     - Effect: "Allow"
       Action:
@@ -36,9 +42,9 @@ provider:
         #- "comprehend:*"
       Resource: "*"
 
-  apiGateway:
-    # https://www.serverless.com/framework/docs/deprecations/#AWS_API_GATEWAY_NAME_STARTING_WITH_SERVICE
-    shouldStartNameWithService: true
+  s3:
+    mainBucket:
+      name: ${self:custom.constants.SERVICE_SHORT_NAME}-${self:provider.stage}
 
 package:
   individually: true
