@@ -5,6 +5,7 @@ import uuid
 from collections import defaultdict
 from typing import Dict, Any, DefaultDict, Tuple, Optional
 
+import simplejson
 from telegram import Bot, Update
 from telegram.ext import Dispatcher, BasePersistence
 from telegram.utils.types import ConversationDict
@@ -75,7 +76,7 @@ class BaseSwiperConversation:
 
         main_bucket.put_object(
             Key=f"audit/{update_filename}.swiper-chat-data.json",
-            Body=json.dumps(swiper_chat_data).encode('utf8'),
+            Body=simplejson.dumps(swiper_chat_data).encode('utf8'),
         )
 
 
