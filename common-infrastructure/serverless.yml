@@ -1,0 +1,32 @@
+service: swiper-common
+app: swipe-thought-bot
+org: toporok
+
+#frameworkVersion: '2.16.1'
+
+provider:
+  name: aws
+
+  stage: common
+  profile: ${file(./serverless.env.yml):PROFILE, ''}
+  region: us-east-1
+
+custom:
+  constants:
+    SERVICE_SHORT_NAME: stb
+
+resources:
+  Resources:
+    ElasticSearchDomainSmall:
+      Type: 'AWS::Elasticsearch::Domain'
+      Properties:
+        DomainName: es-small-${self:custom.constants.SERVICE_SHORT_NAME}
+        ElasticsearchVersion: '7.9'
+        ElasticsearchClusterConfig:
+          ZoneAwarenessEnabled: false
+          InstanceCount: 1
+          InstanceType: t2.small.elasticsearch
+        EBSOptions:
+          EBSEnabled: true
+          VolumeType: gp2
+          VolumeSize: 10

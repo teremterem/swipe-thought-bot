@@ -1,12 +1,17 @@
+import json
 import logging
 import os
+import uuid
 from collections import defaultdict
 from typing import Dict, Any, DefaultDict, Tuple, Optional
 
+import simplejson
 from telegram import Bot, Update
 from telegram.ext import Dispatcher, BasePersistence
 from telegram.utils.types import ConversationDict
 
+from .constants import DataKey
+from .s3 import main_bucket
 from .swiper_chat_data import read_swiper_chat_data, write_swiper_chat_data, CHAT_ID_KEY, \
     PTB_CONVERSATIONS_KEY, PTB_CHAT_DATA_KEY
 
@@ -37,6 +42,9 @@ class BaseSwiperConversation:
         )
         self.configure_dispatcher(self.dispatcher)
 
+        # TODO oleksandr: turn this into UpdateScope class
+        self.update_scope = {}
+
     def init_swiper_presentation(self, swiper_presentation):
         """To be overridden by child classes, if special swiper_presentation initialization is needed."""
         return swiper_presentation
@@ -48,8 +56,16 @@ class BaseSwiperConversation:
         # if logger.isEnabledFor(logging.INFO):
         #     logger.info('TELEGRAM UPDATE:\n%s', pformat(update_json))
         update = Update.de_json(update_json, self.bot)
+        update_filename = f"upd{update.update_id}_{uuid.uuid4()}"
+
+        main_bucket.put_object(
+            Key=f"audit/{update_filename}.update.json",
+            Body=json.dumps(update_json).encode('utf8'),
+        )
 
         swiper_chat_data = read_swiper_chat_data(chat_id=update.effective_chat.id, bot_id=self.bot.id)
+        self.update_scope[DataKey.UPDATE_FILENAME] = update_filename
+
         self.swiper_persistence.init_from_swiper_chat_data(swiper_chat_data)
 
         self.dispatcher.process_update(update)
@@ -57,6 +73,11 @@ class BaseSwiperConversation:
         self.dispatcher.update_persistence()
         self.swiper_persistence.flush()  # this effectively does nothing
         write_swiper_chat_data(swiper_chat_data)
+
+        main_bucket.put_object(
+            Key=f"audit/{update_filename}.swiper-chat-data.json",
+            Body=simplejson.dumps(swiper_chat_data).encode('utf8'),
+        )
 
 
 class StateAwareHandlers:

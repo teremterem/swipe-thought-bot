@@ -12,6 +12,10 @@ provider:
   profile: ${file(./serverless.env.yml):PROFILE, ''}
   region: ${file(./serverless.env.yml):REGION}
 
+  apiGateway:
+    # https://www.serverless.com/framework/docs/deprecations/#AWS_API_GATEWAY_NAME_STARTING_WITH_SERVICE
+    shouldStartNameWithService: true
+
   environment:
     LOG_LEVEL: ${file(./serverless.env.yml):LOG_LEVEL, 'WARNING'}
 
@@ -27,6 +31,8 @@ provider:
 
     SWIPER_CHAT_DATA_DDB_TABLE_NAME: ${self:resources.Resources.swiperChatDataTable.Properties.TableName}
 
+    MAIN_S3_BUCKET_NAME: ${self:resources.Resources.mainBucket.Properties.BucketName}
+
   iamRoleStatements:
     - Effect: "Allow"
       Action:
@@ -35,10 +41,6 @@ provider:
         - "es:*"
         #- "comprehend:*"
       Resource: "*"
-
-  apiGateway:
-    # https://www.serverless.com/framework/docs/deprecations/#AWS_API_GATEWAY_NAME_STARTING_WITH_SERVICE
-    shouldStartNameWithService: true
 
 package:
   individually: true
@@ -92,20 +94,6 @@ custom:
 
 resources:
   Resources:
-    ElasticSearchDomainSmall:
-      Type: 'AWS::Elasticsearch::Domain'
-      Properties:
-        DomainName: es-small-${self:custom.constants.SERVICE_SHORT_NAME}-${self:provider.stage}
-        ElasticsearchVersion: '7.9'
-        ElasticsearchClusterConfig:
-          ZoneAwarenessEnabled: false
-          InstanceCount: 1
-          InstanceType: t2.small.elasticsearch
-        EBSOptions:
-          EBSEnabled: true
-          VolumeType: gp2
-          VolumeSize: 10
-
     swiperChatDataTable:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -122,3 +110,8 @@ resources:
             KeyType: RANGE
         BillingMode: PAY_PER_REQUEST
       DeletionPolicy: Retain
+
+    mainBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.constants.SERVICE_SHORT_NAME}-${self:provider.stage}

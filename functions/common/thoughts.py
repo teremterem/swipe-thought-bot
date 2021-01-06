@@ -1,15 +1,17 @@
+import json
 import logging
 from pprint import pformat
 
 from .constants import DataKey, EsKey, AnswererMode, ConvState
 from .elasticsearch import create_es_client, THOUGHTS_ES_IDX
+from .s3 import main_bucket
 from .utils import timestamp_now_ms, SwiperError
 
 logger = logging.getLogger(__name__)
 
 
 def construct_thought_id(msg_id, chat_id, bot_id):
-    thought_id = f"m{msg_id}:c{chat_id}:b{bot_id}"
+    thought_id = f"m{msg_id}_c{chat_id}_b{bot_id}"
     logger.info('THOUGHT ID CONSTRUCTED: %s', thought_id)
     return thought_id
 
@@ -97,6 +99,12 @@ class Answerer:
             index=self.idx,
             id=answer_thought_id,
             body=doc_body,
+        )
+
+        # TODO oleksandr: do we need this ? it can be extracted from updates; also, it can be fetched from ES itself
+        main_bucket.put_object(
+            Key=f"answerer-idx-backup/{answer_thought_id}.index.json",
+            Body=json.dumps(doc_body).encode('utf8'),
         )
 
         if logger.isEnabledFor(logging.INFO):
