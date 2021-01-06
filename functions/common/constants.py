@@ -11,6 +11,8 @@ class ConvState:
 class DataKey:
     UPDATE_FILENAME = 'update_filename'
 
+    IS_BOT_SILENT = 'is_bot_silent'
+
     LATEST_MSG_ID = 'latest_msg_id'  # this can be either a user thought or a bot answer to it
     LATEST_ANSWER_MSG_ID = 'latest_answer_msg_id'
 
