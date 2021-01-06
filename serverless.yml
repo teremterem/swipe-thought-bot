@@ -94,20 +94,6 @@ custom:
 
 resources:
   Resources:
-    ElasticSearchDomainSmall:
-      Type: 'AWS::Elasticsearch::Domain'
-      Properties:
-        DomainName: es-small-${self:custom.constants.SERVICE_SHORT_NAME}-${self:provider.stage}
-        ElasticsearchVersion: '7.9'
-        ElasticsearchClusterConfig:
-          ZoneAwarenessEnabled: false
-          InstanceCount: 1
-          InstanceType: t2.small.elasticsearch
-        EBSOptions:
-          EBSEnabled: true
-          VolumeType: gp2
-          VolumeSize: 10
-
     swiperChatDataTable:
       Type: AWS::DynamoDB::Table
       Properties:
