@@ -80,7 +80,7 @@ class BaseSwiperConversation:
         )
 
 
-class StateAwareHandlers:
+class StateAwareHandlers:  # TODO oleksandr: get rid of this class and use "UpdateScope" instead
     def __init__(self, conv_state, swiper_conversation):
         self.conv_state = conv_state
         self.swiper_conversation = swiper_conversation

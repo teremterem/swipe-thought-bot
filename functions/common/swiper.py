@@ -42,7 +42,11 @@ class SwiperConversation(BaseSwiperConversation):
         dispatcher.add_handler(conv_handler)
 
 
-class CommonStateHandlers(StateAwareHandlers):
+def is_bot_silent(context):
+    return context.chat_data.setdefault(DataKey.IS_BOT_SILENT, True)  # don't talk to strangers
+
+
+class CommonStateHandlers(StateAwareHandlers):  # TODO oleksandr: get rid of this and parent class and use "UpdateScope"
     def configure_handlers(self):
         handlers = [
             CommandHandler('start', self.start),
@@ -53,7 +57,8 @@ class CommonStateHandlers(StateAwareHandlers):
         return handlers
 
     def start(self, update, context):
-        self.swiper_presentation.say_hello(update, context, self.conv_state)
+        if not is_bot_silent(context):
+            self.swiper_presentation.say_hello(update, context, self.conv_state)
 
     def user_thought(self, update, context):
         bot_id = context.bot.id
@@ -76,8 +81,7 @@ class CommonStateHandlers(StateAwareHandlers):
             conv_state=who_replied,
         )
 
-        is_bot_silent = context.chat_data.setdefault(DataKey.IS_BOT_SILENT, False)
-        if is_bot_silent:
+        if is_bot_silent(context):
             answer_dict = None
         else:
             answerer_mode = context.chat_data.setdefault(DataKey.ANSWERER_MODE, AnswererMode.DEFAULT)
