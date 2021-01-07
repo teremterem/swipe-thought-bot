@@ -86,7 +86,7 @@ custom:
     WEBHOOK_TOKEN: ${file(./serverless.env.yml):WEBHOOK_TOKEN}
 
   pythonRequirements:
-    dockerizePip: false
+    dockerizePip: false # TODO oleksandr: why false ?
     layer:
       name: ${self:custom.constants.SERVICE_SHORT_NAME}-${self:provider.stage}-python-vendor-common
       compatibleRuntimes:
