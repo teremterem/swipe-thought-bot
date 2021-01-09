@@ -1,5 +1,6 @@
 import logging
 import os
+from distutils.util import strtobool
 
 import boto3
 from elasticsearch import Elasticsearch, RequestsHttpConnection
@@ -11,6 +12,8 @@ THOUGHTS_ES_IDX = os.environ['THOUGHTS_ES_IDX']
 
 ES_REGION = os.environ['ES_REGION']
 ES_HOST = os.environ['ES_HOST']
+
+ES_EXPLAIN = bool(strtobool(os.environ['ES_EXPLAIN']))
 
 
 def create_es_client():

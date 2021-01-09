@@ -8,16 +8,16 @@ from pprint import pformat
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
 
-from .constants import ConvState, DataKey, EsKey, AnswererMode
-from .s3 import main_bucket
-from .swiper_telegram import BaseSwiperConversation, StateAwareHandlers, BaseSwiperPresentation
-from .thoughts import ThoughtContext, construct_thought_id, Answerer
-from .utils import send_partitioned_text
+from functions.common.constants import ConvState, DataKey, EsKey, AnswererMode
+from functions.common.s3 import main_bucket
+from functions.common.swiper_telegram import BaseSwiperConversation, StateAwareHandlers, BaseSwiperPresentation
+from functions.common.thoughts import ThoughtContext, construct_thought_id, Answerer
+from functions.common.utils import send_partitioned_text
 
 logger = logging.getLogger(__name__)
 
 
-class SwiperConversation(BaseSwiperConversation):
+class SwiperOne(BaseSwiperConversation):
     def init_swiper_presentation(self, swiper_presentation):
         if not swiper_presentation:
             swiper_presentation = SwiperPresentation(swiper_conversation=self)

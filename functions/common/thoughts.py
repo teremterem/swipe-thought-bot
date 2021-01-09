@@ -3,7 +3,7 @@ import logging
 from pprint import pformat
 
 from .constants import DataKey, EsKey, AnswererMode, ConvState
-from .elasticsearch import create_es_client, THOUGHTS_ES_IDX
+from .elasticsearch import create_es_client, THOUGHTS_ES_IDX, ES_EXPLAIN
 from .s3 import main_bucket
 from .utils import timestamp_now_ms, SwiperError
 
@@ -168,8 +168,11 @@ class Answerer:
         else:
             raise SwiperError(f"unsupported answerer mode: {answerer_mode}")
 
-        es_query['size'] = 1
-        # es_query['explain'] = True
+        if ES_EXPLAIN:
+            es_query['size'] = 2
+            es_query['explain'] = True
+        else:
+            es_query['size'] = 1
 
         if logger.isEnabledFor(logging.INFO):
             logger.info('ES SEARCH QUERY:\n%s', pformat(es_query))
@@ -180,7 +183,7 @@ class Answerer:
             # request_timeout=15,  # or  # timeout=15,  # seconds
         )
         if logger.isEnabledFor(logging.INFO):
-            logger.info('ES SEARCH RESPONSE:\n%s', pformat(response, width=140))
+            logger.info('ES SEARCH RESPONSE:\n%s', pformat(response, width=160))
 
         hits = response['hits']['hits']
         if hits:

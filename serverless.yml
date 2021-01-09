@@ -29,6 +29,7 @@ provider:
 
     ES_REGION: ${${self:custom.env_file}:ES_REGION, '${self:provider.region}'}
     ES_HOST: ${${self:custom.env_file}:ES_HOST}
+    ES_EXPLAIN: ${${self:custom.env_file}:ES_EXPLAIN, 'no'}
 
     THOUGHTS_ES_IDX: ${${self:custom.env_file}:THOUGHTS_ES_IDX}
 
@@ -50,6 +51,7 @@ package:
   include:
     - '!./**' # https://github.com/UnitedIncome/serverless-python-requirements#optimising-packaging-time
     - './functions/common/**'
+    - './functions/__init__.py'
   exclude:
     - '**'
 
@@ -58,6 +60,7 @@ functions:
     handler: functions/telegram_webhook.webhook
     package:
       include:
+        - './functions/swiper_experiments/**'
         - './functions/telegram_webhook.py'
     events:
       - http:
