@@ -7,9 +7,12 @@ org: toporok
 provider:
   name: aws
 
+  region: us-east-1
   stage: common
   profile: ${file(./serverless.env.yml):PROFILE, ''}
-  region: us-east-1
+
+  # https://www.serverless.com/framework/docs/deprecations/#LAMBDA_HASHING_VERSION_V2
+  lambdaHashingVersion: 20201221
 
 custom:
   constants:

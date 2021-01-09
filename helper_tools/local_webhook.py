@@ -8,7 +8,7 @@ sys.path.insert(0, os.getcwd())
 
 from helper_tools.helper_utils import set_env_vars
 
-set_env_vars(for_local=True, project_dir='./')
+set_env_vars(project_dir='./', local_overlay=True)
 
 from functions.telegram_webhook import webhook, swiper_conversation
 from functions.common import logging, LOG_LEVEL

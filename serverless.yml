@@ -8,26 +8,29 @@ provider:
   name: aws
   runtime: python3.8
 
-  stage: ${opt:stage, '${file(./serverless.env.yml):STAGE}'}
-  profile: ${file(./serverless.env.yml):PROFILE, ''}
-  region: ${file(./serverless.env.yml):REGION}
+  region: us-east-1
+  stage: ${opt:stage, ''}
+  profile: ${${self:custom.env_file}:PROFILE, ''}
+
+  # https://www.serverless.com/framework/docs/deprecations/#LAMBDA_HASHING_VERSION_V2
+  lambdaHashingVersion: 20201221
 
   apiGateway:
     # https://www.serverless.com/framework/docs/deprecations/#AWS_API_GATEWAY_NAME_STARTING_WITH_SERVICE
     shouldStartNameWithService: true
 
   environment:
-    LOG_LEVEL: ${file(./serverless.env.yml):LOG_LEVEL, 'WARNING'}
+    LOG_LEVEL: ${${self:custom.env_file}:LOG_LEVEL, 'WARNING'}
 
     STAGE: ${self:provider.stage}
     REGION: ${self:provider.region}
 
-    TELEGRAM_TOKEN: ${file(./serverless.env.yml):TELEGRAM_TOKEN}
+    TELEGRAM_TOKEN: ${${self:custom.env_file}:TELEGRAM_TOKEN}
 
-    ES_REGION: ${file(./serverless.env.yml):ES_REGION, '${self:provider.region}'}
-    ES_HOST: ${file(./serverless.env.yml):ES_HOST}
+    ES_REGION: ${${self:custom.env_file}:ES_REGION, '${self:provider.region}'}
+    ES_HOST: ${${self:custom.env_file}:ES_HOST}
 
-    THOUGHTS_ES_IDX: ${file(./serverless.env.yml):THOUGHTS_ES_IDX}
+    THOUGHTS_ES_IDX: ${${self:custom.env_file}:THOUGHTS_ES_IDX}
 
     SWIPER_CHAT_DATA_DDB_TABLE_NAME: ${self:resources.Resources.swiperChatDataTable.Properties.TableName}
 
@@ -81,9 +84,10 @@ plugins:
   - serverless-python-requirements
 
 custom:
+  env_file: file(./serverless.env-${self:provider.stage}.yml)
   constants:
     SERVICE_SHORT_NAME: stb
-    WEBHOOK_TOKEN: ${file(./serverless.env.yml):WEBHOOK_TOKEN}
+    WEBHOOK_TOKEN: ${${self:custom.env_file}:WEBHOOK_TOKEN}
 
   pythonRequirements:
     dockerizePip: false # TODO oleksandr: why false ?
