@@ -158,9 +158,7 @@ class SwiperPresentation(BaseSwiperPresentation):
             text=answer,
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
 
-                # TODO oleksandr: red/black heart for girl/boy or human/bot ? I think, the latter!
-                #  or maybe more like match / no match ? (we don't want to disclose bot or human too early, right?)
-                #  Yes! Match versus No match!
+                # TODO oleksandr: black vs red hearts mean talking to bot vs to another human respectively !
                 InlineKeyboardButton('🖤', callback_data='like'),
 
                 InlineKeyboardButton('❌', callback_data='dislike'),
