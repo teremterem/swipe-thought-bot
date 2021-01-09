@@ -99,9 +99,7 @@ class StateAwareHandlers:  # TODO oleksandr: get rid of this class and use "Upda
         return self.swiper_conversation.swiper_presentation
 
 
-class BaseSwiperPresentation:
-    # TODO oleksandr: rename this class to SwiperBotAware ? or SwiperConversationAware ?
-    #  or, maybe, get rid of it completely and rely on bot instance from ptb CallbackContext ?
+class BaseSwiperPresentation:  # TODO oleksandr: rename this class to SwiperBotAware ? or SwiperConversationAware ?
     def __init__(self, swiper_conversation=None):
         self.swiper_conversation = swiper_conversation
 

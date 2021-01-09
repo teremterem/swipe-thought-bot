@@ -1,7 +1,5 @@
 ### Project specific
-serverless.env.yml
-serverless.env-oleksandr.yml
-serverless.env-local.yml
+serverless.env*.yml
 nocommit/
 
 ### Kite?

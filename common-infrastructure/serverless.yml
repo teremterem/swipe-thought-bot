@@ -7,9 +7,9 @@ org: toporok
 provider:
   name: aws
 
+  region: us-east-1
   stage: common
   profile: ${file(./serverless.env.yml):PROFILE, ''}
-  region: us-east-1
 
 custom:
   constants:
