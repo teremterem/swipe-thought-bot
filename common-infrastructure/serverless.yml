@@ -11,6 +11,9 @@ provider:
   stage: common
   profile: ${file(./serverless.env.yml):PROFILE, ''}
 
+  # https://www.serverless.com/framework/docs/deprecations/#LAMBDA_HASHING_VERSION_V2
+  lambdaHashingVersion: 20201221
+
 custom:
   constants:
     SERVICE_SHORT_NAME: stb
