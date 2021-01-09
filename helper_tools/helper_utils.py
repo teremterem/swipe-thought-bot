@@ -5,7 +5,7 @@ import yaml
 
 # TODO oleksandr: unhardcode backend_stage='oleksandr'
 def set_env_vars(project_dir='../', backend_stage='oleksandr', local_overlay=False):
-    set_env_vars_from_yml(f"{project_dir}serverless.env={backend_stage}.yml")
+    set_env_vars_from_yml(f"{project_dir}serverless.env-{backend_stage}.yml")
     if local_overlay:
         set_env_vars_from_yml(f"{project_dir}serverless.env-local.yml")
 
