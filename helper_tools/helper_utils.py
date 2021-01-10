@@ -12,7 +12,9 @@ def set_env_vars(project_dir='../', backend_stage='oleksandr', local_overlay=Fal
     os.environ.setdefault('STAGE', backend_stage)
     os.environ.setdefault('REGION', 'us-east-1')
     os.environ.setdefault('ES_REGION', os.environ['REGION'])
+    os.environ.setdefault('ES_SHOW_ANALYSIS', '')
     os.environ.setdefault('ES_EXPLAIN', 'no')
+    os.environ.setdefault('ES_NUM_OF_RESULTS', '1')
     os.environ.setdefault('SWIPER_CHAT_DATA_DDB_TABLE_NAME', f"SwiperChatData-stb-{os.environ['STAGE']}")
     os.environ.setdefault('MAIN_S3_BUCKET_NAME', f"stb-{os.environ['STAGE']}")
 
