@@ -37,7 +37,11 @@ class DataKey:
     CONV_STATE = 'conv_state'
     TIMESTAMP_MS = 'timestamp_ms'
 
+    SWIPER_STATE = 'swiper_state'
     ANSWERER_MODE = 'answerer_mode'
+
+    # "volatile" objects
+    ANSWERER = 'answerer'
 
 
 class EsKey:

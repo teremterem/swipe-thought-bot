@@ -26,28 +26,36 @@ class SwiperOne(BaseSwiperConversation):
 
     def configure_dispatcher(self, dispatcher):
         conv_state_dict = {}
-        CommonStateHandlers(ConvState.USER_REPLIED, self).register_state_handlers(conv_state_dict)
-        CommonStateHandlers(ConvState.BOT_REPLIED, self).register_state_handlers(conv_state_dict)
+        CommonStateHandlers(self, ConvState.USER_REPLIED).register_state_handlers(conv_state_dict)
+        CommonStateHandlers(self, ConvState.BOT_REPLIED).register_state_handlers(conv_state_dict)
 
         conv_handler = ConversationHandler(
             per_chat=True,
             per_user=False,
             per_message=False,
-            entry_points=CommonStateHandlers(ConvState.ENTRY_STATE, self).handlers,
+            entry_points=CommonStateHandlers(self, ConvState.ENTRY_STATE).handlers,
             allow_reentry=False,
             states=conv_state_dict,
-            fallbacks=CommonStateHandlers(ConvState.FALLBACK_STATE, self).handlers,
+            fallbacks=CommonStateHandlers(self, ConvState.FALLBACK_STATE).handlers,
             name='swiper_main',
             persistent=True,
         )
         dispatcher.add_handler(conv_handler)
+
+    def get_answerer(self):
+        swiper_update = self.swiper_update  # single-threaded environment with non-async update processing
+        answerer = swiper_update.volatile.get(DataKey.ANSWERER)
+        if not answerer:
+            answerer = Answerer()
+            swiper_update.volatile[DataKey.ANSWERER] = answerer
+        return answerer
 
 
 def is_bot_silent(context):
     return context.chat_data.setdefault(DataKey.IS_BOT_SILENT, True)  # don't talk to strangers
 
 
-class CommonStateHandlers(StateAwareHandlers):  # TODO oleksandr: get rid of this and parent class and use "UpdateScope"
+class CommonStateHandlers(StateAwareHandlers):
     def configure_handlers(self):
         handlers = [
             CommandHandler('start', self.start),
@@ -71,7 +79,7 @@ class CommonStateHandlers(StateAwareHandlers):  # TODO oleksandr: get rid of thi
 
         thought_ctx = ThoughtContext(context)
 
-        answerer = Answerer()  # TODO oleksandr: introduce some sort of UpdateScope object and move answerer over there
+        answerer = self.swiper_conversation.get_answerer()
         answerer.index_thought(answer_text=text, answer_thought_id=thought_id, thought_ctx=thought_ctx)
 
         who_replied = ConvState.USER_REPLIED
@@ -169,7 +177,7 @@ class SwiperPresentation(BaseSwiperPresentation):
         if logger.isEnabledFor(logging.INFO):
             logger.info('ANSWER FROM BOT:\n%s', pformat(answer_msg_dict))
         main_bucket.put_object(
-            Key=f"audit/{self.swiper_conversation.update_scope[DataKey.UPDATE_FILENAME]}.bot-answer.json",
+            Key=f"audit/{self.swiper_conversation.swiper_update.update_s3_filename_prefix}.bot-answer.json",
             Body=json.dumps(answer_msg_dict).encode('utf8'),
         )
         return answer_msg
