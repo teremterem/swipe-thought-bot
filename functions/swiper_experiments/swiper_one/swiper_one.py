@@ -26,17 +26,17 @@ class SwiperOne(BaseSwiperConversation):
 
     def configure_dispatcher(self, dispatcher):
         conv_state_dict = {}
-        CommonStateHandlers(ConvState.USER_REPLIED, self).register_state_handlers(conv_state_dict)
-        CommonStateHandlers(ConvState.BOT_REPLIED, self).register_state_handlers(conv_state_dict)
+        CommonStateHandlers(self, ConvState.USER_REPLIED).register_state_handlers(conv_state_dict)
+        CommonStateHandlers(self, ConvState.BOT_REPLIED).register_state_handlers(conv_state_dict)
 
         conv_handler = ConversationHandler(
             per_chat=True,
             per_user=False,
             per_message=False,
-            entry_points=CommonStateHandlers(ConvState.ENTRY_STATE, self).handlers,
+            entry_points=CommonStateHandlers(self, ConvState.ENTRY_STATE).handlers,
             allow_reentry=False,
             states=conv_state_dict,
-            fallbacks=CommonStateHandlers(ConvState.FALLBACK_STATE, self).handlers,
+            fallbacks=CommonStateHandlers(self, ConvState.FALLBACK_STATE).handlers,
             name='swiper_main',
             persistent=True,
         )
@@ -47,7 +47,7 @@ def is_bot_silent(context):
     return context.chat_data.setdefault(DataKey.IS_BOT_SILENT, True)  # don't talk to strangers
 
 
-class CommonStateHandlers(StateAwareHandlers):  # TODO oleksandr: get rid of this and parent class and use "UpdateScope"
+class CommonStateHandlers(StateAwareHandlers):
     def configure_handlers(self):
         handlers = [
             CommandHandler('start', self.start),
@@ -169,7 +169,7 @@ class SwiperPresentation(BaseSwiperPresentation):
         if logger.isEnabledFor(logging.INFO):
             logger.info('ANSWER FROM BOT:\n%s', pformat(answer_msg_dict))
         main_bucket.put_object(
-            Key=f"audit/{self.swiper_conversation.update_scope[DataKey.UPDATE_FILENAME]}.bot-answer.json",
+            Key=f"audit/{self.swiper_conversation.swiper_update.update_s3_filename_prefix}.bot-answer.json",
             Body=json.dumps(answer_msg_dict).encode('utf8'),
         )
         return answer_msg

@@ -10,7 +10,6 @@ from telegram import Bot, Update
 from telegram.ext import Dispatcher, BasePersistence
 from telegram.utils.types import ConversationDict
 
-from .constants import DataKey
 from .s3 import main_bucket
 from .swiper_chat_data import read_swiper_chat_data, write_swiper_chat_data, CHAT_ID_KEY, \
     PTB_CONVERSATIONS_KEY, PTB_CHAT_DATA_KEY
@@ -20,11 +19,44 @@ logger = logging.getLogger(__name__)
 TELEGRAM_TOKEN = os.environ['TELEGRAM_TOKEN']
 
 
+class SwiperUpdate:
+    def __init__(self, swiper_conversation, update_json):
+        self.swiper_conversation = swiper_conversation
+
+        self.ptb_update = Update.de_json(update_json, self.swiper_conversation.bot)
+        self.update_s3_filename_prefix = f"upd{self.ptb_update.update_id}_{uuid.uuid4()}"
+
+        main_bucket.put_object(
+            Key=f"audit/{self.update_s3_filename_prefix}.update.json",
+            Body=json.dumps(update_json).encode('utf8'),
+        )
+
+        self.swiper_chat_data = read_swiper_chat_data(
+            chat_id=self.ptb_update.effective_chat.id, bot_id=self.swiper_conversation.bot.id
+        )
+        self.volatile = {}  # to store reusable objects that are scoped to update and aren't to be persisted
+
+    def write_swiper_chat_data(self):
+        write_swiper_chat_data(self.swiper_chat_data)
+
+        main_bucket.put_object(
+            Key=f"audit/{self.update_s3_filename_prefix}.swiper-chat-data.json",
+            Body=simplejson.dumps(self.swiper_chat_data).encode('utf8'),
+        )
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        # TODO oleksandr: should we or should we not write swiper_chat_data to DynamoDB in case of exception ?
+        self.write_swiper_chat_data()
+
+
 class BaseSwiperConversation:
     """
     BaseSwiperConversation is designed to work only in single-threaded environments that process telegram updates
-    sequentially (meaning, no asynchronous processing either). This is due to the way SwiperPersistence is implemented
-    which BaseSwiperConversation uses under the hood.
+    sequentially (meaning, no asynchronous processing either). This is due to the way SwiperPersistence (as well as
+    SwiperUpdateScope) is implemented which BaseSwiperConversation uses under the hood.
     """
 
     def __init__(self, bot=None, swiper_presentation=None):
@@ -42,8 +74,7 @@ class BaseSwiperConversation:
         )
         self.configure_dispatcher(self.dispatcher)
 
-        # TODO oleksandr: turn this into UpdateScope class
-        self.update_scope = {}
+        self.swiper_update = None
 
     def init_swiper_presentation(self, swiper_presentation):
         """To be overridden by child classes, if special swiper_presentation initialization is needed."""
@@ -55,35 +86,21 @@ class BaseSwiperConversation:
     def process_update_json(self, update_json):
         # if logger.isEnabledFor(logging.INFO):
         #     logger.info('TELEGRAM UPDATE:\n%s', pformat(update_json))
-        update = Update.de_json(update_json, self.bot)
-        update_filename = f"upd{update.update_id}_{uuid.uuid4()}"
 
-        main_bucket.put_object(
-            Key=f"audit/{update_filename}.update.json",
-            Body=json.dumps(update_json).encode('utf8'),
-        )
+        with SwiperUpdate(self, update_json) as swiper_update:
+            self.swiper_update = swiper_update  # single-threaded environment with non-async update processing
+            self.swiper_persistence.init_from_swiper_chat_data(self.swiper_update.swiper_chat_data)
 
-        swiper_chat_data = read_swiper_chat_data(chat_id=update.effective_chat.id, bot_id=self.bot.id)
-        self.update_scope[DataKey.UPDATE_FILENAME] = update_filename
+            self.dispatcher.process_update(self.swiper_update.ptb_update)
 
-        self.swiper_persistence.init_from_swiper_chat_data(swiper_chat_data)
-
-        self.dispatcher.process_update(update)
-
-        self.dispatcher.update_persistence()
-        self.swiper_persistence.flush()  # this effectively does nothing
-        write_swiper_chat_data(swiper_chat_data)
-
-        main_bucket.put_object(
-            Key=f"audit/{update_filename}.swiper-chat-data.json",
-            Body=simplejson.dumps(swiper_chat_data).encode('utf8'),
-        )
+            self.dispatcher.update_persistence()
+            self.swiper_persistence.flush()  # this effectively does nothing
 
 
-class StateAwareHandlers:  # TODO oleksandr: get rid of this class and use "UpdateScope" instead
-    def __init__(self, conv_state, swiper_conversation):
-        self.conv_state = conv_state
+class StateAwareHandlers:
+    def __init__(self, swiper_conversation, conv_state):
         self.swiper_conversation = swiper_conversation
+        self.conv_state = conv_state
 
         self.handlers = self.configure_handlers()
 
