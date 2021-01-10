@@ -8,6 +8,20 @@ class ConvState:
     FALLBACK_STATE = 'FALLBACK_STATE'
 
 
+class SwiperState:
+    """
+    Swiper states are maintained separately from PTB conversation states because their purpose is to help with matching
+    people rather than to track the "mechanics" of the conversation (the latter being the case with PTB conversation
+    states).
+    The logic of swiper states is meant to be simpler than that of PTB conversation states. The latter is expected to
+    have more states and be tracked at more than one level (per chat, per message, nested conversations, maybe per user
+    as well) while the former is supposed to only have one level (a state of the swiper aka user so the system can
+    decide whom to match with whom at any given moment).
+    """
+    # TODO oleksandr
+    ...
+
+
 class DataKey:
     UPDATE_FILENAME = 'update_filename'
 

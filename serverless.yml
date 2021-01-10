@@ -30,6 +30,10 @@ provider:
     ES_REGION: ${${self:custom.env_file}:ES_REGION, '${self:provider.region}'}
     ES_HOST: ${${self:custom.env_file}:ES_HOST}
 
+    ES_SHOW_ANALYSIS: ${${self:custom.env_file}:ES_SHOW_ANALYSIS, 'no'}
+    ES_EXPLAIN: ${${self:custom.env_file}:ES_EXPLAIN, 'no'}
+    ES_NUM_OF_RESULTS: ${${self:custom.env_file}:ES_NUM_OF_RESULTS, '1'}
+
     THOUGHTS_ES_IDX: ${${self:custom.env_file}:THOUGHTS_ES_IDX}
 
     SWIPER_CHAT_DATA_DDB_TABLE_NAME: ${self:resources.Resources.swiperChatDataTable.Properties.TableName}
@@ -50,6 +54,7 @@ package:
   include:
     - '!./**' # https://github.com/UnitedIncome/serverless-python-requirements#optimising-packaging-time
     - './functions/common/**'
+    - './functions/__init__.py'
   exclude:
     - '**'
 
@@ -58,6 +63,7 @@ functions:
     handler: functions/telegram_webhook.webhook
     package:
       include:
+        - './functions/swiper_experiments/**'
         - './functions/telegram_webhook.py'
     events:
       - http:

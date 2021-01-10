@@ -24,7 +24,7 @@ class BaseSwiperConversation:
     """
     BaseSwiperConversation is designed to work only in single-threaded environments that process telegram updates
     sequentially (meaning, no asynchronous processing either). This is due to the way SwiperPersistence is implemented
-    which SwiperConversation uses under the hood.
+    which BaseSwiperConversation uses under the hood.
     """
 
     def __init__(self, bot=None, swiper_presentation=None):
@@ -162,7 +162,7 @@ class SwiperPersistence(BasePersistence):
 
     def update_chat_data(self, chat_id: int, data: Dict) -> None:
         # self.ptb_chat_data dict is part of swiper_chat_data and will be persisted automatically when
-        # write_swiper_chat_data is called by SwiperConversation - no code is needed here
+        # write_swiper_chat_data is called by BaseSwiperConversation - no code is needed here
         ...
 
     def get_user_data(self) -> DefaultDict[int, Dict[Any, Any]]:
