@@ -10,6 +10,7 @@ from telegram import Bot, Update
 from telegram.ext import Dispatcher, BasePersistence
 from telegram.utils.types import ConversationDict
 
+from .constants import DataKey
 from .s3 import main_bucket
 from .swiper_chat_data import read_swiper_chat_data, write_swiper_chat_data, CHAT_ID_KEY, \
     PTB_CONVERSATIONS_KEY, PTB_CHAT_DATA_KEY
@@ -35,6 +36,14 @@ class SwiperUpdate:
             chat_id=self.ptb_update.effective_chat.id, bot_id=self.swiper_conversation.bot.id
         )
         self.volatile = {}  # to store reusable objects that are scoped to update and aren't to be persisted
+
+    @property
+    def swiper_state(self):
+        return self.swiper_chat_data.get(DataKey.SWIPER_STATE)
+
+    @swiper_state.setter
+    def swiper_state(self, swiper_state):
+        self.swiper_chat_data[DataKey.SWIPER_STATE] = swiper_state
 
     def write_swiper_chat_data(self):
         write_swiper_chat_data(self.swiper_chat_data)
