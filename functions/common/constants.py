@@ -39,6 +39,9 @@ class DataKey:
 
     ANSWERER_MODE = 'answerer_mode'
 
+    # "volatile" objects
+    ANSWERER = 'answerer'
+
 
 class EsKey:
     ANSWER = 'answer'

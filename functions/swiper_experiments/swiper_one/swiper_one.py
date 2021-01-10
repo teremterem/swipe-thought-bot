@@ -42,6 +42,14 @@ class SwiperOne(BaseSwiperConversation):
         )
         dispatcher.add_handler(conv_handler)
 
+    def get_answerer(self):
+        swiper_update = self.swiper_update  # single-threaded environment with non-async update processing
+        answerer = swiper_update.volatile.get(DataKey.ANSWERER)
+        if not answerer:
+            answerer = Answerer()
+            swiper_update.volatile[DataKey.ANSWERER] = answerer
+        return answerer
+
 
 def is_bot_silent(context):
     return context.chat_data.setdefault(DataKey.IS_BOT_SILENT, True)  # don't talk to strangers
@@ -71,7 +79,7 @@ class CommonStateHandlers(StateAwareHandlers):
 
         thought_ctx = ThoughtContext(context)
 
-        answerer = Answerer()  # TODO oleksandr: introduce some sort of UpdateScope object and move answerer over there
+        answerer = self.swiper_conversation.get_answerer()
         answerer.index_thought(answer_text=text, answer_thought_id=thought_id, thought_ctx=thought_ctx)
 
         who_replied = ConvState.USER_REPLIED
