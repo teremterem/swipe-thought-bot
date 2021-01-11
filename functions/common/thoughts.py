@@ -12,6 +12,12 @@ def construct_thought_id(msg_id, chat_id, bot_id):
     return thought_id
 
 
+def construct_swiper_id(chat_id, bot_id):
+    swiper_id = f"c{chat_id}_b{bot_id}"
+    logger.info('SWIPER ID CONSTRUCTED: %s', swiper_id)
+    return swiper_id
+
+
 class ThoughtContext:
     def __init__(self, ptb_context):
         self.ptb_ctx = ptb_context

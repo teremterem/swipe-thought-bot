@@ -9,16 +9,16 @@ from functions.common.constants import ConvState, DataKey, EsKey, AnswererMode
 from functions.common.s3 import main_bucket
 from functions.common.swiper_telegram import BaseSwiperConversation, StateAwareHandlers, BaseSwiperPresentation
 from functions.common.thoughts import construct_thought_id, ThoughtContext
-from functions.common.utils import send_partitioned_text
 from functions.swiper_experiments.swiper_one.answerer import Answerer
+from functions.swiper_experiments.swiper_one.swiper_one import send_internals, is_bot_silent
 
 logger = logging.getLogger(__name__)
 
 
-class SwiperOne(BaseSwiperConversation):
+class SwiperTwo(BaseSwiperConversation):
     def init_swiper_presentation(self, swiper_presentation):
         if not swiper_presentation:
-            swiper_presentation = SwiperPresentation(swiper_conversation=self)
+            swiper_presentation = SwiperPresentationTwo(swiper_conversation=self)
         return swiper_presentation
 
     def configure_dispatcher(self, dispatcher):
@@ -46,10 +46,6 @@ class SwiperOne(BaseSwiperConversation):
             answerer = Answerer()
             swiper_update.volatile[DataKey.ANSWERER] = answerer
         return answerer
-
-
-def is_bot_silent(context):
-    return context.chat_data.setdefault(DataKey.IS_BOT_SILENT, True)  # don't talk to strangers
 
 
 class CommonStateHandlers(StateAwareHandlers):
@@ -148,7 +144,7 @@ class CommonStateHandlers(StateAwareHandlers):
             self.swiper_presentation.dislike(update, context)
 
 
-class SwiperPresentation(BaseSwiperPresentation):
+class SwiperPresentationTwo(BaseSwiperPresentation):
     def say_hello(self, update, context, conv_state):
         send_internals(update, context, conv_state)
 
@@ -187,14 +183,3 @@ class SwiperPresentation(BaseSwiperPresentation):
     def reject(self, update, context):
         update.effective_message.delete()
         update.callback_query.answer(text='❌ Rejected💔')
-
-
-def send_internals(update, context, conv_state):
-    thought_ctx_len = len(context.chat_data.get(DataKey.THOUGHT_CTX, []))
-    send_partitioned_text(
-        update.effective_chat,
-        f"{pformat(context.chat_data)}\n"
-        f"\n"
-        f"THOUGHT CTX LENGTH: {thought_ctx_len}\n"
-        f"CONVERSATION STATE: {conv_state}"
-    )
