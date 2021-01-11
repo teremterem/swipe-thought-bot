@@ -8,7 +8,7 @@ from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Fi
 from functions.common.constants import ConvState, DataKey, EsKey, AnswererMode
 from functions.common.s3 import main_bucket
 from functions.common.swiper_telegram import BaseSwiperConversation, StateAwareHandlers, BaseSwiperPresentation
-from functions.common.thoughts import construct_thought_id, ThoughtContext
+from functions.swiper_experiments.swiper_one.thoughts import construct_thought_id, ThoughtContext
 from functions.common.utils import send_partitioned_text
 from functions.swiper_experiments.swiper_one.answerer import Answerer
 

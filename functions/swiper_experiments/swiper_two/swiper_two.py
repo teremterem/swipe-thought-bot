@@ -8,9 +8,8 @@ from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Fi
 from functions.common.constants import ConvState, DataKey, EsKey, AnswererMode
 from functions.common.s3 import main_bucket
 from functions.common.swiper_telegram import BaseSwiperConversation, StateAwareHandlers, BaseSwiperPresentation
-from functions.common.thoughts import construct_thought_id, ThoughtContext
-from functions.swiper_experiments.swiper_one.answerer import Answerer
 from functions.swiper_experiments.swiper_one.swiper_one import send_internals, is_bot_silent
+from functions.swiper_experiments.swiper_one.thoughts import construct_thought_id, ThoughtContext
 
 logger = logging.getLogger(__name__)
 
@@ -38,14 +37,6 @@ class SwiperTwo(BaseSwiperConversation):
             persistent=True,
         )
         dispatcher.add_handler(conv_handler)
-
-    def get_answerer(self):
-        swiper_update = self.swiper_update  # single-threaded environment with non-async update processing
-        answerer = swiper_update.volatile.get(DataKey.ANSWERER)
-        if not answerer:
-            answerer = Answerer()
-            swiper_update.volatile[DataKey.ANSWERER] = answerer
-        return answerer
 
 
 class CommonStateHandlers(StateAwareHandlers):
