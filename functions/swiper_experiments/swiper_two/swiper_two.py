@@ -41,7 +41,7 @@ class SwiperTwo(BaseSwiperConversation):
 
     def is_swiper_authorized(self):
         # single-threaded environment with non-async update processing
-        return bool(self.swiper_update.get(DataKey.IS_SWIPER_AUTHORIZED))
+        return bool(self.swiper_update.swiper_chat_data.get(DataKey.IS_SWIPER_AUTHORIZED))
 
     def get_swiper_match(self):
         # single-threaded environment with non-async update processing
