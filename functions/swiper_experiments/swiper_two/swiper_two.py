@@ -5,11 +5,12 @@ from pprint import pformat
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
 
-from functions.common.constants import ConvState, DataKey
+from functions.common.constants import ConvState, DataKey, EsKey
 from functions.common.s3 import main_bucket
 from functions.common.swiper_telegram import BaseSwiperConversation, StateAwareHandlers, BaseSwiperPresentation
 from functions.common.utils import send_partitioned_text
-from functions.swiper_experiments.swiper_one.swiper_one import is_bot_silent
+from functions.swiper_experiments.swiper_one.thoughts import construct_thought_id
+from functions.swiper_experiments.swiper_two.swiper_match import SwiperMatch
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +39,18 @@ class SwiperTwo(BaseSwiperConversation):
         )
         dispatcher.add_handler(conv_handler)
 
+    def is_swiper_authorized(self):
+        # single-threaded environment with non-async update processing
+        return bool(self.swiper_update.get(DataKey.IS_SWIPER_AUTHORIZED))
+
+    def get_swiper_match(self):
+        # single-threaded environment with non-async update processing
+        swiper_match = self.swiper_update.volatile.get(DataKey.SWIPER_MATCH)
+        if not swiper_match:
+            swiper_match = SwiperMatch()
+            self.swiper_update.volatile[DataKey.SWIPER_MATCH] = swiper_match
+        return swiper_match
+
 
 class CommonStateHandlers(StateAwareHandlers):
     def configure_handlers(self):
@@ -50,18 +63,37 @@ class CommonStateHandlers(StateAwareHandlers):
         return handlers
 
     def start(self, update, context):
-        if not is_bot_silent(context):  # TODO oleksandr: change to is_swiper_authorized
+        if self.swiper_conversation.is_swiper_authorized():
             self.swiper_presentation.say_hello(update, context)
 
     def user_thought(self, update, context):
         user_msg_id = update.effective_message.message_id
+        chat_id = update.effective_chat.id
+        bot_id = context.bot.id
 
-        text = update.effective_message.text
+        thought = update.effective_message.text
 
-        if not is_bot_silent(context):  # TODO oleksandr: change to is_swiper_authorized
-            # TODO oleksandr: indexing goes inside this if statement
+        if self.swiper_conversation.is_swiper_authorized():
+            if thought:
+                swiper_match = self.swiper_conversation.get_swiper_match()
 
-            bot_msg = self.swiper_presentation.answer_thought(update, context, text)
+                thought_id = construct_thought_id(msg_id=user_msg_id, chat_id=chat_id, bot_id=bot_id)
+
+                # TODO oleksandr: construct body inside SwiperMatch ?
+                swiper_match.index_thought(thought, body={
+                    EsKey.THOUGHT_ID: thought_id,
+                    EsKey.THOUGHT: thought,
+                    EsKey.MSG_ID: user_msg_id,
+                    EsKey.CHAT_ID: chat_id,
+                    EsKey.BOT_ID: bot_id,
+
+                    # single-threaded environment with non-async update processing
+                    EsKey.SWIPER_STATE_BEFORE: self.swiper_conversation.swiper_update.swiper_state,
+
+                    EsKey.TELEGRAM_STATE_BEFORE: self.conv_state,
+                })
+
+            bot_msg = self.swiper_presentation.send_thought(update, context, thought)
 
             context.chat_data[DataKey.LATEST_ANSWER_MSG_ID] = bot_msg.message_id
             context.chat_data[DataKey.LATEST_MSG_ID] = bot_msg.message_id
@@ -90,9 +122,9 @@ class SwiperPresentationTwo(BaseSwiperPresentation):
 
         send_partitioned_text(update.effective_chat, pformat(swiper_update.swiper_chat_data))
 
-    def answer_thought(self, update, context, answer):
+    def send_thought(self, update, context, thought):
         answer_msg = update.effective_chat.send_message(
-            text=answer,
+            text=thought,
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
 
                 # TODO oleksandr: black vs red hearts mean talking to bot vs to another human respectively !

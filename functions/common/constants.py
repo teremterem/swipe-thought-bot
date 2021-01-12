@@ -18,14 +18,14 @@ class SwiperState:
     as well) while the former is supposed to only have one level (a state of the swiper aka user so the system can
     decide whom to match with whom at any given moment).
     """
-    # TODO oleksandr
-    ...
+    IDLE = 'idle'
 
 
 class DataKey:
     UPDATE_FILENAME = 'update_filename'
 
     IS_BOT_SILENT = 'is_bot_silent'
+    IS_SWIPER_AUTHORIZED = 'is_swiper_authorized'
 
     LATEST_MSG_ID = 'latest_msg_id'  # this can be either a user thought or a bot answer to it
     LATEST_ANSWER_MSG_ID = 'latest_answer_msg_id'
@@ -42,6 +42,7 @@ class DataKey:
 
     # "volatile" objects
     ANSWERER = 'answerer'
+    SWIPER_MATCH = 'swiper_match'
 
 
 class EsKey:
@@ -53,6 +54,14 @@ class EsKey:
     CTX5 = 'ctx5'
     CTX8 = 'ctx8'
     CTX13 = 'ctx13'
+
+    THOUGHT_ID = 'thought_id'
+    THOUGHT = 'thought'
+    MSG_ID = 'msg_id'
+    CHAT_ID = 'chat_id'
+    BOT_ID = 'bot_id'
+    SWIPER_STATE_BEFORE = 'swiper_state_before'
+    TELEGRAM_STATE_BEFORE = 'telegram_state_before'
 
 
 class AnswererMode:
