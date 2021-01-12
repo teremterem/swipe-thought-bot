@@ -8,7 +8,8 @@ from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Fi
 from functions.common.constants import ConvState, DataKey
 from functions.common.s3 import main_bucket
 from functions.common.swiper_telegram import BaseSwiperConversation, StateAwareHandlers, BaseSwiperPresentation
-from functions.swiper_experiments.swiper_one.swiper_one import send_internals, is_bot_silent
+from functions.common.utils import send_partitioned_text
+from functions.swiper_experiments.swiper_one.swiper_one import is_bot_silent
 
 logger = logging.getLogger(__name__)
 
@@ -49,15 +50,15 @@ class CommonStateHandlers(StateAwareHandlers):
         return handlers
 
     def start(self, update, context):
-        if not is_bot_silent(context):
-            self.swiper_presentation.say_hello(update, context, self.conv_state)
+        if not is_bot_silent(context):  # TODO oleksandr: change to is_swiper_authorized
+            self.swiper_presentation.say_hello(update, context)
 
     def user_thought(self, update, context):
         user_msg_id = update.effective_message.message_id
 
         text = update.effective_message.text
 
-        if not is_bot_silent(context):  # TODO oleksandr: rename to is_swiper_authorized
+        if not is_bot_silent(context):  # TODO oleksandr: change to is_swiper_authorized
             # TODO oleksandr: indexing goes inside this if statement
 
             bot_msg = self.swiper_presentation.answer_thought(update, context, text)
@@ -83,8 +84,11 @@ class CommonStateHandlers(StateAwareHandlers):
 
 
 class SwiperPresentationTwo(BaseSwiperPresentation):
-    def say_hello(self, update, context, conv_state):
-        send_internals(update, context, conv_state)
+    def say_hello(self, update, context):
+        # single-threaded environment with non-async update processing
+        swiper_update = self.swiper_conversation.swiper_update
+
+        send_partitioned_text(update.effective_chat, pformat(swiper_update.swiper_chat_data))
 
     def answer_thought(self, update, context, answer):
         answer_msg = update.effective_chat.send_message(

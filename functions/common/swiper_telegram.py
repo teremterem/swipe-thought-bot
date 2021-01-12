@@ -125,7 +125,7 @@ class StateAwareHandlers:
         return self.swiper_conversation.swiper_presentation
 
 
-class BaseSwiperPresentation:  # TODO oleksandr: rename this class to SwiperBotAware ? or SwiperConversationAware ?
+class BaseSwiperPresentation:  # TODO oleksandr: rename this class to SwiperConversationAware ?
     def __init__(self, swiper_conversation=None):
         self.swiper_conversation = swiper_conversation
 
