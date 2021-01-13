@@ -2,6 +2,7 @@ class ConvState:
     # using plain str constants because json lib doesn't serialize Enum
     ENTRY_STATE = 'ENTRY_STATE'
 
+    # TODO oleksandr: these states are impractical - they can be changed for current user only, which is a limitation
     USER_REPLIED = 'USER_REPLIED'
     BOT_REPLIED = 'BOT_REPLIED'
 

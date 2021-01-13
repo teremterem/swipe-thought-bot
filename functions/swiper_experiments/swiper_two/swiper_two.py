@@ -9,7 +9,7 @@ from functions.common.constants import ConvState, DataKey, EsKey
 from functions.common.s3 import main_bucket
 from functions.common.swiper_telegram import BaseSwiperConversation, StateAwareHandlers, BaseSwiperPresentation
 from functions.common.utils import send_partitioned_text
-from functions.swiper_experiments.swiper_one.thoughts import construct_thought_id
+from functions.swiper_experiments.swiper_one.thoughts import construct_thought_id, construct_swiper_id
 from functions.swiper_experiments.swiper_two.swiper_match import SwiperMatch
 
 logger = logging.getLogger(__name__)
@@ -78,6 +78,7 @@ class CommonStateHandlers(StateAwareHandlers):
                 swiper_match = self.swiper_conversation.get_swiper_match()
 
                 thought_id = construct_thought_id(msg_id=user_msg_id, chat_id=chat_id, bot_id=bot_id)
+                current_swiper_id = construct_swiper_id(chat_id=chat_id, bot_id=bot_id)
 
                 # TODO oleksandr: construct body inside SwiperMatch ?
                 swiper_match.index_thought(thought, body={
@@ -86,6 +87,7 @@ class CommonStateHandlers(StateAwareHandlers):
                     EsKey.MSG_ID: user_msg_id,
                     EsKey.CHAT_ID: chat_id,
                     EsKey.BOT_ID: bot_id,
+                    EsKey.SWIPER_ID: current_swiper_id,
 
                     # single-threaded environment with non-async update processing
                     EsKey.SWIPER_STATE_BEFORE: self.swiper_conversation.swiper_update.swiper_state,
@@ -93,7 +95,7 @@ class CommonStateHandlers(StateAwareHandlers):
                     EsKey.TELEGRAM_STATE_BEFORE: self.conv_state,
                 })
 
-                similar_thought = swiper_match.find_similar_thought(thought)
+                similar_thought = swiper_match.find_similar_thought(thought, current_swiper_id)
                 send_partitioned_text(update.effective_chat, pformat(similar_thought))
 
             # bot_msg = self.swiper_presentation.send_thought(update, context, thought)

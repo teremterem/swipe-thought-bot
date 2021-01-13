@@ -43,7 +43,7 @@ class SwiperMatch:
                 text_to_analyze,
             )
 
-    def find_similar_thought(self, thought):
+    def find_similar_thought(self, thought, current_swiper_id):
         self._show_analysis(thought)
         es_query = {
             'query': {
@@ -59,6 +59,11 @@ class SwiperMatch:
                             },
                         },
                     ],
+                    'must_not': {
+                        'term': {
+                            EsKey.SWIPER_ID: current_swiper_id,
+                        },
+                    },
                     # 'must_not': {
                     #     # https://stackoverflow.com/a/42646653/2040370
                     #     'terms': {
@@ -82,7 +87,6 @@ class SwiperMatch:
         response = self.es.search(
             index=self.idx,
             body=es_query,
-            # request_timeout=15,  # seconds
         )
         if logger.isEnabledFor(logging.INFO):
             logger.info('ES SEARCH RESPONSE:\n%s', pformat(response, width=160))
