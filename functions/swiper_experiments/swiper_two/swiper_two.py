@@ -93,11 +93,14 @@ class CommonStateHandlers(StateAwareHandlers):
                     EsKey.TELEGRAM_STATE_BEFORE: self.conv_state,
                 })
 
-            bot_msg = self.swiper_presentation.send_thought(update, context, thought)
+                similar_thought = swiper_match.find_similar_thought(thought)
+                send_partitioned_text(update.effective_chat, pformat(similar_thought))
 
-            context.chat_data[DataKey.LATEST_ANSWER_MSG_ID] = bot_msg.message_id
-            context.chat_data[DataKey.LATEST_MSG_ID] = bot_msg.message_id
-            return ConvState.BOT_REPLIED
+            # bot_msg = self.swiper_presentation.send_thought(update, context, thought)
+            #
+            # context.chat_data[DataKey.LATEST_ANSWER_MSG_ID] = bot_msg.message_id
+            # context.chat_data[DataKey.LATEST_MSG_ID] = bot_msg.message_id
+            # return ConvState.BOT_REPLIED
 
         context.chat_data[DataKey.LATEST_MSG_ID] = user_msg_id
         return ConvState.USER_REPLIED
