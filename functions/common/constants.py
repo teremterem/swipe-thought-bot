@@ -60,6 +60,7 @@ class EsKey:
     MSG_ID = 'msg_id'
     CHAT_ID = 'chat_id'
     BOT_ID = 'bot_id'
+    SWIPER_ID = 'swiper_id'
     SWIPER_STATE_BEFORE = 'swiper_state_before'
     TELEGRAM_STATE_BEFORE = 'telegram_state_before'
 
