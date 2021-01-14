@@ -81,19 +81,22 @@ class CommonStateHandlers(StateAwareHandlers):
                 current_swiper_id = construct_swiper_id(chat_id=current_chat_id, bot_id=bot_id)
 
                 # TODO oleksandr: construct body inside SwiperMatch ?
-                swiper_match.index_thought(thought, body={
-                    EsKey.THOUGHT_ID: thought_id,
-                    EsKey.THOUGHT: thought,
-                    EsKey.MSG_ID: user_msg_id,
-                    EsKey.CHAT_ID: current_chat_id,
-                    EsKey.BOT_ID: bot_id,
-                    EsKey.SWIPER_ID: current_swiper_id,  # TODO oleksandr: are you sure we need this ?
+                swiper_match.index_thought(
+                    thought_id=thought_id,
+                    body={
+                        EsKey.THOUGHT_ID: thought_id,
+                        EsKey.THOUGHT: thought,
+                        EsKey.MSG_ID: user_msg_id,
+                        EsKey.CHAT_ID: current_chat_id,
+                        EsKey.BOT_ID: bot_id,
+                        EsKey.SWIPER_ID: current_swiper_id,  # TODO oleksandr: are you sure we need this ?
 
-                    # single-threaded environment with non-async update processing
-                    EsKey.SWIPER_STATE_BEFORE: self.swiper_conversation.swiper_update.swiper_state,
+                        # single-threaded environment with non-async update processing
+                        EsKey.SWIPER_STATE_BEFORE: self.swiper_conversation.swiper_update.swiper_state,
 
-                    EsKey.TELEGRAM_STATE_BEFORE: self.conv_state,
-                })
+                        EsKey.TELEGRAM_STATE_BEFORE: self.conv_state,
+                    }
+                )
 
                 similar_thought_dict = swiper_match.find_similar_thought(
                     thought=thought,
