@@ -43,7 +43,7 @@ class SwiperMatch:
                 text_to_analyze,
             )
 
-    def find_similar_thought(self, thought, current_swiper_id):
+    def find_similar_thought(self, thought, current_chat_id, bot_id):
         self._show_analysis(thought)
         es_query = {
             'query': {
@@ -59,9 +59,14 @@ class SwiperMatch:
                             },
                         },
                     ],
+                    'filter': {
+                        'term': {
+                            EsKey.BOT_ID: bot_id,
+                        },
+                    },
                     'must_not': {
                         'term': {
-                            EsKey.SWIPER_ID: current_swiper_id,
+                            EsKey.CHAT_ID: current_chat_id,
                         },
                     },
                     # 'must_not': {
