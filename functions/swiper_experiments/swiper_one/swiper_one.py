@@ -1,6 +1,3 @@
-# TODO oleksandr: move this module outside of common ?
-#  give it a more descriptive name, too ?
-#  and also rename swiper_telegram.py to something else ?
 import json
 import logging
 from pprint import pformat
@@ -11,7 +8,7 @@ from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Fi
 from functions.common.constants import ConvState, DataKey, EsKey, AnswererMode
 from functions.common.s3 import main_bucket
 from functions.common.swiper_telegram import BaseSwiperConversation, StateAwareHandlers, BaseSwiperPresentation
-from functions.common.thoughts import construct_thought_id, ThoughtContext
+from functions.swiper_experiments.swiper_one.thoughts import construct_thought_id, ThoughtContext
 from functions.common.utils import send_partitioned_text
 from functions.swiper_experiments.swiper_one.answerer import Answerer
 
@@ -153,14 +150,7 @@ class CommonStateHandlers(StateAwareHandlers):
 
 class SwiperPresentation(BaseSwiperPresentation):
     def say_hello(self, update, context, conv_state):
-        thought_ctx_len = len(ThoughtContext(context).get_list())
-        send_partitioned_text(
-            update.effective_chat,
-            f"{pformat(context.chat_data)}\n"
-            f"\n"
-            f"THOUGHT CTX LENGTH: {thought_ctx_len}\n"
-            f"CONVERSATION STATE: {conv_state}"
-        )
+        send_internals(update, context, conv_state)
 
     def answer_thought(self, update, context, answer):
         answer_msg = update.effective_chat.send_message(
@@ -197,3 +187,14 @@ class SwiperPresentation(BaseSwiperPresentation):
     def reject(self, update, context):
         update.effective_message.delete()
         update.callback_query.answer(text='❌ Rejected💔')
+
+
+def send_internals(update, context, conv_state):
+    thought_ctx_len = len(context.chat_data.get(DataKey.THOUGHT_CTX, []))
+    send_partitioned_text(
+        update.effective_chat,
+        f"{pformat(context.chat_data)}\n"
+        f"\n"
+        f"THOUGHT CTX LENGTH: {thought_ctx_len}\n"
+        f"CONVERSATION STATE: {conv_state}"
+    )

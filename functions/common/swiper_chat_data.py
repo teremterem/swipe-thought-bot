@@ -3,6 +3,7 @@ import logging
 import os
 from pprint import pformat
 
+from .constants import DataKey, SwiperState
 from .dynamodb import dynamodb
 
 logger = logging.getLogger(__name__)
@@ -29,6 +30,8 @@ def read_swiper_chat_data(chat_id, bot_id):
     item = response.get('Item')
     if not item:
         # does not exist yet
+        empty_item[DataKey.IS_SWIPER_AUTHORIZED] = False  # don't talk to strangers
+        empty_item[DataKey.SWIPER_STATE] = SwiperState.IDLE
         return empty_item
 
     return item

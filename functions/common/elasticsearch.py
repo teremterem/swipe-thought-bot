@@ -13,7 +13,7 @@ THOUGHTS_ES_IDX = os.environ['THOUGHTS_ES_IDX']
 ES_REGION = os.environ['ES_REGION']
 ES_HOST = os.environ['ES_HOST']
 
-ES_SHOW_ANALYSIS = os.environ['ES_SHOW_ANALYSIS'].strip()  # either name of analyzer (like 'english') or empty string
+ES_SHOW_ANALYSIS = bool(strtobool(os.environ['ES_SHOW_ANALYSIS']))
 ES_EXPLAIN = bool(strtobool(os.environ['ES_EXPLAIN']))
 ES_NUM_OF_RESULTS = int(os.environ['ES_NUM_OF_RESULTS'])
 
