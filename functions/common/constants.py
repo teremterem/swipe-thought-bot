@@ -38,6 +38,8 @@ class DataKey:
     CONV_STATE = 'conv_state'
     TIMESTAMP_MS = 'timestamp_ms'
 
+    CHAT = 'chat'
+
     SWIPER_STATE = 'swiper_state'
     ANSWERER_MODE = 'answerer_mode'
 

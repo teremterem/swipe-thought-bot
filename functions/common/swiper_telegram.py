@@ -48,6 +48,10 @@ class SwiperUpdate:
             self._swiper_chat_data = read_swiper_chat_data(
                 chat_id=self.ptb_update.effective_chat.id, bot_id=self.swiper_conversation.bot.id
             )
+
+            if self.ptb_update.effective_chat:
+                self._swiper_chat_data[DataKey.CHAT] = self.ptb_update.effective_chat.to_dict()
+
         return self._swiper_chat_data
 
     def write_swiper_chat_data(self):

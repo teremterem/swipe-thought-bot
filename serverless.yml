@@ -40,6 +40,10 @@ provider:
 
     MAIN_S3_BUCKET_NAME: ${self:resources.Resources.mainBucket.Properties.BucketName}
 
+    SWIPER1_CHAT_ID: ${${self:custom.env_file}:SWIPER1_CHAT_ID, ''}
+    SWIPER2_CHAT_ID: ${${self:custom.env_file}:SWIPER2_CHAT_ID, ''}
+    SWIPER3_CHAT_ID: ${${self:custom.env_file}:SWIPER3_CHAT_ID, ''}
+
   iamRoleStatements:
     - Effect: "Allow"
       Action:
