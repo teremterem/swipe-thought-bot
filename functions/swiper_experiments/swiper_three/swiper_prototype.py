@@ -2,7 +2,7 @@ import logging
 import os
 import re
 
-from telegram import ReplyKeyboardMarkup
+from telegram import ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CommandHandler, DispatcherHandlerStop, Filters, MessageHandler, RegexHandler
 
 from functions.common.constants import DataKey
@@ -35,11 +35,20 @@ class SwiperPrototype(BaseSwiperConversation):
 
     def share_semi_anonymously(self, update, context):
         context.bot.send_message(
-            chat_id=SWIPER1_CHAT_ID,
-            text='Ну так иди делись себе… От меня́ что надо?',
-            # reply_markup=ReplyKeyboardMarkup([[
-            #     SHARE_SEMI_ANONYMOUSLY,
-            # ]]),
+            chat_id=SWIPER2_CHAT_ID,
+            text='Вам кто-то написал. Этот кто-то не знает, что написал именно вам, а вы не знаете, кто этот кто-то. '
+                 'Система в произвольном порядке выбрала, как получателя, именно вас…\n\n'
+                 'Вам знакомы переживания, излитые в сообщении? У вас есть, что ответить (посоветовать)? Или может '
+                 'сообщение, которое пришло, вас раздражает (момент неподходящий, либо сообщение просто глупое)?',
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [
+                    InlineKeyboardButton('❤️', callback_data='like_stranger_thought'),
+                    InlineKeyboardButton('❌', callback_data='reject_stranger_thought'),
+                ],
+                [
+                    InlineKeyboardButton('У меня есть, что ответить…', callback_data='like_stranger_thought'),
+                ]
+            ]),
         )
 
     def start(self, update, context):
