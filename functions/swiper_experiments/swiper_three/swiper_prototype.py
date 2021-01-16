@@ -122,6 +122,11 @@ class SwiperPrototype(BaseSwiperConversation):
         reply_to_msg_id = self.swiper_update.swiper_chat_data[ProtoKey.SWIPER3_INDEXED_MSG_ID]
 
         context.bot.send_message(
+            chat_id=SWIPER1_CHAT_ID,
+            text='<i>Вы ответили</i>',
+            parse_mode=ParseMode.HTML,
+        )
+        context.bot.send_message(
             chat_id=SWIPER3_CHAT_ID,
             text='Кто-то ответил на вашу старую мысль. Этот кто-то не знает, что написал именно вам, а вы не знаете, '
                  'кто этот кто-то.\n'
