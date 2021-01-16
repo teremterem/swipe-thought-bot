@@ -2,8 +2,9 @@ import logging
 import os
 import re
 
-from telegram import ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton
-from telegram.ext import CommandHandler, DispatcherHandlerStop, Filters, MessageHandler, RegexHandler
+from telegram import ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton, ParseMode
+from telegram.ext import CommandHandler, DispatcherHandlerStop, Filters, MessageHandler, RegexHandler, \
+    CallbackQueryHandler
 
 from functions.common.constants import DataKey
 from functions.common.swiper_telegram import BaseSwiperConversation
@@ -20,6 +21,11 @@ class Stories:
                              'думать/знать, кому моя мысль будет отправлена.'
 
 
+class Reactions:
+    LIKE_STRANGER_THOUGHT = 'like_stranger_thought'
+    REJECT_STRANGER_THOUGHT = 'reject_stranger_thought'
+
+
 class SwiperPrototype(BaseSwiperConversation):
     def assert_swiper_authorized(self, update, context):
         # single-threaded environment with non-async update processing
@@ -32,6 +38,8 @@ class SwiperPrototype(BaseSwiperConversation):
 
         dispatcher.add_handler(CommandHandler('start', self.start))
         dispatcher.add_handler(RegexHandler(re.escape(Stories.SHARE_SEMI_ANONYMOUSLY), self.share_semi_anonymously))
+        dispatcher.add_handler(CallbackQueryHandler(self.reject_stranger_thought,
+                                                    pattern=re.escape(Reactions.REJECT_STRANGER_THOUGHT)))
 
     def share_semi_anonymously(self, update, context):
         context.bot.send_message(
@@ -42,13 +50,22 @@ class SwiperPrototype(BaseSwiperConversation):
                  'сообщение, которое пришло, вас раздражает (момент неподходящий, либо сообщение просто глупое)?',
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                 [
-                    InlineKeyboardButton('❤️', callback_data='like_stranger_thought'),
-                    InlineKeyboardButton('❌', callback_data='reject_stranger_thought'),
+                    InlineKeyboardButton('❤️', callback_data=Reactions.LIKE_STRANGER_THOUGHT),
+                    InlineKeyboardButton('❌', callback_data=Reactions.REJECT_STRANGER_THOUGHT),
                 ],
                 [
                     InlineKeyboardButton('У меня есть, что ответить…', callback_data='like_stranger_thought'),
                 ]
             ]),
+        )
+
+    def reject_stranger_thought(self, update, context):
+        update.effective_message.delete()
+        update.callback_query.answer(text='❌ Отвергнуто💔')
+        context.bot.send_message(
+            chat_id=SWIPER2_CHAT_ID,
+            text='<i>Вы больше не получите сообщений от этого человека [как минимум, некоторое время]</i>',
+            parse_mode=ParseMode.HTML,
         )
 
     def start(self, update, context):
