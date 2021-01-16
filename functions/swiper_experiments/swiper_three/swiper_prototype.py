@@ -16,16 +16,20 @@ SWIPER2_CHAT_ID = os.environ['SWIPER2_CHAT_ID']
 SWIPER3_CHAT_ID = os.environ['SWIPER3_CHAT_ID']
 
 
-class Stories:
+class Story:
     SHARE_SEMI_ANONYMOUSLY = 'Меня что-то тревожит и я хочу поделиться этим [полу]анонимно - я [пока-что] не хочу ' \
                              'думать/знать, кому моя мысль будет отправлена.'
 
 
-class Reactions:
+class Reaction:
     LIKE_STRANGER_THOUGHT = 'like_stranger_thought'
     REJECT_STRANGER_THOUGHT = 'reject_stranger_thought'
     LIKE_BOT_THOUGHT = 'like_stranger_thought'
     REJECT_BOT_THOUGHT = 'reject_stranger_thought'
+
+
+class ProtoKey:
+    SWIPER3_INDEXED_MSG_ID = 'swiper3_indexed_msg_id'
 
 
 class SwiperPrototype(BaseSwiperConversation):
@@ -36,12 +40,19 @@ class SwiperPrototype(BaseSwiperConversation):
             raise DispatcherHandlerStop()
 
     def configure_dispatcher(self, dispatcher):
-        dispatcher.add_handler(MessageHandler(Filters.all, self.assert_swiper_authorized), -1)
+        dispatcher.add_handler(MessageHandler(Filters.all, self.assert_swiper_authorized), -100500)
+        # TODO oleksandr: guard CallbackQueryHandler as well ? any other types of handlers not covered ?
 
         dispatcher.add_handler(CommandHandler('start', self.start))
-        dispatcher.add_handler(RegexHandler(re.escape(Stories.SHARE_SEMI_ANONYMOUSLY), self.share_semi_anonymously))
+        dispatcher.add_handler(RegexHandler(re.escape(Story.SHARE_SEMI_ANONYMOUSLY), self.share_semi_anonymously))
         dispatcher.add_handler(CallbackQueryHandler(self.reject_stranger_thought,
-                                                    pattern=re.escape(Reactions.REJECT_STRANGER_THOUGHT)))
+                                                    pattern=re.escape(Reaction.REJECT_STRANGER_THOUGHT)))
+
+        dispatcher.add_handler(MessageHandler(Filters.all, self.todo))
+        dispatcher.add_handler(CallbackQueryHandler(self.todo))
+
+    def todo(self, update, context):
+        update.effective_chat.send_message('TODO')
 
     def share_semi_anonymously(self, update, context):
         context.bot.send_message(
@@ -52,8 +63,8 @@ class SwiperPrototype(BaseSwiperConversation):
                  'сообщение, которое пришло, вас раздражает (момент неподходящий, либо сообщение просто глупое)?',
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                 [
-                    InlineKeyboardButton('❤️', callback_data=Reactions.LIKE_STRANGER_THOUGHT),
-                    InlineKeyboardButton('❌', callback_data=Reactions.REJECT_STRANGER_THOUGHT),
+                    InlineKeyboardButton('❤️', callback_data=Reaction.LIKE_STRANGER_THOUGHT),
+                    InlineKeyboardButton('❌', callback_data=Reaction.REJECT_STRANGER_THOUGHT),
                 ],
                 [
                     InlineKeyboardButton('У меня есть, что ответить…', callback_data='like_stranger_thought'),
@@ -75,8 +86,8 @@ class SwiperPrototype(BaseSwiperConversation):
                  'отправил). Вам есть, что ответить, или подобранный ответ - глупый?',
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                 [
-                    InlineKeyboardButton('🖤', callback_data=Reactions.LIKE_STRANGER_THOUGHT),
-                    InlineKeyboardButton('❌', callback_data=Reactions.REJECT_STRANGER_THOUGHT),
+                    InlineKeyboardButton('🖤', callback_data=Reaction.LIKE_STRANGER_THOUGHT),
+                    InlineKeyboardButton('❌', callback_data=Reaction.REJECT_STRANGER_THOUGHT),
                 ],
                 [
                     InlineKeyboardButton('У меня есть, что ответить…', callback_data='like_stranger_thought'),
@@ -89,6 +100,12 @@ class SwiperPrototype(BaseSwiperConversation):
             chat_id=SWIPER1_CHAT_ID,
             text='Привет, мир!',
             reply_markup=ReplyKeyboardMarkup([[
-                Stories.SHARE_SEMI_ANONYMOUSLY,
+                Story.SHARE_SEMI_ANONYMOUSLY,
             ]]),
+        )
+        indexed_msg = context.bot.send_message(
+            chat_id=SWIPER3_CHAT_ID,
+            text='<i>Здесь должна быть какая-то переписка между пользователем и ботом, либо пользователем и другими '
+                 'пользователями.</i>',
+            parse_mode=ParseMode.HTML,
         )
