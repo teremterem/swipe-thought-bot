@@ -31,10 +31,7 @@ class SwiperUpdate:
             Key=f"audit/{self.update_s3_filename_prefix}.update.json",
             Body=json.dumps(update_json).encode('utf8'),
         )
-
-        self.swiper_chat_data = read_swiper_chat_data(
-            chat_id=self.ptb_update.effective_chat.id, bot_id=self.swiper_conversation.bot.id
-        )
+        self._swiper_chat_data = None
         self.volatile = {}  # to store reusable objects that are scoped to update and aren't to be persisted
 
     @property
@@ -45,19 +42,27 @@ class SwiperUpdate:
     def swiper_state(self, swiper_state):
         self.swiper_chat_data[DataKey.SWIPER_STATE] = swiper_state
 
-    def write_swiper_chat_data(self):
-        write_swiper_chat_data(self.swiper_chat_data)
+    @property
+    def swiper_chat_data(self):
+        if self._swiper_chat_data is None:
+            self._swiper_chat_data = read_swiper_chat_data(
+                chat_id=self.ptb_update.effective_chat.id, bot_id=self.swiper_conversation.bot.id
+            )
+        return self._swiper_chat_data
 
-        main_bucket.put_object(
-            Key=f"audit/{self.update_s3_filename_prefix}.swiper-chat-data.json",
-            Body=simplejson.dumps(self.swiper_chat_data).encode('utf8'),
-        )
+    def write_swiper_chat_data(self):
+        if self._swiper_chat_data is not None:
+            write_swiper_chat_data(self._swiper_chat_data)
+
+            main_bucket.put_object(
+                Key=f"audit/{self.update_s3_filename_prefix}.swiper-chat-data.json",
+                Body=simplejson.dumps(self._swiper_chat_data).encode('utf8'),
+            )
 
     def __enter__(self):
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
-        # TODO oleksandr: should we or should we not write swiper_chat_data to DynamoDB in case of exception ?
         self.write_swiper_chat_data()
 
 
@@ -98,6 +103,9 @@ class BaseSwiperConversation:
 
         with SwiperUpdate(self, update_json) as swiper_update:
             self.swiper_update = swiper_update  # single-threaded environment with non-async update processing
+
+            # TODO oleksandr: we don't need this if we are getting rid of ConversationHandler
+            #  (why read from DDB for no reason ?)
             self.swiper_persistence.init_from_swiper_chat_data(self.swiper_update.swiper_chat_data)
 
             self.dispatcher.process_update(self.swiper_update.ptb_update)
