@@ -1,6 +1,7 @@
 import logging
 import os
 
+from telegram import ReplyKeyboardMarkup
 from telegram.ext import CommandHandler, DispatcherHandlerStop, Filters, MessageHandler
 
 from functions.common.constants import DataKey
@@ -11,6 +12,9 @@ logger = logging.getLogger(__name__)
 SWIPER1_CHAT_ID = os.environ['SWIPER1_CHAT_ID']
 SWIPER2_CHAT_ID = os.environ['SWIPER2_CHAT_ID']
 SWIPER3_CHAT_ID = os.environ['SWIPER3_CHAT_ID']
+
+SHARE_SEMI_ANONYMOUSLY = 'Меня что-то тревожит и я хочу поделиться этим [полу]анонимно - я пока-что не хочу ' \
+                         'думать/знать, кому моя мысль будет отправлена.'
 
 
 class SwiperPrototype(BaseSwiperConversation):
@@ -28,13 +32,8 @@ class SwiperPrototype(BaseSwiperConversation):
     def start(self, update, context):
         context.bot.send_message(
             chat_id=SWIPER1_CHAT_ID,
-            text='Hello Swiper One',
-        )
-        context.bot.send_message(
-            chat_id=SWIPER2_CHAT_ID,
-            text='Hello Swiper Two',
-        )
-        context.bot.send_message(
-            chat_id=SWIPER3_CHAT_ID,
-            text='Hello Swiper Three',
+            text='Привет, мир!',
+            reply_markup=ReplyKeyboardMarkup([[
+                SHARE_SEMI_ANONYMOUSLY,
+            ]]),
         )
