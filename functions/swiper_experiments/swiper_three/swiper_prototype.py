@@ -24,6 +24,8 @@ class Stories:
 class Reactions:
     LIKE_STRANGER_THOUGHT = 'like_stranger_thought'
     REJECT_STRANGER_THOUGHT = 'reject_stranger_thought'
+    LIKE_BOT_THOUGHT = 'like_stranger_thought'
+    REJECT_BOT_THOUGHT = 'reject_stranger_thought'
 
 
 class SwiperPrototype(BaseSwiperConversation):
@@ -66,6 +68,20 @@ class SwiperPrototype(BaseSwiperConversation):
             chat_id=SWIPER2_CHAT_ID,
             text='<i>Вы больше не получите сообщений от этого человека [как минимум, некоторое время]</i>',
             parse_mode=ParseMode.HTML,
+        )
+        context.bot.send_message(
+            chat_id=SWIPER1_CHAT_ID,
+            text='Вам пришел ответ, правда, не от человека (человек его когда-то написал, но не человек его вам сейчас '
+                 'отправил). Вам есть, что ответить, или подобранный ответ - глупый?',
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [
+                    InlineKeyboardButton('🖤', callback_data=Reactions.LIKE_STRANGER_THOUGHT),
+                    InlineKeyboardButton('❌', callback_data=Reactions.REJECT_STRANGER_THOUGHT),
+                ],
+                [
+                    InlineKeyboardButton('У меня есть, что ответить…', callback_data='like_stranger_thought'),
+                ]
+            ]),
         )
 
     def start(self, update, context):
