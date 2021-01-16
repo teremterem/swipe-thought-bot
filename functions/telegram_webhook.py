@@ -2,11 +2,11 @@ import os
 
 from functions.common import logging  # force log config of functions/common/__init__.py
 from functions.common.utils import log_event_and_response
-from functions.swiper_experiments.swiper_two.swiper_two import SwiperTwo
+from functions.swiper_experiments.swiper_three.swiper_prototype import SwiperPrototype
 
 logger = logging.getLogger()
 
-swiper = SwiperTwo()
+swiper = SwiperPrototype()  # TODO oleksandr: rename to something else (swiper_conversation ?)
 
 
 @log_event_and_response
