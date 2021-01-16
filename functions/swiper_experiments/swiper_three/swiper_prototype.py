@@ -104,7 +104,9 @@ class SwiperPrototype(BaseSwiperConversation):
         context.bot.send_message(
             chat_id=SWIPER1_CHAT_ID,
             text='Вам пришел ответ. Правда, не от человека. Человек его когда-то написал, но не человек его вам сейчас '
-                 'отправил. Вам есть, что ответить, или подобранный ответ - глупый / не интересный?',
+                 'отправил.\n'
+                 '\n'
+                 'Вам есть, что ответить, или подобранный ответ - глупый / не интересный?',
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                 [
                     InlineKeyboardButton('🖤', callback_data=Reaction.LIKE_BOT_THOUGHT),
@@ -137,6 +139,7 @@ class SwiperPrototype(BaseSwiperConversation):
                 ]
             ]),
         )
+        # TODO oleksandr: handle telegram.error.BadRequest: Reply message not found
 
     def todo(self, update, context):
         update.effective_chat.send_message('TODO')
