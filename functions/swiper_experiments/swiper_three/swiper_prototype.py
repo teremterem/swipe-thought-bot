@@ -128,7 +128,10 @@ class SwiperPrototype(BaseSwiperConversation):
                  '\n'
                  'Причина: бот подбросил эту вашу мысль ему как автоматический ответ на что-то, и человек ответил на '
                  'неё.',
+
+            # TODO oleksandr: handle telegram.error.BadRequest: Reply message not found
             reply_to_message_id=str(reply_to_msg_id),
+
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                 [
                     InlineKeyboardButton('❤️', callback_data=Reaction.LIKE_STRANGER_THOUGHT),
@@ -139,7 +142,6 @@ class SwiperPrototype(BaseSwiperConversation):
                 ]
             ]),
         )
-        # TODO oleksandr: handle telegram.error.BadRequest: Reply message not found
 
     def todo(self, update, context):
         update.effective_chat.send_message('TODO')
