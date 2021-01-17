@@ -124,7 +124,7 @@ class SwiperPrototype(BaseSwiperConversation):
         )
 
     def respond_to_bot(self, update, context):
-        reply_to_msg_id = self.swiper_update.current_swiper.swiper_data[ProtoKey.SWIPER3_INDEXED_MSG_ID]
+        reply_to_msg_id = self.swiper_update.get_swiper(SWIPER3_CHAT_ID).swiper_data[ProtoKey.SWIPER3_INDEXED_MSG_ID]
 
         context.bot.send_message(
             chat_id=SWIPER1_CHAT_ID,

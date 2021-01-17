@@ -46,6 +46,8 @@ class Swiper:
 
     def persist(self):
         if self.is_initialized():
+            # TODO oleksandr: track changes somehow and persist only if data changed ?
+            # TODO oleksandr: versioning and optimistic locking ?
             write_swiper_chat_data(self._swiper_data)
 
 
@@ -81,8 +83,7 @@ class SwiperUpdate:
             self.current_swiper.swiper_data[DataKey.CHAT] = self.ptb_update.effective_chat.to_dict()
 
         for swiper in self._swipers.values():
-            if swiper.is_initialized():
-                swiper.persist()
+            swiper.persist()
 
     def __enter__(self):
         # single-threaded environment with non-async update processing
