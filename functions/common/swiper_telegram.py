@@ -71,27 +71,31 @@ class SwiperUpdate:
         self.volatile = {}  # to store reusable objects that are scoped to update and aren't to be persisted
 
     def get_swiper(self, chat_id):
-        chat_id = str(chat_id)  # let's be sure that chat_id is always of the same type
+        chat_id_str = str(chat_id)  # let's be sure that chat id is always of the same type when used as a dict key
 
-        swiper = self._swipers.get(chat_id)
+        swiper = self._swipers.get(chat_id_str)
         if not swiper:
             swiper = Swiper(chat_id=chat_id, bot_id=self.swiper_conversation.bot.id)
-            self._swipers[chat_id] = swiper
+            self._swipers[chat_id_str] = swiper
 
         return swiper
 
     def persist_swipers(self):
         if self.current_swiper.is_initialized() and self.ptb_update.effective_chat:
-            self.current_swiper.swiper_chat_data[DataKey.CHAT] = self.ptb_update.effective_chat.to_dict()
+            self.current_swiper.swiper_data[DataKey.CHAT] = self.ptb_update.effective_chat.to_dict()
 
         for swiper in self._swipers.values():
             if swiper.is_initialized():
                 swiper.persist()
 
     def __enter__(self):
+        # single-threaded environment with non-async update processing
+        self.swiper_conversation.swiper_update = self
+
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
+        self.swiper_conversation.swiper_update = None
         self.persist_swipers()
 
 
@@ -136,9 +140,7 @@ class BaseSwiperConversation:
             #  although, we do read swiper data on every update during assert_swiper_authorized anyway...
             self.swiper_persistence.init_from_swiper_data(swiper_update.current_swiper.swiper_data)
 
-            self.swiper_update = swiper_update  # single-threaded environment with non-async update processing
             self.dispatcher.process_update(swiper_update.ptb_update)
-            self.swiper_update = None
 
             self.dispatcher.update_persistence()
             self.swiper_persistence.flush()  # this effectively does nothing

@@ -72,7 +72,7 @@ class SwiperPrototype(BaseSwiperConversation):
         )
 
         # single-threaded environment with non-async update processing
-        self.swiper_update.swiper_chat_data[ProtoKey.SWIPER3_INDEXED_MSG_ID] = indexed_msg.message_id
+        self.swiper_update.current_swiper.swiper_data[ProtoKey.SWIPER3_INDEXED_MSG_ID] = indexed_msg.message_id
 
     def share_semi_anonymously(self, update, context):
         context.bot.send_message(
@@ -119,7 +119,7 @@ class SwiperPrototype(BaseSwiperConversation):
         )
 
     def respond_to_bot(self, update, context):
-        reply_to_msg_id = self.swiper_update.swiper_chat_data[ProtoKey.SWIPER3_INDEXED_MSG_ID]
+        reply_to_msg_id = self.swiper_update.current_swiper.swiper_data[ProtoKey.SWIPER3_INDEXED_MSG_ID]
 
         context.bot.send_message(
             chat_id=SWIPER1_CHAT_ID,
