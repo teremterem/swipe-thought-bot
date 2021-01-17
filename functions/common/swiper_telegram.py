@@ -133,6 +133,7 @@ class BaseSwiperConversation:
         with SwiperUpdate(self, update_json) as swiper_update:
             # TODO oleksandr: we don't need this if we are getting rid of ConversationHandler
             #  (why read from DDB for no reason ?)
+            #  although, we do read swiper data on every update during assert_swiper_authorized anyway...
             self.swiper_persistence.init_from_swiper_data(swiper_update.current_swiper.swiper_data)
 
             self.swiper_update = swiper_update  # single-threaded environment with non-async update processing
