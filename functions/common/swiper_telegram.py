@@ -53,7 +53,7 @@ class SwiperUpdate:
     def __init__(self, swiper_conversation, update_json):
         self.swiper_conversation = swiper_conversation
 
-        self.ptb_update = Update.de_json(update_json, self.swiper_conversation.bot)
+        self.ptb_update = Update.de_json(update_json, self.swiper_conversation.dispatcher.bot)
         self.update_s3_filename_prefix = f"upd{self.ptb_update.update_id}_{uuid.uuid4()}"
 
         main_bucket.put_object(
@@ -71,7 +71,7 @@ class SwiperUpdate:
 
         swiper = self._swipers.get(chat_id_str)
         if not swiper:
-            swiper = Swiper(chat_id=chat_id, bot_id=self.swiper_conversation.bot.id)
+            swiper = Swiper(chat_id=chat_id, bot_id=self.swiper_conversation.dispatcher.bot.id)
             self._swipers[chat_id_str] = swiper
 
         return swiper
@@ -105,12 +105,12 @@ class BaseSwiperConversation:
     def __init__(self, bot=None, swiper_presentation=None):
         if not bot:
             bot = Bot(TELEGRAM_TOKEN)
-        self.bot = bot
+        # self.bot = bot
         self.swiper_presentation = self.init_swiper_presentation(swiper_presentation)
 
         self.swiper_persistence = SwiperPersistence()
         self.dispatcher = Dispatcher(
-            self.bot,
+            bot,
             None,
             workers=0,
             persistence=self.swiper_persistence,
@@ -165,9 +165,9 @@ class BaseSwiperPresentation:  # TODO oleksandr: rename this class to SwiperConv
     def __init__(self, swiper_conversation=None):
         self.swiper_conversation = swiper_conversation
 
-    @property
-    def bot(self):
-        return self.swiper_conversation.bot
+    # @property
+    # def bot(self):
+    #     return self.swiper_conversation.bot
 
 
 class SwiperPersistence(BasePersistence):

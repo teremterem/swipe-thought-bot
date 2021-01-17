@@ -56,7 +56,21 @@ class SwiperPrototype(BaseSwiperConversation):
         dispatcher.add_handler(MessageHandler(Filters.all, self.todo))
         dispatcher.add_handler(CallbackQueryHandler(self.todo))
 
+    def _seed_chat_history(self, context, chat_id):
+        indexed_msg = context.bot.send_message(
+            chat_id=chat_id,
+            text='<i>Здесь должна быть какая-то переписка между пользователем и ботом, либо пользователем и другими '
+                 'пользователями.</i>',
+            parse_mode=ParseMode.HTML,
+        )
+        swiper = self.swiper_update.get_swiper(chat_id)  # single-threaded environment with non-async update processing
+        swiper.swiper_data[ProtoKey.SWIPER3_INDEXED_MSG_ID] = indexed_msg.message_id
+
     def start(self, update, context):
+        self._seed_chat_history(context, SWIPER1_CHAT_ID)
+        self._seed_chat_history(context, SWIPER2_CHAT_ID)
+        self._seed_chat_history(context, SWIPER3_CHAT_ID)
+
         context.bot.send_message(
             chat_id=SWIPER1_CHAT_ID,
             text='Привет, мир!',
@@ -64,15 +78,6 @@ class SwiperPrototype(BaseSwiperConversation):
                 Story.SHARE_SEMI_ANONYMOUSLY,
             ]], one_time_keyboard=True),
         )
-        indexed_msg = context.bot.send_message(
-            chat_id=SWIPER3_CHAT_ID,
-            text='<i>Здесь должна быть какая-то переписка между пользователем и ботом, либо пользователем и другими '
-                 'пользователями.</i>',
-            parse_mode=ParseMode.HTML,
-        )
-
-        # single-threaded environment with non-async update processing
-        self.swiper_update.current_swiper.swiper_data[ProtoKey.SWIPER3_INDEXED_MSG_ID] = indexed_msg.message_id
 
     def share_semi_anonymously(self, update, context):
         context.bot.send_message(
