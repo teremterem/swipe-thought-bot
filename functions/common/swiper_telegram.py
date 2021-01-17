@@ -31,10 +31,6 @@ class Swiper:
         if self._swiper_data is None:
             self._swiper_data = read_swiper_chat_data(chat_id=self.chat_id, bot_id=self.bot_id)
 
-            # # TODO oleksandr: when to do this ?
-            # if self.ptb_update.effective_chat:
-            #     self._swiper_chat_data[DataKey.CHAT] = self.ptb_update.effective_chat.to_dict()
-
         return self._swiper_data
 
     @property
@@ -227,7 +223,7 @@ class SwiperPersistence(BasePersistence):
         return self._ptb_chat_data
 
     def update_chat_data(self, chat_id: int, data: Dict) -> None:
-        # self.ptb_chat_data dict is part of swiper_chat_data and will be persisted automatically when
+        # self.ptb_chat_data dict is part of swiper_data and will be persisted automatically when
         # write_swiper_chat_data is called by BaseSwiperConversation - no code is needed here
         ...
 

@@ -1,4 +1,3 @@
-# TODO oleksandr: rename to swiper_chat_data
 import logging
 import os
 from pprint import pformat
