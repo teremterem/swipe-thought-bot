@@ -5,7 +5,6 @@ import uuid
 from collections import defaultdict
 from typing import Dict, Any, DefaultDict, Tuple, Optional
 
-import simplejson
 from telegram import Bot, Update
 from telegram.ext import Dispatcher, BasePersistence
 from telegram.utils.types import ConversationDict
@@ -20,6 +19,40 @@ logger = logging.getLogger(__name__)
 TELEGRAM_TOKEN = os.environ['TELEGRAM_TOKEN']
 
 
+class Swiper:
+    def __init__(self, chat_id, bot_id):
+        self.chat_id = chat_id
+        self.bot_id = bot_id
+
+        self._swiper_data = None
+
+    @property
+    def swiper_data(self):
+        if self._swiper_data is None:
+            self._swiper_data = read_swiper_chat_data(chat_id=self.chat_id, bot_id=self.bot_id)
+
+            # # TODO oleksandr: when to do this ?
+            # if self.ptb_update.effective_chat:
+            #     self._swiper_chat_data[DataKey.CHAT] = self.ptb_update.effective_chat.to_dict()
+
+        return self._swiper_data
+
+    @property
+    def swiper_state(self):
+        return self._swiper_data.get(DataKey.SWIPER_STATE)
+
+    @swiper_state.setter
+    def swiper_state(self, swiper_state):
+        self._swiper_data[DataKey.SWIPER_STATE] = swiper_state
+
+    def is_initialized(self):
+        return self._swiper_data is not None
+
+    def persist(self):
+        if self.is_initialized():
+            write_swiper_chat_data(self._swiper_data)
+
+
 class SwiperUpdate:
     def __init__(self, swiper_conversation, update_json):
         self.swiper_conversation = swiper_conversation
@@ -31,43 +64,35 @@ class SwiperUpdate:
             Key=f"audit/{self.update_s3_filename_prefix}.update.json",
             Body=json.dumps(update_json).encode('utf8'),
         )
-        self._swiper_chat_data = None
+
+        self._swipers = {}
+        self.current_swiper = self.get_swiper(self.ptb_update.effective_chat.id)
+
         self.volatile = {}  # to store reusable objects that are scoped to update and aren't to be persisted
 
-    @property
-    def swiper_state(self):
-        return self.swiper_chat_data.get(DataKey.SWIPER_STATE)
+    def get_swiper(self, chat_id):
+        chat_id = str(chat_id)  # let's be sure that chat_id is always of the same type
 
-    @swiper_state.setter
-    def swiper_state(self, swiper_state):
-        self.swiper_chat_data[DataKey.SWIPER_STATE] = swiper_state
+        swiper = self._swipers.get(chat_id)
+        if not swiper:
+            swiper = Swiper(chat_id=chat_id, bot_id=self.swiper_conversation.bot.id)
+            self._swipers[chat_id] = swiper
 
-    @property
-    def swiper_chat_data(self):
-        if self._swiper_chat_data is None:
-            self._swiper_chat_data = read_swiper_chat_data(
-                chat_id=self.ptb_update.effective_chat.id, bot_id=self.swiper_conversation.bot.id
-            )
+        return swiper
 
-            if self.ptb_update.effective_chat:
-                self._swiper_chat_data[DataKey.CHAT] = self.ptb_update.effective_chat.to_dict()
+    def persist_swipers(self):
+        if self.current_swiper.is_initialized() and self.ptb_update.effective_chat:
+            self.current_swiper.swiper_chat_data[DataKey.CHAT] = self.ptb_update.effective_chat.to_dict()
 
-        return self._swiper_chat_data
-
-    def write_swiper_chat_data(self):
-        if self._swiper_chat_data is not None:
-            write_swiper_chat_data(self._swiper_chat_data)
-
-            main_bucket.put_object(
-                Key=f"audit/{self.update_s3_filename_prefix}.swiper-chat-data.json",
-                Body=simplejson.dumps(self._swiper_chat_data).encode('utf8'),
-            )
+        for swiper in self._swipers.values():
+            if swiper.is_initialized():
+                swiper.persist()
 
     def __enter__(self):
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
-        self.write_swiper_chat_data()
+        self.persist_swipers()
 
 
 class BaseSwiperConversation:
@@ -106,13 +131,13 @@ class BaseSwiperConversation:
         #     logger.info('TELEGRAM UPDATE:\n%s', pformat(update_json))
 
         with SwiperUpdate(self, update_json) as swiper_update:
-            self.swiper_update = swiper_update  # single-threaded environment with non-async update processing
-
             # TODO oleksandr: we don't need this if we are getting rid of ConversationHandler
             #  (why read from DDB for no reason ?)
-            self.swiper_persistence.init_from_swiper_chat_data(self.swiper_update.swiper_chat_data)
+            self.swiper_persistence.init_from_swiper_data(swiper_update.current_swiper.swiper_data)
 
-            self.dispatcher.process_update(self.swiper_update.ptb_update)
+            self.swiper_update = swiper_update  # single-threaded environment with non-async update processing
+            self.dispatcher.process_update(swiper_update.ptb_update)
+            self.swiper_update = None
 
             self.dispatcher.update_persistence()
             self.swiper_persistence.flush()  # this effectively does nothing
@@ -153,7 +178,7 @@ class SwiperPersistence(BasePersistence):
             store_user_data=False,
             store_bot_data=False,
         )
-        self._swiper_chat_data = None
+        self._swiper_data = None
         self._ptb_conversations = {}
         self._ptb_chat_data = defaultdict(dict)
 
@@ -165,17 +190,17 @@ class SwiperPersistence(BasePersistence):
         # do not clone dictionaries - we rely on ability to modify dict content when processing telegram update
         return obj
 
-    def init_from_swiper_chat_data(self, swiper_chat_data):
+    def init_from_swiper_data(self, swiper_data):
         """
         SwiperPersistence expects single-threaded environment with sequential (non-async) update processing.
         """
-        self._swiper_chat_data = swiper_chat_data
-        chat_id = swiper_chat_data[CHAT_ID_KEY]
+        self._swiper_data = swiper_data
+        chat_id = swiper_data[CHAT_ID_KEY]
 
         for ptb_conv_states in self._ptb_conversations.values():
             ptb_conv_states.clear()
 
-        for conv_name, swiper_conv_states in swiper_chat_data.setdefault(PTB_CONVERSATIONS_KEY, {}).items():
+        for conv_name, swiper_conv_states in swiper_data.setdefault(PTB_CONVERSATIONS_KEY, {}).items():
             ptb_conv_states = self._ptb_conversations.setdefault(conv_name, {})
 
             for conv_state_key, swiper_conv_state in swiper_conv_states.items():
@@ -183,7 +208,7 @@ class SwiperPersistence(BasePersistence):
                 ptb_conv_states[conv_state_key] = swiper_conv_state
 
         self._ptb_chat_data.clear()
-        self._ptb_chat_data[chat_id] = swiper_chat_data.setdefault(PTB_CHAT_DATA_KEY, {})
+        self._ptb_chat_data[chat_id] = swiper_data.setdefault(PTB_CHAT_DATA_KEY, {})
 
     def get_conversations(self, name: str) -> ConversationDict:
         return self._ptb_conversations.setdefault(name, {})
@@ -191,9 +216,9 @@ class SwiperPersistence(BasePersistence):
     def update_conversation(self, name: str, key: Tuple[int, ...], new_state: Optional[object]) -> None:
         key = repr(key)  # from tuple to str
         if new_state is None:
-            self._swiper_chat_data.get(PTB_CONVERSATIONS_KEY, {}).get(name, {}).pop(key, None)
+            self._swiper_data.get(PTB_CONVERSATIONS_KEY, {}).get(name, {}).pop(key, None)
         else:
-            self._swiper_chat_data.setdefault(PTB_CONVERSATIONS_KEY, {}).setdefault(name, {})[key] = new_state
+            self._swiper_data.setdefault(PTB_CONVERSATIONS_KEY, {}).setdefault(name, {})[key] = new_state
 
     def get_chat_data(self) -> DefaultDict[int, Dict[Any, Any]]:
         return self._ptb_chat_data
