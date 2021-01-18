@@ -47,7 +47,7 @@ class SwiperPrototype(BaseSwiperConversation):
         dispatcher.add_handler(CallbackQueryHandler(self.reject_stranger,
                                                     pattern=rf"^{re.escape(Reaction.REJECT_STRANGER)}_(.+)$"))
         dispatcher.add_handler(CallbackQueryHandler(self.respond_to_bot,
-                                                    pattern=re.escape(Reaction.RESPOND_TO_BOT)))
+                                                    pattern=rf"^{re.escape(Reaction.RESPOND_TO_BOT)}_(.+)$"))
 
         dispatcher.add_handler(MessageHandler(Filters.all, self.todo))
         dispatcher.add_handler(CallbackQueryHandler(self.todo))
@@ -77,8 +77,7 @@ class SwiperPrototype(BaseSwiperConversation):
         )
 
     def share_semi_anonymously(self, update, context):
-        sender_chat_id = update.effective_chat.id
-        matched_swiper_chat_id = find_match_for_swiper(sender_chat_id)
+        matched_swiper_chat_id = find_match_for_swiper(update.effective_chat.id)
 
         context.bot.send_message(
             chat_id=matched_swiper_chat_id,
@@ -90,7 +89,7 @@ class SwiperPrototype(BaseSwiperConversation):
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                 [
                     InlineKeyboardButton('❤️', callback_data=Reaction.LIKE_STRANGER_THOUGHT),
-                    InlineKeyboardButton('❌', callback_data=f"{Reaction.REJECT_STRANGER}_{sender_chat_id}"),
+                    InlineKeyboardButton('❌', callback_data=f"{Reaction.REJECT_STRANGER}_{update.effective_chat.id}"),
                 ],
                 [
                     InlineKeyboardButton('У меня есть, что ответить…', callback_data=Reaction.RESPOND_TO_STRANGER),
@@ -109,6 +108,7 @@ class SwiperPrototype(BaseSwiperConversation):
         )
         # TODO oleksandr: actually exclude this swiper in prototype ?
 
+        # TODO oleksandr: "mimesis" goes here
         context.bot.send_message(
             chat_id=sender_chat_id,
             text='Вам пришел ответ. Правда, не от человека. Человек его когда-то написал, но не человек его вам сейчас '
@@ -121,21 +121,30 @@ class SwiperPrototype(BaseSwiperConversation):
                     InlineKeyboardButton('❌', callback_data=Reaction.REJECT_BOT_THOUGHT),
                 ],
                 [
-                    InlineKeyboardButton('У меня есть, что ответить…', callback_data=Reaction.RESPOND_TO_BOT),
+                    InlineKeyboardButton('У меня есть, что ответить…',
+                                         callback_data=f"{Reaction.RESPOND_TO_BOT}_{update.effective_chat.id}"),
                 ]
             ]),
         )
 
     def respond_to_bot(self, update, context):
-        reply_to_msg_id = self.swiper_update.get_swiper(SWIPER3_CHAT_ID).swiper_data[ProtoKey.SWIPER3_INDEXED_MSG_ID]
+        rejecter_chat_id = context.matches[0].group(1)
 
-        context.bot.send_message(
-            chat_id=SWIPER1_CHAT_ID,
+        update.effective_chat.send_message(
             text='<i>Вы ответили</i>',
             parse_mode=ParseMode.HTML,
         )
+
+        # TODO oleksandr: actual "mimesis" should have happened earlier, but we are faking it here
+        swiper_chat_id_by_mimesis = find_match_for_swiper(
+            update.effective_chat.id,
+            exclude_swiper_chat_id=rejecter_chat_id,
+        )
+        swiper_by_mimesis = self.swiper_update.get_swiper(swiper_chat_id_by_mimesis)
+        reply_to_msg_id = swiper_by_mimesis.swiper_data[ProtoKey.SWIPER3_INDEXED_MSG_ID]
+
         context.bot.send_message(
-            chat_id=SWIPER3_CHAT_ID,
+            chat_id=swiper_chat_id_by_mimesis,
             text='Кто-то ответил на вашу старую мысль. Этот кто-то не знает, что написал именно вам, а вы не знаете, '
                  'кто этот кто-то.\n'
                  '\n'
@@ -148,7 +157,7 @@ class SwiperPrototype(BaseSwiperConversation):
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                 [
                     InlineKeyboardButton('❤️', callback_data=Reaction.LIKE_STRANGER_THOUGHT),
-                    InlineKeyboardButton('❌', callback_data=Reaction.REJECT_STRANGER_THOUGHT),
+                    InlineKeyboardButton('❌', callback_data=Reaction.REJECT_STRANGER),
                 ],
                 [
                     InlineKeyboardButton('У меня есть, что ответить…', callback_data='stub'),

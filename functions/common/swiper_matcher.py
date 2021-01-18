@@ -16,9 +16,12 @@ def get_all_swiper_chat_ids():
     return all_swiper_chat_ids
 
 
-def find_match_for_swiper(swiper_chat_id):
-    swiper_chat_id = str(swiper_chat_id)
-
+def find_match_for_swiper(swiper_chat_id, exclude_swiper_chat_id=None):
     all_swiper_chat_ids = get_all_swiper_chat_ids()
-    all_swiper_chat_ids.remove(swiper_chat_id)
+
+    all_swiper_chat_ids.remove(str(swiper_chat_id))
+    if exclude_swiper_chat_id is not None:
+        # TODO oleksandr: get rid of this parameter later - it will not make much sense outside of prototype
+        all_swiper_chat_ids.remove(str(exclude_swiper_chat_id))
+
     return random.choice(tuple(all_swiper_chat_ids))
