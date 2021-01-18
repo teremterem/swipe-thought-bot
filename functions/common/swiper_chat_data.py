@@ -1,4 +1,3 @@
-# TODO oleksandr: rename to swiper_chat_data
 import logging
 import os
 from pprint import pformat
@@ -20,9 +19,11 @@ swiper_chat_data_table = dynamodb.Table(SWIPER_CHAT_DATA_DDB_TABLE_NAME)
 
 def read_swiper_chat_data(chat_id, bot_id):
     empty_item = {
-        CHAT_ID_KEY: chat_id,
-        BOT_ID_KEY: bot_id,
+        CHAT_ID_KEY: int(chat_id),
+        BOT_ID_KEY: int(bot_id),
     }
+    if logger.isEnabledFor(logging.INFO):
+        logger.info('SWIPER CHAT DATA - GET_ITEM (DDB) KEY:\n%s', pformat(empty_item))
     response = swiper_chat_data_table.get_item(Key=empty_item)
     if logger.isEnabledFor(logging.INFO):
         logger.info('SWIPER CHAT DATA - GET_ITEM (DDB):\n%s', pformat(response))

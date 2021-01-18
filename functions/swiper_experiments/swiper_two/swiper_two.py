@@ -41,7 +41,7 @@ class SwiperTwo(BaseSwiperConversation):
 
     def is_swiper_authorized(self):
         # single-threaded environment with non-async update processing
-        return bool(self.swiper_update.swiper_chat_data.get(DataKey.IS_SWIPER_AUTHORIZED))
+        return bool(self.swiper_update.current_swiper.swiper_data.get(DataKey.IS_SWIPER_AUTHORIZED))
 
     def get_swiper_match(self):
         # single-threaded environment with non-async update processing
@@ -131,7 +131,7 @@ class SwiperPresentationTwo(BaseSwiperPresentation):
         # single-threaded environment with non-async update processing
         swiper_update = self.swiper_conversation.swiper_update
 
-        send_partitioned_text(update.effective_chat, pformat(swiper_update.swiper_chat_data))
+        send_partitioned_text(update.effective_chat, pformat(swiper_update.current_swiper.swiper_data))
 
     def reply_to_thought(self, update, context, thought, another_thought_dict):
         answer_msg = context.bot.send_message(
