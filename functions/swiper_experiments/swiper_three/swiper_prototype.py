@@ -6,7 +6,7 @@ from telegram.ext import CommandHandler, DispatcherHandlerStop, Filters, Message
     CallbackQueryHandler
 
 from functions.common.constants import DataKey
-from functions.common.swiper_matcher import get_all_swiper_chat_ids
+from functions.common.swiper_matcher import get_all_swiper_chat_ids, find_match_for_swiper
 from functions.common.swiper_telegram import BaseSwiperConversation
 
 logger = logging.getLogger(__name__)
@@ -77,8 +77,10 @@ class SwiperPrototype(BaseSwiperConversation):
         )
 
     def share_semi_anonymously(self, update, context):
+        matched_swiper_chat_id = find_match_for_swiper(update.effective_chat.id)
+
         context.bot.send_message(
-            chat_id=SWIPER2_CHAT_ID,
+            chat_id=matched_swiper_chat_id,
             text='Вам кто-то написал. Этот кто-то не знает, что написал именно вам, а вы не знаете, кто этот кто-то. '
                  'Система в произвольном порядке выбрала, как получателя, именно вас.\n'
                  '\n'
