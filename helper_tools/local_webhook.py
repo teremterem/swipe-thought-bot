@@ -35,7 +35,7 @@ def set_local_webhook():
     url += WEBHOOK_PATH
     print(url)
 
-    webhook_set = swiper.bot.set_webhook(url)
+    webhook_set = swiper.dispatcher.bot.set_webhook(url)
     if webhook_set:
         return url
     return 'FAILED TO SET WEBHOOK'

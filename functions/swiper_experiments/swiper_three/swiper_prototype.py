@@ -1,5 +1,4 @@
 import logging
-import os
 import re
 
 from telegram import ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton, ParseMode
@@ -7,13 +6,10 @@ from telegram.ext import CommandHandler, DispatcherHandlerStop, Filters, Message
     CallbackQueryHandler
 
 from functions.common.constants import DataKey
+from functions.common.swiper_matcher import get_all_swiper_chat_ids
 from functions.common.swiper_telegram import BaseSwiperConversation
 
 logger = logging.getLogger(__name__)
-
-SWIPER1_CHAT_ID = os.environ['SWIPER1_CHAT_ID']
-SWIPER2_CHAT_ID = os.environ['SWIPER2_CHAT_ID']
-SWIPER3_CHAT_ID = os.environ['SWIPER3_CHAT_ID']
 
 
 class Story:
@@ -67,16 +63,17 @@ class SwiperPrototype(BaseSwiperConversation):
         swiper.swiper_data[ProtoKey.SWIPER3_INDEXED_MSG_ID] = indexed_msg.message_id
 
     def start(self, update, context):
-        self._seed_chat_history(context, SWIPER1_CHAT_ID)
-        self._seed_chat_history(context, SWIPER2_CHAT_ID)
-        self._seed_chat_history(context, SWIPER3_CHAT_ID)
+        for swiper_chat_id in get_all_swiper_chat_ids():
+            self._seed_chat_history(context, swiper_chat_id)
 
-        context.bot.send_message(
-            chat_id=SWIPER1_CHAT_ID,
+        update.effective_chat.send_message(
             text='Привет, мир!',
-            reply_markup=ReplyKeyboardMarkup([[
-                Story.SHARE_SEMI_ANONYMOUSLY,
-            ]], one_time_keyboard=True),
+            reply_markup=ReplyKeyboardMarkup(
+                [[
+                    Story.SHARE_SEMI_ANONYMOUSLY,
+                ]],
+                one_time_keyboard=True,
+            ),
         )
 
     def share_semi_anonymously(self, update, context):
@@ -111,7 +108,7 @@ class SwiperPrototype(BaseSwiperConversation):
             text='Вам пришел ответ. Правда, не от человека. Человек его когда-то написал, но не человек его вам сейчас '
                  'отправил.\n'
                  '\n'
-                 'Вам есть, что ответить, или подобранный ответ - глупый / не интересный?',
+                 'Вам есть, что ответить, или подобранный ответ не имеет в этом контексте никакого смысла?',
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                 [
                     InlineKeyboardButton('🖤', callback_data=Reaction.LIKE_BOT_THOUGHT),
