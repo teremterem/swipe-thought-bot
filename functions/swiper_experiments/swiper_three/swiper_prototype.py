@@ -19,7 +19,7 @@ class Story:
 
 class Reaction:
     LIKE_STRANGER_THOUGHT = 'like_stranger_thought'
-    REJECT_STRANGER_THOUGHT = 'reject_stranger_thought'
+    REJECT_STRANGER = 'reject_stranger'
     RESPOND_TO_STRANGER = 'respond_to_stranger'
 
     LIKE_BOT_THOUGHT = 'like_bot_thought'
@@ -44,8 +44,8 @@ class SwiperPrototype(BaseSwiperConversation):
 
         dispatcher.add_handler(CommandHandler('start', self.start))
         dispatcher.add_handler(RegexHandler(re.escape(Story.SHARE_SEMI_ANONYMOUSLY), self.share_semi_anonymously))
-        dispatcher.add_handler(CallbackQueryHandler(self.reject_stranger_thought,
-                                                    pattern=re.escape(Reaction.REJECT_STRANGER_THOUGHT)))
+        dispatcher.add_handler(CallbackQueryHandler(self.reject_stranger,
+                                                    pattern=rf"^{re.escape(Reaction.REJECT_STRANGER)}_(.+)$"))
         dispatcher.add_handler(CallbackQueryHandler(self.respond_to_bot,
                                                     pattern=re.escape(Reaction.RESPOND_TO_BOT)))
 
@@ -77,7 +77,8 @@ class SwiperPrototype(BaseSwiperConversation):
         )
 
     def share_semi_anonymously(self, update, context):
-        matched_swiper_chat_id = find_match_for_swiper(update.effective_chat.id)
+        sender_chat_id = update.effective_chat.id
+        matched_swiper_chat_id = find_match_for_swiper(sender_chat_id)
 
         context.bot.send_message(
             chat_id=matched_swiper_chat_id,
@@ -89,7 +90,7 @@ class SwiperPrototype(BaseSwiperConversation):
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                 [
                     InlineKeyboardButton('❤️', callback_data=Reaction.LIKE_STRANGER_THOUGHT),
-                    InlineKeyboardButton('❌', callback_data=Reaction.REJECT_STRANGER_THOUGHT),
+                    InlineKeyboardButton('❌', callback_data=f"{Reaction.REJECT_STRANGER}_{sender_chat_id}"),
                 ],
                 [
                     InlineKeyboardButton('У меня есть, что ответить…', callback_data=Reaction.RESPOND_TO_STRANGER),
@@ -97,16 +98,19 @@ class SwiperPrototype(BaseSwiperConversation):
             ]),
         )
 
-    def reject_stranger_thought(self, update, context):
+    def reject_stranger(self, update, context):
+        sender_chat_id = context.matches[0].group(1)
+
         update.effective_message.delete()
         update.callback_query.answer(text='❌ Отвергнуто💔')
-        context.bot.send_message(
-            chat_id=SWIPER2_CHAT_ID,
+        update.effective_chat.send_message(
             text='<i>Вы больше не получите сообщений от этого человека [как минимум, некоторое время]</i>',
             parse_mode=ParseMode.HTML,
         )
+        # TODO oleksandr: actually exclude this swiper in prototype ?
+
         context.bot.send_message(
-            chat_id=SWIPER1_CHAT_ID,
+            chat_id=sender_chat_id,
             text='Вам пришел ответ. Правда, не от человека. Человек его когда-то написал, но не человек его вам сейчас '
                  'отправил.\n'
                  '\n'
