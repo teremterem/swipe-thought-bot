@@ -10,7 +10,7 @@ from helper_tools.helper_utils import set_env_vars
 
 set_env_vars(project_dir='./', local_overlay=True)
 
-from functions.telegram_webhook import webhook, swiper
+from functions.telegram_webhook import webhook, swiper_conversation
 from functions.common import logging, LOG_LEVEL
 
 logging.basicConfig(level=LOG_LEVEL)
@@ -35,7 +35,7 @@ def set_local_webhook():
     url += WEBHOOK_PATH
     print(url)
 
-    webhook_set = swiper.dispatcher.bot.set_webhook(url)
+    webhook_set = swiper_conversation.dispatcher.bot.set_webhook(url)
     if webhook_set:
         return url
     return 'FAILED TO SET WEBHOOK'

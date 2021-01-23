@@ -2,17 +2,17 @@ import os
 
 from functions.common import logging  # force log config of functions/common/__init__.py
 from functions.common.utils import log_event_and_response
-from functions.swiper_experiments.swiper_three.swiper_prototype import SwiperPrototype
+from functions.swiper_experiments.swiper_four.swiper_transparency import SwiperTransparency
 
 logger = logging.getLogger()
 
-swiper = SwiperPrototype()  # TODO oleksandr: rename to something else (swiper_conversation ?)
+swiper_conversation = SwiperTransparency()
 
 
 @log_event_and_response
 def webhook(event, context):
     update_json = event['body']
-    swiper.process_update_json(update_json)
+    swiper_conversation.process_update_json(update_json)
 
 
 @log_event_and_response
@@ -23,7 +23,7 @@ def set_webhook(event, context):
     # # Uncomment the following line at your own risk... Better not to flash our secret url in logs, right?
     # logger.info('SETTING WEBHOOK IN TELEGRAM: %s', url)
 
-    webhook_set = swiper.bot.set_webhook(url)
+    webhook_set = swiper_conversation.dispatcher.bot.set_webhook(url)
 
     if webhook_set:
         return {
