@@ -1,5 +1,6 @@
 import logging
 import re
+from pprint import pformat
 
 from telegram import ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton, ParseMode
 from telegram.ext import CommandHandler, DispatcherHandlerStop, Filters, MessageHandler, RegexHandler, \
@@ -166,4 +167,10 @@ class SwiperPrototype(BaseSwiperConversation):
         )
 
     def todo(self, update, context):
-        update.effective_chat.send_message('TODO')
+        msg = update.effective_chat.send_message('TODO')
+        log_bot_msg(msg)
+
+
+def log_bot_msg(msg):
+    if logger.isEnabledFor(logging.INFO):
+        logger.info('MESSAGE FROM BOT:\n%s', pformat(msg.to_dict()))

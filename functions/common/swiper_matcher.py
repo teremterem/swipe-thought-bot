@@ -4,6 +4,7 @@ import random
 SWIPER1_CHAT_ID = os.environ['SWIPER1_CHAT_ID']
 SWIPER2_CHAT_ID = os.environ['SWIPER2_CHAT_ID']
 SWIPER3_CHAT_ID = os.environ['SWIPER3_CHAT_ID']
+SWIPER4_CHAT_ID = os.environ['SWIPER4_CHAT_ID']
 
 
 def get_all_swiper_chat_ids():
@@ -12,6 +13,7 @@ def get_all_swiper_chat_ids():
         SWIPER1_CHAT_ID,
         SWIPER2_CHAT_ID,
         SWIPER3_CHAT_ID,
+        SWIPER4_CHAT_ID,
     }
     return all_swiper_chat_ids
 
