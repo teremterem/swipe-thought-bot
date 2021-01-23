@@ -37,12 +37,14 @@ provider:
     THOUGHTS_ES_IDX: ${${self:custom.env_file}:THOUGHTS_ES_IDX}
 
     SWIPER_CHAT_DATA_DDB_TABLE_NAME: ${self:resources.Resources.swiperChatDataTable.Properties.TableName}
+    MESSAGE_TRANSMISSION_DDB_TABLE_NAME: ${self:resources.Resources.messageTransmissionTable.Properties.TableName}
 
     MAIN_S3_BUCKET_NAME: ${self:resources.Resources.mainBucket.Properties.BucketName}
 
     SWIPER1_CHAT_ID: ${${self:custom.env_file}:SWIPER1_CHAT_ID, ''}
     SWIPER2_CHAT_ID: ${${self:custom.env_file}:SWIPER2_CHAT_ID, ''}
     SWIPER3_CHAT_ID: ${${self:custom.env_file}:SWIPER3_CHAT_ID, ''}
+    SWIPER4_CHAT_ID: ${${self:custom.env_file}:SWIPER4_CHAT_ID, ''}
 
   iamRoleStatements:
     - Effect: "Allow"
