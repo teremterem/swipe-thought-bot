@@ -5,9 +5,16 @@ from functions.common import logging  # force log config of functions/common/__i
 logger = logging.getLogger(__name__)
 
 
-def transmit_message(sender_chat_id, sender_bot_id, receiver_chat_id, receiver_bot_id, text):
-    msg = context.bot.send_message(
-        chat_id=swiper_chat_id,
+def transmit_message(
+        sender_bot_id,
+        sender_chat_id,
+        sender_msg_id,
+        receiver_bot,
+        receiver_chat_id,
+        text,
+):
+    msg = receiver_bot.send_message(
+        chat_id=receiver_chat_id,
         text=text,
     )
     log_bot_msg(msg)

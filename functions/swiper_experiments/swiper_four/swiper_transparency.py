@@ -4,6 +4,7 @@ from functions.common import logging  # force log config of functions/common/__i
 from functions.common.constants import DataKey
 from functions.common.swiper_matcher import get_all_swiper_chat_ids
 from functions.common.swiper_telegram import BaseSwiperConversation
+from functions.swiper_experiments.swiper_four.message_transmitter import transmit_message
 
 logger = logging.getLogger(__name__)
 
@@ -28,12 +29,16 @@ class SwiperTransparency(BaseSwiperConversation):
         )
 
     def todo(self, update, context):
-        text = update.effective_message.text
+        msg = update.effective_message
+        text = msg.text
         if text:
             for swiper_chat_id in get_all_swiper_chat_ids():
                 if swiper_chat_id != str(update.effective_chat.id):
-                    msg = context.bot.send_message(
-                        chat_id=swiper_chat_id,
+                    transmit_message(
+                        sender_bot_id=context.bot.id,
+                        sender_chat_id=update.effective_chat.id,
+                        sender_msg_id=msg.message_id,
+                        receiver_bot=context.bot,
+                        receiver_chat_id=swiper_chat_id,
                         text=text,
                     )
-                    log_bot_msg(msg)
