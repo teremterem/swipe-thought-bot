@@ -29,12 +29,14 @@ class SwiperTransparency(BaseSwiperConversation):
         )
 
     def todo(self, update, context):
+        sender_update_s3_key = self.swiper_update.telegram_update_s3_key  # non-async single-threaded environment
         msg = update.effective_message
         text = msg.text
         if text:
             for swiper_chat_id in get_all_swiper_chat_ids():
                 if swiper_chat_id != str(update.effective_chat.id):
                     transmit_message(
+                        sender_update_s3_key=sender_update_s3_key,
                         sender_bot_id=context.bot.id,
                         sender_chat_id=update.effective_chat.id,
                         sender_msg_id=msg.message_id,

@@ -57,9 +57,10 @@ class SwiperUpdate:
 
         self.ptb_update = Update.de_json(update_json, self.swiper_conversation.dispatcher.bot)
         self.update_s3_filename_prefix = f"upd{self.ptb_update.update_id}_{uuid.uuid4()}"
+        self.telegram_update_s3_key = f"audit/{self.update_s3_filename_prefix}.update.json"
 
         main_bucket.put_object(
-            Key=f"audit/{self.update_s3_filename_prefix}.update.json",
+            Key=self.telegram_update_s3_key,
             Body=json.dumps(update_json).encode('utf8'),
         )
 

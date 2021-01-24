@@ -10,17 +10,23 @@ logger = logging.getLogger(__name__)
 MESSAGE_TRANSMISSION_DDB_TABLE_NAME = os.environ['MESSAGE_TRANSMISSION_DDB_TABLE_NAME']
 
 MSG_TRANS_ID_KEY = 'id'
+
 SENDER_MSG_ID_KEY = 'sender_msg_id'
 SENDER_CHAT_ID_KEY = 'sender_chat_id'
 SENDER_BOT_ID_KEY = 'sender_bot_id'
+
 RECEIVER_MSG_ID_KEY = 'receiver_msg_id'
 RECEIVER_CHAT_ID_KEY = 'receiver_chat_id'
 RECEIVER_BOT_ID_KEY = 'receiver_bot_id'
+
+SENDER_UPDATE_S3_KEY_KEY = 'sender_update_s3_key'
+RECEIVER_MSG_S3_KEY_KEY = 'receiver_msg_s3_key'  # TODO oleksandr
 
 message_transmission_table = dynamodb.Table(MESSAGE_TRANSMISSION_DDB_TABLE_NAME)
 
 
 def transmit_message(
+        sender_update_s3_key,
         sender_bot_id,
         sender_chat_id,
         sender_msg_id,
@@ -43,8 +49,10 @@ def transmit_message(
 
     receiver_msg_id = int(msg.message_id)
 
+    msg_transmission_id = str(uuid.uuid4())
     msg_transmission = {
-        MSG_TRANS_ID_KEY: str(uuid.uuid4()),
+        MSG_TRANS_ID_KEY: msg_transmission_id,
+        SENDER_UPDATE_S3_KEY_KEY: sender_update_s3_key,
         SENDER_MSG_ID_KEY: sender_msg_id,
         SENDER_CHAT_ID_KEY: sender_chat_id,
         SENDER_BOT_ID_KEY: sender_bot_id,
