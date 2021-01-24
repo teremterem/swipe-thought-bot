@@ -2,9 +2,9 @@ from telegram.ext import CommandHandler, DispatcherHandlerStop, Filters, Message
 
 from functions.common import logging  # force log config of functions/common/__init__.py
 from functions.common.constants import DataKey
+from functions.common.message_transmitter import transmit_message
 from functions.common.swiper_matcher import get_all_swiper_chat_ids
 from functions.common.swiper_telegram import BaseSwiperConversation
-from functions.swiper_experiments.swiper_four.message_transmitter import transmit_message
 
 logger = logging.getLogger(__name__)
 
