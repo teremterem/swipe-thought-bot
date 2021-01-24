@@ -1,6 +1,8 @@
 import os
 import uuid
 
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+
 from functions.common import logging  # force log config of functions/common/__init__.py
 from functions.common.dynamodb import dynamodb, put_ddb_item
 from functions.common.s3 import put_s3_object, main_bucket
@@ -42,6 +44,10 @@ def transmit_message(
     msg = receiver_bot.send_message(
         chat_id=receiver_chat_id,
         text=text,
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton('❤️', callback_data='like'),
+            InlineKeyboardButton('❌', callback_data='dislike'),
+        ]]),
     )
     receiver_msg_id = int(msg.message_id)
 

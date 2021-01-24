@@ -21,14 +21,14 @@ class SwiperTransparency(BaseSwiperConversation):
         # TODO oleksandr: guard CallbackQueryHandler as well ? any other types of handlers not covered ?
 
         dispatcher.add_handler(CommandHandler('start', self.start))
-        dispatcher.add_handler(MessageHandler(Filters.all, self.todo))
+        dispatcher.add_handler(MessageHandler(Filters.all, self.start_topic))
 
     def start(self, update, context):
         update.effective_chat.send_message(
             text='Привет, мир',
         )
 
-    def todo(self, update, context):
+    def start_topic(self, update, context):
         if update.effective_message.text:
             for swiper_chat_id in get_all_swiper_chat_ids():
                 if swiper_chat_id != str(update.effective_chat.id):
