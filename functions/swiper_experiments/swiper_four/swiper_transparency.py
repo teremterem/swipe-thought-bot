@@ -1,9 +1,8 @@
-import logging
-from pprint import pformat
-
 from telegram.ext import CommandHandler, DispatcherHandlerStop, Filters, MessageHandler
 
+from functions.common import logging  # force log config of functions/common/__init__.py
 from functions.common.constants import DataKey
+from functions.common.message_transmitter import transmit_message
 from functions.common.swiper_matcher import get_all_swiper_chat_ids
 from functions.common.swiper_telegram import BaseSwiperConversation
 
@@ -30,19 +29,12 @@ class SwiperTransparency(BaseSwiperConversation):
         )
 
     def todo(self, update, context):
-        text = update.effective_message.text
-        if text:
+        if update.effective_message.text:
             for swiper_chat_id in get_all_swiper_chat_ids():
                 if swiper_chat_id != str(update.effective_chat.id):
-                    msg = context.bot.send_message(
-                        chat_id=swiper_chat_id,
-                        text=text,
+                    transmit_message(
+                        swiper_update=self.swiper_update,  # non-async single-threaded environment
+                        sender_bot_id=context.bot.id,
+                        receiver_chat_id=swiper_chat_id,
+                        receiver_bot=context.bot,
                     )
-                    log_bot_msg(msg)
-
-
-def log_bot_msg(msg):
-    if logger.isEnabledFor(logging.INFO):
-        if msg:
-            msg = msg.to_dict()
-        logger.info('MESSAGE FROM BOT:\n%s', pformat(msg))

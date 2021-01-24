@@ -1,16 +1,16 @@
 import json
-import logging
 from pprint import pformat
 
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
 
+from functions.common import logging  # force log config of functions/common/__init__.py
 from functions.common.constants import ConvState, DataKey, EsKey, AnswererMode
 from functions.common.s3 import main_bucket
 from functions.common.swiper_telegram import BaseSwiperConversation, StateAwareHandlers, BaseSwiperPresentation
-from functions.swiper_experiments.swiper_one.thoughts import construct_thought_id, ThoughtContext
 from functions.common.utils import send_partitioned_text
 from functions.swiper_experiments.swiper_one.answerer import Answerer
+from functions.swiper_experiments.swiper_one.thoughts import construct_thought_id, ThoughtContext
 
 logger = logging.getLogger(__name__)
 
@@ -167,7 +167,7 @@ class SwiperPresentation(BaseSwiperPresentation):
         if logger.isEnabledFor(logging.INFO):
             logger.info('ANSWER FROM BOT:\n%s', pformat(answer_msg_dict))
         main_bucket.put_object(
-            Key=f"audit/{self.swiper_conversation.swiper_update.update_s3_filename_prefix}.bot-answer.json",
+            Key=f"{self.swiper_conversation.swiper_update.update_s3_key_prefix}.bot-answer.json",
             Body=json.dumps(answer_msg_dict).encode('utf8'),
         )
         return answer_msg

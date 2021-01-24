@@ -1,4 +1,3 @@
-import logging
 import re
 from pprint import pformat
 
@@ -6,6 +5,7 @@ from telegram import ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardBu
 from telegram.ext import CommandHandler, DispatcherHandlerStop, Filters, MessageHandler, RegexHandler, \
     CallbackQueryHandler
 
+from functions.common import logging  # force log config of functions/common/__init__.py
 from functions.common.constants import DataKey
 from functions.common.swiper_matcher import get_all_swiper_chat_ids, find_match_for_swiper
 from functions.common.swiper_telegram import BaseSwiperConversation

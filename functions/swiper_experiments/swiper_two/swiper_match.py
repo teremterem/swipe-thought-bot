@@ -1,6 +1,6 @@
-import logging
 from pprint import pformat
 
+from functions.common import logging  # force log config of functions/common/__init__.py
 from functions.common.constants import EsKey
 from functions.common.elasticsearch import create_es_client, THOUGHTS_ES_IDX, ES_NUM_OF_RESULTS, ES_EXPLAIN, \
     ES_SHOW_ANALYSIS

@@ -1,7 +1,7 @@
 import json
-import logging
 from pprint import pformat
 
+from functions.common import logging  # force log config of functions/common/__init__.py
 from functions.common.constants import EsKey, AnswererMode
 from functions.common.elasticsearch import create_es_client, THOUGHTS_ES_IDX, ES_NUM_OF_RESULTS, ES_EXPLAIN, \
     ES_SHOW_ANALYSIS
@@ -141,7 +141,8 @@ class Answerer:
         response = self.es.search(
             index=self.idx,
             body=es_query,
-            # request_timeout=15,  # or  # timeout=15,  # seconds
+            # request_timeout=15,  # seconds
+            # timeout=...,
         )
         if logger.isEnabledFor(logging.INFO):
             logger.info('ES SEARCH RESPONSE:\n%s', pformat(response, width=160))
