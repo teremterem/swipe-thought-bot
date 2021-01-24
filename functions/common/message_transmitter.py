@@ -47,7 +47,7 @@ def transmit_message(
 
     msg_transmission_id = str(uuid.uuid4())
 
-    receiver_msg_s3_key = f"{swiper_update.update_s3_key_prefix}.transmission{msg_transmission_id}.json"
+    receiver_msg_s3_key = f"{swiper_update.update_s3_key_prefix}.transmission.{msg_transmission_id}.json"
     put_s3_object(
         s3_bucket=main_bucket,
         key=receiver_msg_s3_key,
