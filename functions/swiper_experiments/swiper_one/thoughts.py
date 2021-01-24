@@ -1,5 +1,4 @@
-import logging
-
+from functions.common import logging  # force log config of functions/common/__init__.py
 from functions.common.constants import DataKey, ConvState
 from functions.common.utils import timestamp_now_ms, SwiperError
 

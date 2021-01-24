@@ -1,10 +1,10 @@
 import json
-import logging
 from pprint import pformat
 
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
 
+from functions.common import logging  # force log config of functions/common/__init__.py
 from functions.common.constants import ConvState, DataKey, EsKey
 from functions.common.s3 import main_bucket
 from functions.common.swiper_telegram import BaseSwiperConversation, StateAwareHandlers, BaseSwiperPresentation
