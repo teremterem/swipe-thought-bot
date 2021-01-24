@@ -56,8 +56,8 @@ class SwiperUpdate:
         self.swiper_conversation = swiper_conversation
 
         self.ptb_update = Update.de_json(update_json, self.swiper_conversation.dispatcher.bot)
-        self.update_s3_filename_prefix = f"upd{self.ptb_update.update_id}_{uuid.uuid4()}"
-        self.telegram_update_s3_key = f"audit/{self.update_s3_filename_prefix}.update.json"
+        self.update_s3_key_prefix = f"audit/upd{self.ptb_update.update_id}_{uuid.uuid4()}"
+        self.telegram_update_s3_key = f"{self.update_s3_key_prefix}.update.json"
 
         main_bucket.put_object(
             Key=self.telegram_update_s3_key,
@@ -163,7 +163,7 @@ class StateAwareHandlers:
         return self.swiper_conversation.swiper_presentation
 
 
-class BaseSwiperPresentation:  # TODO oleksandr: rename this class to SwiperConversationAware ?
+class BaseSwiperPresentation:  # TODO oleksandr: rename this class to SwiperConversationAware ? no, get rid of it
     def __init__(self, swiper_conversation=None):
         self.swiper_conversation = swiper_conversation
 

@@ -17,3 +17,4 @@ def put_ddb_item(ddb_table, item):
     response = ddb_table.put_item(Item=item)
     if logger.isEnabledFor(logging.INFO):
         logger.info('DDB PUT_ITEM RESPONSE:\n%s', pformat(response))
+    return response

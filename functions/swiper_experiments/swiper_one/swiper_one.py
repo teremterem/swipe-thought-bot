@@ -167,7 +167,7 @@ class SwiperPresentation(BaseSwiperPresentation):
         if logger.isEnabledFor(logging.INFO):
             logger.info('ANSWER FROM BOT:\n%s', pformat(answer_msg_dict))
         main_bucket.put_object(
-            Key=f"audit/{self.swiper_conversation.swiper_update.update_s3_filename_prefix}.bot-answer.json",
+            Key=f"{self.swiper_conversation.swiper_update.update_s3_key_prefix}.bot-answer.json",
             Body=json.dumps(answer_msg_dict).encode('utf8'),
         )
         return answer_msg
