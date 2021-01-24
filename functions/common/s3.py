@@ -16,7 +16,7 @@ main_bucket = s3.Bucket(name=MAIN_S3_BUCKET_NAME)
 
 def put_s3_object(s3_bucket, key, obj_dict):
     if logger.isEnabledFor(logging.INFO):
-        logger.info('S3 PUT_OBJECT ( bucket: %s ; key: %s ):\n%s', s3_bucket.name, key, pformat(obj_dict))
+        logger.info('S3 PUT_OBJECT ( BUCKET: %s | KEY: %s ):\n%s', s3_bucket.name, key, pformat(obj_dict))
     response = s3_bucket.put_object(
         Key=key,
         Body=simplejson.dumps(obj_dict).encode('utf8'),

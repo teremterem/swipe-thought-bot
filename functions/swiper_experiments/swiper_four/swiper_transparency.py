@@ -2,7 +2,8 @@ from telegram.ext import CommandHandler, DispatcherHandlerStop, Filters, Message
 
 from functions.common import logging  # force log config of functions/common/__init__.py
 from functions.common.constants import DataKey
-from functions.common.message_transmitter import transmit_message
+from functions.common.message_transmitter import transmit_message, find_original_transmission, SENDER_CHAT_ID_KEY, \
+    SENDER_MSG_ID_KEY
 from functions.common.swiper_matcher import get_all_swiper_chat_ids
 from functions.common.swiper_telegram import BaseSwiperConversation
 
@@ -21,14 +22,15 @@ class SwiperTransparency(BaseSwiperConversation):
         # TODO oleksandr: guard CallbackQueryHandler as well ? any other types of handlers not covered ?
 
         dispatcher.add_handler(CommandHandler('start', self.start))
-        dispatcher.add_handler(MessageHandler(Filters.all, self.todo))
+        dispatcher.add_handler(MessageHandler(Filters.reply, self.transmit_reply))
+        dispatcher.add_handler(MessageHandler(Filters.all, self.start_topic))
 
     def start(self, update, context):
         update.effective_chat.send_message(
             text='Привет, мир',
         )
 
-    def todo(self, update, context):
+    def start_topic(self, update, context):
         if update.effective_message.text:
             for swiper_chat_id in get_all_swiper_chat_ids():
                 if swiper_chat_id != str(update.effective_chat.id):
@@ -38,3 +40,18 @@ class SwiperTransparency(BaseSwiperConversation):
                         receiver_chat_id=swiper_chat_id,
                         receiver_bot=context.bot,
                     )
+
+    def transmit_reply(self, update, context):
+        msg_transmission = find_original_transmission(
+            receiver_msg_id=update.effective_message.reply_to_message.message_id,
+            receiver_chat_id=update.effective_chat.id,
+            receiver_bot_id=context.bot.id,
+        )
+        if msg_transmission:
+            transmit_message(
+                swiper_update=self.swiper_update,  # non-async single-threaded environment
+                sender_bot_id=context.bot.id,
+                receiver_chat_id=msg_transmission[SENDER_CHAT_ID_KEY],
+                receiver_bot=context.bot,  # msg_transmission[SENDER_BOT_ID_KEY] is of no use here
+                reply_to_msg_id=msg_transmission[SENDER_MSG_ID_KEY],
+            )
