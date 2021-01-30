@@ -67,7 +67,7 @@ class SwiperTransparency(BaseSwiperConversation):
             update.effective_chat.send_message(
                 text=f"<i>{TRANSMISSION_NOT_FOUND_TEXT}</i>",
                 parse_mode=ParseMode.HTML,
-                reply_to_message_id=update.effective_message.message_id,
+                reply_to_message_id=update.effective_message.reply_to_message.message_id,
             )
             return
 
