@@ -103,7 +103,7 @@ def transmit_message(
         text=text,
         reply_to_message_id=reply_to_msg_id,
         reply_markup=reply_reject_kbd_markup(
-            black_heart=reply_to_msg_id is not None,  # TODO oleksandr: are you sure about this criterion ?
+            black_heart=reply_to_msg_id is None,  # TODO oleksandr: are you sure about this criterion ?
         ),
     )
     receiver_msg_id = int(msg.message_id)

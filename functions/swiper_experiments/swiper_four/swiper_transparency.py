@@ -10,7 +10,9 @@ from functions.common.swiper_telegram import BaseSwiperConversation
 
 logger = logging.getLogger(__name__)
 
-TRANSMISSION_NOT_FOUND_HTML = '<i>💔 Беседа не найдена</i>'
+TRANSMISSION_NOT_FOUND_TEXT = '💔 Беседа не найдена'
+TRANSMISSION_REJECTED_TEXT = '❌ Беседа отвергнута💔'
+NEW_TRANSMISSION_STARTED_TEXT = 'Вы начали новую беседу - ждите ответа ⏳'
 
 
 class SwiperTransparency(BaseSwiperConversation):
@@ -47,15 +49,22 @@ class SwiperTransparency(BaseSwiperConversation):
                 receiver_chat_id=matched_swiper_chat_id,
                 receiver_bot=context.bot,
             )
+            update.effective_chat.send_message(
+                text=f"<i>{NEW_TRANSMISSION_STARTED_TEXT}</i>",
+                parse_mode=ParseMode.HTML,
+                # reply_to_message_id=update.effective_message.message_id,
+            )
 
     def force_reply(self, update, context):
         msg_transmission = find_original_transmission_by_msg(update.effective_message)
         if not msg_transmission:
-            update.effective_chat.send_message(
-                text=TRANSMISSION_NOT_FOUND_HTML,
-                parse_mode=ParseMode.HTML,
-                reply_to_message_id=update.effective_message.message_id,
-            )
+            # update.callback_query.answer()  # TODO oleksandr: make it failsafe
+            # update.effective_chat.send_message(
+            #     text=f"<i>{TRANSMISSION_NOT_FOUND_TEXT}</i>",
+            #     parse_mode=ParseMode.HTML,
+            #     reply_to_message_id=update.effective_message.message_id,
+            # )
+            update.callback_query.answer(text=TRANSMISSION_NOT_FOUND_TEXT)
             update.effective_message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=[]))
             return
 
@@ -67,21 +76,25 @@ class SwiperTransparency(BaseSwiperConversation):
         update.effective_message.delete()
 
     def reject(self, update, context):
-        update.callback_query.answer()  # TODO oleksandr: make it failsafe
-
         # TODO oleksandr: what does rejection actually imply ?
-        update.effective_chat.send_message(
-            text=f"<i>❌ Беседа отвергнута💔</i>",
-            parse_mode=ParseMode.HTML,
-            reply_to_message_id=update.effective_message.message_id,
-        )
-        update.effective_message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=[]))
+
+        update.effective_message.delete()
+        update.callback_query.answer(text=TRANSMISSION_REJECTED_TEXT)
+
+        # update.callback_query.answer()  # TODO oleksandr: make it failsafe
+        #
+        # update.effective_chat.send_message(
+        #     text=f"<i></i>",
+        #     parse_mode=ParseMode.HTML,
+        #     reply_to_message_id=update.effective_message.message_id,
+        # )
+        # update.effective_message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=[]))
 
     def transmit_reply(self, update, context):
         msg_transmission = find_original_transmission_by_msg(update.effective_message.reply_to_message)
         if not msg_transmission:
             update.effective_chat.send_message(
-                text=TRANSMISSION_NOT_FOUND_HTML,
+                text=f"<i>{TRANSMISSION_NOT_FOUND_TEXT}</i>",
                 parse_mode=ParseMode.HTML,
                 reply_to_message_id=update.effective_message.reply_to_message.message_id,
             )
