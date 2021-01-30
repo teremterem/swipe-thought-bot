@@ -1,5 +1,6 @@
 class CallbackData:
-    LIKE = 'like'
+    REPLY = 'reply'
+    REJECT = 'reject'
 
 
 class ConvState:
