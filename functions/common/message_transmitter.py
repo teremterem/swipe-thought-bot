@@ -5,6 +5,7 @@ from boto3.dynamodb.conditions import Key, Attr
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
 from functions.common import logging  # force log config of functions/common/__init__.py
+from functions.common.constants import CallbackData
 from functions.common.dynamodb import dynamodb, put_ddb_item
 from functions.common.s3 import put_s3_object, main_bucket
 
@@ -88,7 +89,7 @@ def transmit_message(
         text=text,
         reply_to_message_id=reply_to_msg_id,
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton('❤️', callback_data='like'),
+            InlineKeyboardButton('❤️', callback_data=CallbackData.LIKE),
             InlineKeyboardButton('❌', callback_data='dislike'),
         ]]),
     )

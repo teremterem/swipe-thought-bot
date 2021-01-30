@@ -1,3 +1,7 @@
+class CallbackData:
+    LIKE = 'like'
+
+
 class ConvState:
     # using plain str constants because json lib doesn't serialize Enum
     ENTRY_STATE = 'ENTRY_STATE'
