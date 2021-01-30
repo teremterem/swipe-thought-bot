@@ -2,9 +2,10 @@ import os
 import uuid
 
 from boto3.dynamodb.conditions import Key, Attr
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ForceReply
 
 from functions.common import logging  # force log config of functions/common/__init__.py
+from functions.common.constants import CallbackData
 from functions.common.dynamodb import dynamodb, put_ddb_item
 from functions.common.s3 import put_s3_object, main_bucket
 
@@ -13,6 +14,7 @@ logger = logging.getLogger(__name__)
 MESSAGE_TRANSMISSION_DDB_TABLE_NAME = os.environ['MESSAGE_TRANSMISSION_DDB_TABLE_NAME']
 
 MSG_TRANS_ID_KEY = 'id'
+ORIGINAL_MSG_TRANS_ID_KEY = 'original_msg_trans_id'
 
 SENDER_MSG_ID_KEY = 'sender_msg_id'
 SENDER_CHAT_ID_KEY = 'sender_chat_id'
@@ -26,6 +28,19 @@ SENDER_UPDATE_S3_KEY_KEY = 'sender_update_s3_key'
 RECEIVER_MSG_S3_KEY_KEY = 'receiver_msg_s3_key'
 
 msg_transmission_table = dynamodb.Table(MESSAGE_TRANSMISSION_DDB_TABLE_NAME)
+
+
+def reply_reject_kbd_markup(reject_only=False, black_heart=True):
+    kbd_row = [InlineKeyboardButton('❌Отвергнуть', callback_data=CallbackData.REJECT)]
+    if not reject_only:
+        if black_heart:
+            heart = '🖤'
+        else:
+            heart = '❤️'
+        kbd_row.insert(0, InlineKeyboardButton(f"{heart}Ответить", callback_data=CallbackData.REPLY))
+
+    kbd_markup = InlineKeyboardMarkup(inline_keyboard=[kbd_row])
+    return kbd_markup
 
 
 def find_original_transmission(
@@ -87,14 +102,13 @@ def transmit_message(
         chat_id=receiver_chat_id,
         text=text,
         reply_to_message_id=reply_to_msg_id,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton('❤️', callback_data='like'),
-            InlineKeyboardButton('❌', callback_data='dislike'),
-        ]]),
+        reply_markup=reply_reject_kbd_markup(
+            black_heart=reply_to_msg_id is None,  # TODO oleksandr: are you sure about this criterion ?
+        ),
     )
     receiver_msg_id = int(msg.message_id)
 
-    msg_transmission_id = str(uuid.uuid4())
+    msg_transmission_id = generate_msg_transmission_id()
 
     receiver_msg_s3_key = f"{swiper_update.update_s3_key_prefix}.transmission.{msg_transmission_id}.json"
     put_s3_object(
@@ -121,3 +135,31 @@ def transmit_message(
         ddb_table=msg_transmission_table,
         item=msg_transmission,
     )
+
+
+def force_reply(original_msg, original_msg_transmission):
+    kwargs = {
+        'text': original_msg.text,
+        'reply_markup': ForceReply(),
+    }
+    if original_msg.reply_to_message:
+        kwargs['reply_to_message_id'] = original_msg.reply_to_message.message_id
+    force_reply_msg = original_msg.chat.send_message(**kwargs)
+
+    msg_trans_copy = original_msg_transmission.copy()
+    msg_trans_copy[ORIGINAL_MSG_TRANS_ID_KEY] = msg_trans_copy[MSG_TRANS_ID_KEY]
+    msg_trans_copy[MSG_TRANS_ID_KEY] = generate_msg_transmission_id()
+
+    msg_trans_copy[RECEIVER_MSG_ID_KEY] = int(force_reply_msg.message_id)
+    msg_trans_copy[RECEIVER_CHAT_ID_KEY] = int(force_reply_msg.chat.id)
+    msg_trans_copy[RECEIVER_BOT_ID_KEY] = int(force_reply_msg.bot.id)
+
+    put_ddb_item(
+        ddb_table=msg_transmission_table,
+        item=msg_trans_copy,
+    )
+
+
+def generate_msg_transmission_id():
+    msg_transmission_id = str(uuid.uuid4())
+    return msg_transmission_id
