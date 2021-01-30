@@ -30,10 +30,14 @@ RECEIVER_MSG_S3_KEY_KEY = 'receiver_msg_s3_key'
 msg_transmission_table = dynamodb.Table(MESSAGE_TRANSMISSION_DDB_TABLE_NAME)
 
 
-def reply_reject_kbd_markup(reject_only=False):
+def reply_reject_kbd_markup(reject_only=False, black_heart=True):
     kbd_row = [InlineKeyboardButton('❌Отвергнуть', callback_data=CallbackData.REJECT)]
     if not reject_only:
-        kbd_row.insert(0, InlineKeyboardButton('❤️Ответить', callback_data=CallbackData.REPLY))
+        if black_heart:
+            heart = '🖤'
+        else:
+            heart = '❤️'
+        kbd_row.insert(0, InlineKeyboardButton(f"{heart}Ответить", callback_data=CallbackData.REPLY))
 
     kbd_markup = InlineKeyboardMarkup(inline_keyboard=[kbd_row])
     return kbd_markup
@@ -98,7 +102,9 @@ def transmit_message(
         chat_id=receiver_chat_id,
         text=text,
         reply_to_message_id=reply_to_msg_id,
-        reply_markup=reply_reject_kbd_markup(),
+        reply_markup=reply_reject_kbd_markup(
+            black_heart=reply_to_msg_id is not None,  # TODO oleksandr: are you sure about this criterion ?
+        ),
     )
     receiver_msg_id = int(msg.message_id)
 
