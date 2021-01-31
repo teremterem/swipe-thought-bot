@@ -1,4 +1,7 @@
+from traceback import format_exception
+
 from telegram import InlineKeyboardMarkup, ParseMode
+from telegram.error import BadRequest
 from telegram.ext import CommandHandler, DispatcherHandlerStop, Filters, MessageHandler, CallbackQueryHandler
 
 from functions.common import logging  # force log config of functions/common/__init__.py
@@ -8,6 +11,7 @@ from functions.common.message_transmitter import transmit_message, find_original
     RECEIVER_MSG_ID_KEY
 from functions.common.swiper_chat_data import IS_SWIPER_AUTHORIZED_KEY, find_all_active_swiper_chat_ids
 from functions.common.swiper_telegram import BaseSwiperConversation
+from functions.common.utils import send_partitioned_text
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +36,8 @@ class SwiperTransparency(BaseSwiperConversation):
         dispatcher.add_handler(MessageHandler(Filters.all, self.start_topic))
         dispatcher.add_handler(CallbackQueryHandler(self.force_reply, pattern=CallbackData.REPLY))
         dispatcher.add_handler(CallbackQueryHandler(self.reject, pattern=CallbackData.REJECT))
+
+        dispatcher.add_error_handler(self.handle_error)
 
     def start(self, update, context):
         update.effective_chat.send_message(
@@ -99,6 +105,11 @@ class SwiperTransparency(BaseSwiperConversation):
 
     def transmit_reply(self, update, context):
         reply_to_msg = update.effective_message.reply_to_message
+        try:
+            reply_to_msg.edit_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=[]))
+        except BadRequest:
+            logger.warning('Failed to hide inline keyboard', exc_info=True)
+
         msg_transmission = find_original_transmission_by_msg(reply_to_msg)
         if msg_transmission:
             transmit_message(
@@ -142,6 +153,12 @@ class SwiperTransparency(BaseSwiperConversation):
                 #  send red heart if swipers are already engaged in "back and forth"
                 red_heart=False,
             )
+
+    def handle_error(self, update, context):
+        logger.error('ERROR IN A PTB HANDLER', exc_info=context.error)
+
+        error_str = ''.join(format_exception(type(context.error), context.error, context.error.__traceback__))
+        send_partitioned_text(update.effective_chat, error_str)
 
 
 def find_original_transmission_by_msg(msg):
