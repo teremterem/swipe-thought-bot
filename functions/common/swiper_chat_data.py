@@ -54,9 +54,9 @@ def write_swiper_chat_data(swiper_chat_data):
 def find_all_active_swiper_chat_ids(bot_id):
     bot_id = int(bot_id)
 
-    # TODo oleksandr: do we need to paginate over the result ?
+    # TODo oleksandr: do we need to paginate over the results ?
     scan_result = swiper_chat_data_table.scan(
-        # TODO oleksandr: do we need to create correspondent global secondary index ?
+        # TODO oleksandr: do we need to create a correspondent global secondary index ?
         FilterExpression=Attr(BOT_ID_KEY).eq(bot_id) & Attr(IS_SWIPER_AUTHORIZED_KEY).eq(True),
         ProjectionExpression=CHAT_ID_KEY,
     )
