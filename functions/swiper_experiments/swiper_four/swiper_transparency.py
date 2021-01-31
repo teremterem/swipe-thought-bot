@@ -155,7 +155,7 @@ class SwiperTransparency(BaseSwiperConversation):
             )
 
     def handle_error(self, update, context):
-        logger.error('PTB ERROR HANDLER', exc_info=context.error)
+        logger.error('ERROR IN A PTB HANDLER', exc_info=context.error)
 
         error_str = ''.join(format_exception(type(context.error), context.error, context.error.__traceback__))
         send_partitioned_text(update.effective_chat, error_str)
