@@ -50,7 +50,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
     def start_topic(self, update, context):
         if not update.effective_message.text:
-            report_msg_not_transmitted(update.effective_chat, update.effective_message)
+            report_msg_not_transmitted(update.effective_chat, update.effective_message.message_id)
             return
 
         # matched_swiper_chat_id = find_match_for_swiper(update.effective_chat.id)
@@ -94,7 +94,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
     def reject(self, update, context):
         # TODO oleksandr: what does rejection actually imply ?
-        # TODO oleksandr: delete correspondent transission(s) as well
+        # TODO oleksandr: delete correspondent transmission(s) as well
 
         update.effective_message.delete()
         update.callback_query.answer(text=TRANSMISSION_REJECTED_TEXT)
@@ -116,7 +116,7 @@ class SwiperTransparency(BaseSwiperConversation):
             logger.warning('Failed to hide inline keyboard', exc_info=True)
 
         if not update.effective_message.text:
-            report_msg_not_transmitted(update.effective_chat, update.effective_message)
+            report_msg_not_transmitted(update.effective_chat, update.effective_message.message_id)
             return
 
         msg_transmission = find_original_transmission_by_msg(reply_to_msg)
