@@ -139,7 +139,7 @@ class SwiperTransparency(BaseSwiperConversation):
                 reply_to_msg_id=msg_transmission[RECEIVER_MSG_ID_KEY],
 
                 # TODO oleksandr: are you sure this is "sophisticated" enough ?
-                #  although, what the hell am I talking about? :\
+                #  send red heart if swipers are already engaged in "back and forth"
                 red_heart=False,
             )
 
