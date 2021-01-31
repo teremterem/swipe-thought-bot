@@ -114,19 +114,24 @@ def find_transmissions_by_sender_msg(
     return items
 
 
-def _ptb_transmit(update, receiver_chat_id, receiver_bot, red_heart, reply_to_msg_id):
-    if not update.effective_message.text:
-        return None
+def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
+    transmitted_msg = None
 
-    msg = receiver_bot.send_message(
-        chat_id=receiver_chat_id,
-        text=update.effective_message.text,
-        reply_to_message_id=reply_to_msg_id,
-        reply_markup=reply_reject_kbd_markup(
-            red_heart=red_heart,
-        ),
-    )
-    return msg
+    if msg.sticker:
+        transmitted_msg = receiver_bot.send_sticker(
+            chat_id=receiver_chat_id,
+            sticker=msg.sticker,
+            **kwargs,
+        )
+
+    elif msg.text:
+        transmitted_msg = receiver_bot.send_message(
+            chat_id=receiver_chat_id,
+            text=msg.text,
+            **kwargs,
+        )
+
+    return transmitted_msg
 
 
 def transmit_message(
@@ -147,11 +152,14 @@ def transmit_message(
         reply_to_msg_id = int(reply_to_msg_id)
 
     transmitted_msg = _ptb_transmit(
-        update=swiper_update.ptb_update,
+        msg=swiper_update.ptb_update.effective_message,
         receiver_chat_id=receiver_chat_id,
         receiver_bot=receiver_bot,
-        red_heart=red_heart,
-        reply_to_msg_id=reply_to_msg_id,
+
+        reply_to_message_id=reply_to_msg_id,
+        reply_markup=reply_reject_kbd_markup(
+            red_heart=red_heart,
+        ),
     )
     if not transmitted_msg:
         # message was not transmitted
@@ -190,13 +198,19 @@ def transmit_message(
 
 
 def force_reply(original_msg, original_msg_transmission):
-    kwargs = {
-        'text': original_msg.text,
-        'reply_markup': ForceReply(),
-    }
     if original_msg.reply_to_message:
-        kwargs['reply_to_message_id'] = original_msg.reply_to_message.message_id
-    force_reply_msg = original_msg.chat.send_message(**kwargs)
+        reply_to_msg_id = original_msg.reply_to_message.message_id
+    else:
+        reply_to_msg_id = None
+
+    force_reply_msg = _ptb_transmit(
+        msg=original_msg,
+        receiver_chat_id=original_msg.chat.id,
+        receiver_bot=original_msg.bot,
+
+        reply_to_message_id=reply_to_msg_id,
+        reply_markup=ForceReply(),
+    )
 
     msg_trans_copy = original_msg_transmission.copy()
     msg_trans_copy[ORIGINAL_MSG_TRANS_ID_KEY] = msg_trans_copy[MSG_TRANS_ID_KEY]
