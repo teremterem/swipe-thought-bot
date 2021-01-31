@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 TRANSMISSION_NOT_FOUND_TEXT = '💔 Беседа не найдена'
 TRANSMISSION_REJECTED_TEXT = '❌ Беседа отвергнута💔'
 NEW_TRANSMISSION_STARTED_TEXT = 'Вы начали новую беседу - ждите ответов ⏳'
-MESSAGE_NOT_TRANSMITTED_TEXT = 'Сообщение не отправлено😞'
+MESSAGE_NOT_TRANSMITTED_TEXT = 'Сообщение не отправлено 😞'
 
 
 class SwiperTransparency(BaseSwiperConversation):
