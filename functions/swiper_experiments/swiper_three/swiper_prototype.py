@@ -6,7 +6,7 @@ from telegram.ext import CommandHandler, DispatcherHandlerStop, Filters, Message
     CallbackQueryHandler
 
 from functions.common import logging  # force log config of functions/common/__init__.py
-from functions.common.constants import DataKey
+from functions.common.swiper_chat_data import IS_SWIPER_AUTHORIZED_KEY
 from functions.common.swiper_matcher import get_all_swiper_chat_ids, find_match_for_swiper
 from functions.common.swiper_telegram import BaseSwiperConversation
 
@@ -35,7 +35,7 @@ class ProtoKey:
 class SwiperPrototype(BaseSwiperConversation):
     def assert_swiper_authorized(self, update, context):
         # single-threaded environment with non-async update processing
-        if not self.swiper_update.current_swiper.swiper_data.get(DataKey.IS_SWIPER_AUTHORIZED):
+        if not self.swiper_update.current_swiper.swiper_data.get(IS_SWIPER_AUTHORIZED_KEY):
             # https://github.com/python-telegram-bot/python-telegram-bot/issues/849#issuecomment-332682845
             raise DispatcherHandlerStop()
 

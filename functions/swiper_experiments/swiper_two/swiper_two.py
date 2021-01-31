@@ -7,6 +7,7 @@ from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Fi
 from functions.common import logging  # force log config of functions/common/__init__.py
 from functions.common.constants import ConvState, DataKey, EsKey
 from functions.common.s3 import main_bucket
+from functions.common.swiper_chat_data import IS_SWIPER_AUTHORIZED_KEY
 from functions.common.swiper_telegram import BaseSwiperConversation, StateAwareHandlers, BaseSwiperPresentation
 from functions.common.utils import send_partitioned_text
 from functions.swiper_experiments.swiper_one.thoughts import construct_thought_id, construct_swiper_id
@@ -41,7 +42,7 @@ class SwiperTwo(BaseSwiperConversation):
 
     def is_swiper_authorized(self):
         # single-threaded environment with non-async update processing
-        return bool(self.swiper_update.current_swiper.swiper_data.get(DataKey.IS_SWIPER_AUTHORIZED))
+        return bool(self.swiper_update.current_swiper.swiper_data.get(IS_SWIPER_AUTHORIZED_KEY))
 
     def get_swiper_match(self):
         # single-threaded environment with non-async update processing
