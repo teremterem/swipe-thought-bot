@@ -30,13 +30,13 @@ RECEIVER_MSG_S3_KEY_KEY = 'receiver_msg_s3_key'
 msg_transmission_table = dynamodb.Table(MESSAGE_TRANSMISSION_DDB_TABLE_NAME)
 
 
-def reply_reject_kbd_markup(reject_only=False, black_heart=True):
+def reply_reject_kbd_markup(red_heart, reject_only=False):
     kbd_row = [InlineKeyboardButton('❌Отвергнуть', callback_data=CallbackData.REJECT)]
     if not reject_only:
-        if black_heart:
-            heart = '🖤'
-        else:
+        if red_heart:
             heart = '❤️'
+        else:
+            heart = '🖤'
         kbd_row.insert(0, InlineKeyboardButton(f"{heart}Ответить", callback_data=CallbackData.REPLY))
 
     kbd_markup = InlineKeyboardMarkup(inline_keyboard=[kbd_row])
@@ -52,6 +52,7 @@ def find_original_transmission(
     receiver_chat_id = int(receiver_chat_id)
     receiver_bot_id = int(receiver_bot_id)
 
+    # TODO oleksandr: paginate ?
     scan_result = msg_transmission_table.query(
         IndexName='byReceiverMsgId',
         KeyConditionExpression=
@@ -81,11 +82,42 @@ def find_original_transmission(
     return scan_result['Items'][0]
 
 
+def find_transmissions_by_sender_msg(
+        sender_msg_id,
+        sender_chat_id,
+        sender_bot_id,
+):
+    sender_msg_id = int(sender_msg_id)
+    sender_chat_id = int(sender_chat_id)
+    sender_bot_id = int(sender_bot_id)
+
+    scan_result = msg_transmission_table.query(
+        IndexName='bySenderMsgId',
+        KeyConditionExpression=
+        Key(SENDER_MSG_ID_KEY).eq(sender_msg_id) & Key(SENDER_CHAT_ID_KEY).eq(sender_chat_id),
+        FilterExpression=Attr(SENDER_BOT_ID_KEY).eq(sender_bot_id),
+    )
+    if logger.isEnabledFor(logging.INFO):
+        logger.info('FIND TRANSMISSION (DDB QUERY RESPONSE):\n%s', scan_result)
+
+    items = scan_result['Items']
+    if not items:
+        logger.info(
+            'FIND TRANSMISSIONS BY SENDER MSG: no DDB results were found for '
+            'sender_msg_id=%s ; sender_chat_id=%s ; sender_bot_id=%s',
+            sender_msg_id,
+            sender_chat_id,
+            sender_bot_id,
+        )
+    return items
+
+
 def transmit_message(
         swiper_update,
         sender_bot_id,
         receiver_chat_id,
         receiver_bot,
+        red_heart,
         reply_to_msg_id=None,
 ):
     sender_msg_id = int(swiper_update.ptb_update.effective_message.message_id)
@@ -103,7 +135,7 @@ def transmit_message(
         text=text,
         reply_to_message_id=reply_to_msg_id,
         reply_markup=reply_reject_kbd_markup(
-            black_heart=reply_to_msg_id is None,  # TODO oleksandr: are you sure about this criterion ?
+            red_heart=red_heart,
         ),
     )
     receiver_msg_id = int(msg.message_id)
