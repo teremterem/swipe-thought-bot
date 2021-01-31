@@ -55,8 +55,9 @@ def find_original_transmission(
     # TODO oleksandr: paginate ?
     scan_result = msg_transmission_table.query(
         IndexName='byReceiverMsgId',
-        KeyConditionExpression=
-        Key(RECEIVER_MSG_ID_KEY).eq(receiver_msg_id) & Key(RECEIVER_CHAT_ID_KEY).eq(receiver_chat_id),
+        KeyConditionExpression=(
+                Key(RECEIVER_MSG_ID_KEY).eq(receiver_msg_id) & Key(RECEIVER_CHAT_ID_KEY).eq(receiver_chat_id)
+        ),
         FilterExpression=Attr(RECEIVER_BOT_ID_KEY).eq(receiver_bot_id),
     )
     if logger.isEnabledFor(logging.INFO):
@@ -93,8 +94,9 @@ def find_transmissions_by_sender_msg(
 
     scan_result = msg_transmission_table.query(
         IndexName='bySenderMsgId',
-        KeyConditionExpression=
-        Key(SENDER_MSG_ID_KEY).eq(sender_msg_id) & Key(SENDER_CHAT_ID_KEY).eq(sender_chat_id),
+        KeyConditionExpression=(
+                Key(SENDER_MSG_ID_KEY).eq(sender_msg_id) & Key(SENDER_CHAT_ID_KEY).eq(sender_chat_id)
+        ),
         FilterExpression=Attr(SENDER_BOT_ID_KEY).eq(sender_bot_id),
     )
     if logger.isEnabledFor(logging.INFO):
@@ -110,6 +112,26 @@ def find_transmissions_by_sender_msg(
             sender_bot_id,
         )
     return items
+
+
+def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
+    transmitted_msg = None
+
+    if msg.sticker:
+        transmitted_msg = receiver_bot.send_sticker(
+            chat_id=receiver_chat_id,
+            sticker=msg.sticker,
+            **kwargs,
+        )
+
+    elif msg.text:
+        transmitted_msg = receiver_bot.send_message(
+            chat_id=receiver_chat_id,
+            text=msg.text,
+            **kwargs,
+        )
+
+    return transmitted_msg
 
 
 def transmit_message(
@@ -129,16 +151,21 @@ def transmit_message(
     if reply_to_msg_id is not None:
         reply_to_msg_id = int(reply_to_msg_id)
 
-    text = swiper_update.ptb_update.effective_message.text
-    msg = receiver_bot.send_message(
-        chat_id=receiver_chat_id,
-        text=text,
+    transmitted_msg = _ptb_transmit(
+        msg=swiper_update.ptb_update.effective_message,
+        receiver_chat_id=receiver_chat_id,
+        receiver_bot=receiver_bot,
+
         reply_to_message_id=reply_to_msg_id,
         reply_markup=reply_reject_kbd_markup(
             red_heart=red_heart,
         ),
     )
-    receiver_msg_id = int(msg.message_id)
+    if not transmitted_msg:
+        # message was not transmitted
+        return False
+
+    receiver_msg_id = int(transmitted_msg.message_id)
 
     msg_transmission_id = generate_msg_transmission_id()
 
@@ -146,7 +173,7 @@ def transmit_message(
     put_s3_object(
         s3_bucket=main_bucket,
         key=receiver_msg_s3_key,
-        obj_dict=msg.to_dict(),
+        obj_dict=transmitted_msg.to_dict(),
     )
 
     msg_transmission = {
@@ -167,16 +194,23 @@ def transmit_message(
         ddb_table=msg_transmission_table,
         item=msg_transmission,
     )
+    return True
 
 
 def force_reply(original_msg, original_msg_transmission):
-    kwargs = {
-        'text': original_msg.text,
-        'reply_markup': ForceReply(),
-    }
     if original_msg.reply_to_message:
-        kwargs['reply_to_message_id'] = original_msg.reply_to_message.message_id
-    force_reply_msg = original_msg.chat.send_message(**kwargs)
+        reply_to_msg_id = original_msg.reply_to_message.message_id
+    else:
+        reply_to_msg_id = None
+
+    force_reply_msg = _ptb_transmit(
+        msg=original_msg,
+        receiver_chat_id=original_msg.chat.id,
+        receiver_bot=original_msg.bot,
+
+        reply_to_message_id=reply_to_msg_id,
+        reply_markup=ForceReply(),
+    )
 
     msg_trans_copy = original_msg_transmission.copy()
     msg_trans_copy[ORIGINAL_MSG_TRANS_ID_KEY] = msg_trans_copy[MSG_TRANS_ID_KEY]
