@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 TRANSMISSION_NOT_FOUND_TEXT = '💔 Беседа не найдена'
 TRANSMISSION_REJECTED_TEXT = '❌ Беседа отвергнута💔'
 NEW_TRANSMISSION_STARTED_TEXT = 'Вы начали новую беседу - ждите ответов ⏳'
+MESSAGE_NOT_TRANSMITTED_TEXT = 'Сообщение не отправлено 😞'
 
 
 class SwiperTransparency(BaseSwiperConversation):
@@ -48,25 +49,28 @@ class SwiperTransparency(BaseSwiperConversation):
         )
 
     def start_topic(self, update, context):
-        if update.effective_message.text:
-            # matched_swiper_chat_id = find_match_for_swiper(update.effective_chat.id)
-            for swiper_chat_id in find_all_active_swiper_chat_ids(context.bot.id):
-                # TODO oleksandr: use thread-workers to broadcast in parallel (remember about Telegram limits too);
-                #  as a side effect it should also ensure that one failure doesn't stop the rest of broadcast
-                #  (an exception may happen if, for ex., a receiver has blocked the bot)
-                if str(swiper_chat_id) != str(update.effective_chat.id):
-                    transmit_message(
-                        swiper_update=self.swiper_update,  # non-async single-threaded environment
-                        sender_bot_id=context.bot.id,
-                        receiver_chat_id=swiper_chat_id,
-                        receiver_bot=context.bot,
-                        red_heart=False,
-                    )
-            update.effective_chat.send_message(
-                text=f"<i>{NEW_TRANSMISSION_STARTED_TEXT}</i>",
-                parse_mode=ParseMode.HTML,
-                # reply_to_message_id=update.effective_message.message_id,
-            )
+        if not update.effective_message.text:
+            report_msg_not_transmitted(update.effective_chat, update.effective_message)
+            return
+
+        # matched_swiper_chat_id = find_match_for_swiper(update.effective_chat.id)
+        for swiper_chat_id in find_all_active_swiper_chat_ids(context.bot.id):
+            # TODO oleksandr: use thread-workers to broadcast in parallel (remember about Telegram limits too);
+            #  as a side effect it should also ensure that one failure doesn't stop the rest of broadcast
+            #  (an exception may happen if, for ex., a receiver has blocked the bot)
+            if str(swiper_chat_id) != str(update.effective_chat.id):
+                transmit_message(
+                    swiper_update=self.swiper_update,  # non-async single-threaded environment
+                    sender_bot_id=context.bot.id,
+                    receiver_chat_id=swiper_chat_id,
+                    receiver_bot=context.bot,
+                    red_heart=False,
+                )
+        update.effective_chat.send_message(
+            text=f"<i>{NEW_TRANSMISSION_STARTED_TEXT}</i>",
+            parse_mode=ParseMode.HTML,
+            # reply_to_message_id=update.effective_message.message_id,
+        )
 
     def force_reply(self, update, context):
         msg_transmission = find_original_transmission_by_msg(update.effective_message)
@@ -90,6 +94,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
     def reject(self, update, context):
         # TODO oleksandr: what does rejection actually imply ?
+        # TODO oleksandr: delete correspondent transission(s) as well
 
         update.effective_message.delete()
         update.callback_query.answer(text=TRANSMISSION_REJECTED_TEXT)
@@ -109,6 +114,10 @@ class SwiperTransparency(BaseSwiperConversation):
             reply_to_msg.edit_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=[]))
         except BadRequest:
             logger.warning('Failed to hide inline keyboard', exc_info=True)
+
+        if not update.effective_message.text:
+            report_msg_not_transmitted(update.effective_chat, update.effective_message)
+            return
 
         msg_transmission = find_original_transmission_by_msg(reply_to_msg)
         if msg_transmission:
@@ -136,6 +145,8 @@ class SwiperTransparency(BaseSwiperConversation):
             )
             return
 
+        red_heart = len(transmissions_by_sender_msg) < 2
+
         for msg_transmission in transmissions_by_sender_msg:
             # broadcast replies to own message
 
@@ -149,9 +160,7 @@ class SwiperTransparency(BaseSwiperConversation):
                 receiver_bot=context.bot,  # msg_transmission[RECEIVER_BOT_ID_KEY] is of no use here
                 reply_to_msg_id=msg_transmission[RECEIVER_MSG_ID_KEY],
 
-                # TODO oleksandr: are you sure this is "sophisticated" enough ?
-                #  send red heart if swipers are already engaged in "back and forth"
-                red_heart=False,
+                red_heart=red_heart,
             )
 
     def handle_error(self, update, context):
@@ -159,6 +168,15 @@ class SwiperTransparency(BaseSwiperConversation):
 
         error_str = ''.join(format_exception(type(context.error), context.error, context.error.__traceback__))
         send_partitioned_text(update.effective_chat, error_str)
+
+
+def report_msg_not_transmitted(chat, message_id):
+    report_msg = chat.send_message(
+        text=f"<i>{MESSAGE_NOT_TRANSMITTED_TEXT}</i>",
+        parse_mode=ParseMode.HTML,
+        reply_to_message_id=message_id,
+    )
+    return report_msg
 
 
 def find_original_transmission_by_msg(msg):
