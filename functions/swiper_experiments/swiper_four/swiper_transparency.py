@@ -1,4 +1,5 @@
 from telegram import InlineKeyboardMarkup, ParseMode
+from telegram.error import BadRequest
 from telegram.ext import CommandHandler, DispatcherHandlerStop, Filters, MessageHandler, CallbackQueryHandler
 
 from functions.common import logging  # force log config of functions/common/__init__.py
@@ -99,6 +100,11 @@ class SwiperTransparency(BaseSwiperConversation):
 
     def transmit_reply(self, update, context):
         reply_to_msg = update.effective_message.reply_to_message
+        try:
+            reply_to_msg.edit_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=[]))
+        except BadRequest:
+            logger.warning('Failed to hide inline keyboard', exc_info=True)
+
         msg_transmission = find_original_transmission_by_msg(reply_to_msg)
         if msg_transmission:
             transmit_message(
