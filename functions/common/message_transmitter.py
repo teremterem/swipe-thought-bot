@@ -114,6 +114,21 @@ def find_transmissions_by_sender_msg(
     return items
 
 
+def _ptb_transmit(update, receiver_chat_id, receiver_bot, red_heart, reply_to_msg_id):
+    if not update.effective_message.text:
+        return None
+
+    msg = receiver_bot.send_message(
+        chat_id=receiver_chat_id,
+        text=update.effective_message.text,
+        reply_to_message_id=reply_to_msg_id,
+        reply_markup=reply_reject_kbd_markup(
+            red_heart=red_heart,
+        ),
+    )
+    return msg
+
+
 def transmit_message(
         swiper_update,
         sender_bot_id,
@@ -131,16 +146,18 @@ def transmit_message(
     if reply_to_msg_id is not None:
         reply_to_msg_id = int(reply_to_msg_id)
 
-    text = swiper_update.ptb_update.effective_message.text
-    msg = receiver_bot.send_message(
-        chat_id=receiver_chat_id,
-        text=text,
-        reply_to_message_id=reply_to_msg_id,
-        reply_markup=reply_reject_kbd_markup(
-            red_heart=red_heart,
-        ),
+    transmitted_msg = _ptb_transmit(
+        update=swiper_update.ptb_update,
+        receiver_chat_id=receiver_chat_id,
+        receiver_bot=receiver_bot,
+        red_heart=red_heart,
+        reply_to_msg_id=reply_to_msg_id,
     )
-    receiver_msg_id = int(msg.message_id)
+    if not transmitted_msg:
+        # message was not transmitted
+        return False
+
+    receiver_msg_id = int(transmitted_msg.message_id)
 
     msg_transmission_id = generate_msg_transmission_id()
 
@@ -148,7 +165,7 @@ def transmit_message(
     put_s3_object(
         s3_bucket=main_bucket,
         key=receiver_msg_s3_key,
-        obj_dict=msg.to_dict(),
+        obj_dict=transmitted_msg.to_dict(),
     )
 
     msg_transmission = {
@@ -169,6 +186,7 @@ def transmit_message(
         ddb_table=msg_transmission_table,
         item=msg_transmission,
     )
+    return True
 
 
 def force_reply(original_msg, original_msg_transmission):
