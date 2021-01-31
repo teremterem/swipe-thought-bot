@@ -55,8 +55,9 @@ def find_original_transmission(
     # TODO oleksandr: paginate ?
     scan_result = msg_transmission_table.query(
         IndexName='byReceiverMsgId',
-        KeyConditionExpression=
-        Key(RECEIVER_MSG_ID_KEY).eq(receiver_msg_id) & Key(RECEIVER_CHAT_ID_KEY).eq(receiver_chat_id),
+        KeyConditionExpression=(
+                Key(RECEIVER_MSG_ID_KEY).eq(receiver_msg_id) & Key(RECEIVER_CHAT_ID_KEY).eq(receiver_chat_id)
+        ),
         FilterExpression=Attr(RECEIVER_BOT_ID_KEY).eq(receiver_bot_id),
     )
     if logger.isEnabledFor(logging.INFO):
@@ -93,8 +94,9 @@ def find_transmissions_by_sender_msg(
 
     scan_result = msg_transmission_table.query(
         IndexName='bySenderMsgId',
-        KeyConditionExpression=
-        Key(SENDER_MSG_ID_KEY).eq(sender_msg_id) & Key(SENDER_CHAT_ID_KEY).eq(sender_chat_id),
+        KeyConditionExpression=(
+                Key(SENDER_MSG_ID_KEY).eq(sender_msg_id) & Key(SENDER_CHAT_ID_KEY).eq(sender_chat_id)
+        ),
         FilterExpression=Attr(SENDER_BOT_ID_KEY).eq(sender_bot_id),
     )
     if logger.isEnabledFor(logging.INFO):
