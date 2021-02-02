@@ -214,10 +214,28 @@ def generate_msg_transmission_id():
 def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
     transmitted_msg = None
 
-    if msg.sticker:
+    if msg.text:
+        transmitted_msg = receiver_bot.send_message(
+            chat_id=receiver_chat_id,
+            text=msg.text,
+            **kwargs,
+        )
+
+    elif msg.sticker:
         transmitted_msg = receiver_bot.send_sticker(
             chat_id=receiver_chat_id,
             sticker=msg.sticker,
+            **kwargs,
+        )
+
+    elif msg.photo:
+        biggest_photo = max(msg.photo, key=lambda p: p['file_size'])
+        if logger.isEnabledFor(logging.INFO):
+            logger.info('BIGGEST PHOTO SIZE:\n%s', biggest_photo.to_dict())
+        transmitted_msg = receiver_bot.send_photo(
+            chat_id=receiver_chat_id,
+            photo=biggest_photo,
+            caption=msg.caption,
             **kwargs,
         )
 
@@ -225,6 +243,15 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
         transmitted_msg = receiver_bot.send_animation(
             chat_id=receiver_chat_id,
             animation=msg.animation,
+            caption=msg.caption,
+            **kwargs,
+        )
+
+    elif msg.video:
+        transmitted_msg = receiver_bot.send_video(
+            chat_id=receiver_chat_id,
+            video=msg.video,
+            caption=msg.caption,
             **kwargs,
         )
 
@@ -232,6 +259,15 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
         transmitted_msg = receiver_bot.send_location(
             chat_id=receiver_chat_id,
             location=msg.location,
+            caption=msg.caption,
+            **kwargs,
+        )
+
+    elif msg.document:
+        transmitted_msg = receiver_bot.send_document(
+            chat_id=receiver_chat_id,
+            document=msg.document,
+            caption=msg.caption,
             **kwargs,
         )
 
@@ -245,12 +281,5 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
     #         message_id=msg.message_id,
     #         # **kwargs,
     #     )
-
-    elif msg.text:
-        transmitted_msg = receiver_bot.send_message(
-            chat_id=receiver_chat_id,
-            text=msg.text,
-            **kwargs,
-        )
 
     return transmitted_msg
