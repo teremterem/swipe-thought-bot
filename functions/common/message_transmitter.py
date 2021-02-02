@@ -31,7 +31,7 @@ msg_transmission_table = dynamodb.Table(MESSAGE_TRANSMISSION_DDB_TABLE_NAME)
 
 
 def reply_reject_kbd_markup(red_heart, reject_only=False):
-    kbd_row = [InlineKeyboardButton('❌Отвергнуть', callback_data=CallbackData.REJECT)]
+    kbd_row = [InlineKeyboardButton('❌Отклонить', callback_data=CallbackData.REJECT)]  # aka dismiss ?
     if not reject_only:
         if red_heart:
             heart = '❤️'
@@ -112,26 +112,6 @@ def find_transmissions_by_sender_msg(
             sender_bot_id,
         )
     return items
-
-
-def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
-    transmitted_msg = None
-
-    if msg.sticker:
-        transmitted_msg = receiver_bot.send_sticker(
-            chat_id=receiver_chat_id,
-            sticker=msg.sticker,
-            **kwargs,
-        )
-
-    elif msg.text:
-        transmitted_msg = receiver_bot.send_message(
-            chat_id=receiver_chat_id,
-            text=msg.text,
-            **kwargs,
-        )
-
-    return transmitted_msg
 
 
 def transmit_message(
@@ -229,3 +209,77 @@ def force_reply(original_msg, original_msg_transmission):
 def generate_msg_transmission_id():
     msg_transmission_id = str(uuid.uuid4())
     return msg_transmission_id
+
+
+def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
+    transmitted_msg = None
+
+    if msg.text:
+        transmitted_msg = receiver_bot.send_message(
+            chat_id=receiver_chat_id,
+            text=msg.text,
+            **kwargs,
+        )
+
+    elif msg.sticker:
+        transmitted_msg = receiver_bot.send_sticker(
+            chat_id=receiver_chat_id,
+            sticker=msg.sticker,
+            **kwargs,
+        )
+
+    elif msg.photo:
+        biggest_photo = max(msg.photo, key=lambda p: p['file_size'])
+        if logger.isEnabledFor(logging.INFO):
+            logger.info('BIGGEST PHOTO SIZE:\n%s', biggest_photo.to_dict())
+        transmitted_msg = receiver_bot.send_photo(
+            chat_id=receiver_chat_id,
+            photo=biggest_photo,
+            caption=msg.caption,
+            **kwargs,
+        )
+
+    elif msg.animation:
+        transmitted_msg = receiver_bot.send_animation(
+            chat_id=receiver_chat_id,
+            animation=msg.animation,
+            caption=msg.caption,
+            **kwargs,
+        )
+
+    elif msg.video:
+        transmitted_msg = receiver_bot.send_video(
+            chat_id=receiver_chat_id,
+            video=msg.video,
+            caption=msg.caption,
+            **kwargs,
+        )
+
+    elif msg.location:
+        transmitted_msg = receiver_bot.send_location(
+            chat_id=receiver_chat_id,
+            location=msg.location,
+            caption=msg.caption,
+            **kwargs,
+        )
+
+    elif msg.document:
+        transmitted_msg = receiver_bot.send_document(
+            chat_id=receiver_chat_id,
+            document=msg.document,
+            caption=msg.caption,
+            **kwargs,
+        )
+
+    # # forwarding a poll will disclose its author's identity
+    # # TODO oleksandr: try to recreate the poll with the same settings and delete the user's version of it
+    # #  (turns out bots actually can delete messages sent by users...)
+    # elif msg.poll:
+    #     transmitted_msg = receiver_bot.forward_message(
+    #         chat_id=receiver_chat_id,
+    #         from_chat_id=msg.chat_id,
+    #         message_id=msg.message_id,
+    #         # **kwargs,
+    #     )
+
+    return transmitted_msg

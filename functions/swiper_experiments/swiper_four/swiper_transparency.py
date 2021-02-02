@@ -16,7 +16,7 @@ from functions.common.utils import send_partitioned_text
 logger = logging.getLogger(__name__)
 
 TRANSMISSION_NOT_FOUND_TEXT = '💔 Беседа не найдена'
-TRANSMISSION_REJECTED_TEXT = '❌ Беседа отвергнута💔'
+TRANSMISSION_REJECTED_TEXT = '❌ Беседа отклонена💔'  # aka dismissed ?
 NEW_TRANSMISSION_STARTED_TEXT = 'Вы начали новую беседу - ждите ответов ⏳'
 MESSAGE_NOT_TRANSMITTED_TEXT = 'Сообщение не отправлено 😞'
 
