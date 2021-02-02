@@ -114,26 +114,6 @@ def find_transmissions_by_sender_msg(
     return items
 
 
-def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
-    transmitted_msg = None
-
-    if msg.sticker:
-        transmitted_msg = receiver_bot.send_sticker(
-            chat_id=receiver_chat_id,
-            sticker=msg.sticker,
-            **kwargs,
-        )
-
-    elif msg.text:
-        transmitted_msg = receiver_bot.send_message(
-            chat_id=receiver_chat_id,
-            text=msg.text,
-            **kwargs,
-        )
-
-    return transmitted_msg
-
-
 def transmit_message(
         swiper_update,
         sender_bot_id,
@@ -229,3 +209,23 @@ def force_reply(original_msg, original_msg_transmission):
 def generate_msg_transmission_id():
     msg_transmission_id = str(uuid.uuid4())
     return msg_transmission_id
+
+
+def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
+    transmitted_msg = None
+
+    if msg.sticker:
+        transmitted_msg = receiver_bot.send_sticker(
+            chat_id=receiver_chat_id,
+            sticker=msg.sticker,
+            **kwargs,
+        )
+
+    elif msg.text:
+        transmitted_msg = receiver_bot.send_message(
+            chat_id=receiver_chat_id,
+            text=msg.text,
+            **kwargs,
+        )
+
+    return transmitted_msg
