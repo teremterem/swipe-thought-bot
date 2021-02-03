@@ -255,6 +255,21 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
             **kwargs,
         )
 
+    elif msg.video_note:
+        transmitted_msg = receiver_bot.send_video_note(
+            chat_id=receiver_chat_id,
+            video_note=msg.video_note,
+            **kwargs,
+        )
+
+    elif msg.voice:
+        transmitted_msg = receiver_bot.send_voice(
+            chat_id=receiver_chat_id,
+            voice=msg.voice,
+            caption=msg.caption,
+            **kwargs,
+        )
+
     elif msg.location:
         transmitted_msg = receiver_bot.send_location(
             chat_id=receiver_chat_id,
