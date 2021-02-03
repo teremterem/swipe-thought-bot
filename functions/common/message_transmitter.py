@@ -278,6 +278,13 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
             **kwargs,
         )
 
+    elif msg.contact:
+        transmitted_msg = receiver_bot.send_contact(
+            chat_id=receiver_chat_id,
+            contact=msg.contact,
+            **kwargs,
+        )
+
     elif msg.document:
         transmitted_msg = receiver_bot.send_document(
             chat_id=receiver_chat_id,
