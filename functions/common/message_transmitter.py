@@ -255,6 +255,14 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
             **kwargs,
         )
 
+    elif msg.audio:
+        transmitted_msg = receiver_bot.send_audio(
+            chat_id=receiver_chat_id,
+            audio=msg.audio,
+            caption=msg.caption,
+            **kwargs,
+        )
+
     elif msg.video_note:
         transmitted_msg = receiver_bot.send_video_note(
             chat_id=receiver_chat_id,
@@ -295,7 +303,7 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
 
     # # forwarding a poll will disclose its author's identity
     # # TODO oleksandr: try to recreate the poll with the same settings and delete the user's version of it
-    # #  (turns out bots actually can delete messages sent by users...)
+    # #  (turns out bots can actually delete messages sent by users...)
     # elif msg.poll:
     #     transmitted_msg = receiver_bot.forward_message(
     #         chat_id=receiver_chat_id,
