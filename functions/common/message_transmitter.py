@@ -357,7 +357,6 @@ def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_
             ),
             **kwargs,
         )
-        breakpoint()
     except BadRequest:
         logger.warning('Failed to edit message at receiver\'s side', exc_info=True)
         # TODO oleksandr: it is not because of inline keyboard (it can be added to a message without one no problem),
