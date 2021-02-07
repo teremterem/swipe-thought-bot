@@ -95,22 +95,22 @@ class SwiperTransparency(BaseSwiperConversation):
 
         red_heart_default = len(transmissions_by_sender_msg) < 2
 
-        transmitted = False
+        edited_at_receiver = True
         for msg_transmission in transmissions_by_sender_msg:
             # broadcast replies to own message
 
             # TODO oleksandr: use thread-workers to broadcast in parallel (remember about Telegram limits too);
             #  as a side effect it should also ensure that one failure doesn't stop the rest of broadcast
             #  (an exception may happen if, for ex., a receiver has blocked the bot)
-            transmitted = edit_transmission(
+            edited_at_receiver = edit_transmission(
                 msg=msg,
                 receiver_msg_id=msg_transmission[RECEIVER_MSG_ID_KEY],
                 receiver_chat_id=msg_transmission[RECEIVER_CHAT_ID_KEY],
                 receiver_bot=context.bot,  # msg_transmission[RECEIVER_BOT_ID_KEY] is of no use here
                 red_heart=msg_transmission.get(RED_HEART_KEY, red_heart_default),
-            ) and transmitted
+            ) and edited_at_receiver
 
-        if not transmitted:
+        if not edited_at_receiver:
             update.effective_chat.send_message(
                 text=f"<i>{FAILED_TO_EDIT_AT_RECEIVER_TEXT}</i>",
                 parse_mode=ParseMode.HTML,
