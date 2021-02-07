@@ -3,6 +3,7 @@ import uuid
 
 from boto3.dynamodb.conditions import Key, Attr
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ForceReply
+from telegram.error import BadRequest
 
 from functions.common import logging  # force log config of functions/common/__init__.py
 from functions.common.constants import CallbackData
@@ -180,6 +181,18 @@ def transmit_message(
         ddb_table=msg_transmission_table,
         item=msg_transmission,
     )
+
+    if reply_to_msg_id is not None:
+        try:
+            # TODO oleksandr: keep "stop" button at least ? no... I don't think so...
+            receiver_bot.edit_message_reply_markup(
+                chat_id=receiver_chat_id,
+                message_id=reply_to_msg_id,
+                reply_markup=InlineKeyboardMarkup(inline_keyboard=[]),
+            )
+        except BadRequest:
+            logger.warning('Failed to hide inline keyboard', exc_info=True)
+
     return True
 
 
@@ -334,13 +347,19 @@ def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_
     receiver_chat_id = int(receiver_chat_id)
 
     edited_msg = None
-    edited_msg = receiver_bot.edit_message_text(
-        chat_id=receiver_chat_id,
-        message_id=receiver_msg_id,
-        text=msg.text,
-        reply_markup=reply_reject_kbd_markup(
-            red_heart=red_heart,
-        ),
-        **kwargs,
-    )
+    try:
+        edited_msg = receiver_bot.edit_message_text(
+            chat_id=receiver_chat_id,
+            message_id=receiver_msg_id,
+            text=msg.text,
+            reply_markup=reply_reject_kbd_markup(
+                red_heart=red_heart,
+            ),
+            **kwargs,
+        )
+    except BadRequest:
+        logger.warning('Failed to edit message at receiver\'s side', exc_info=True)
+        # TODO oleksandr: it is not because of inline keyboard (it can be added to a message without one no problem),
+        #  it is because of ForceReply... what to do about it ?
+
     return edited_msg

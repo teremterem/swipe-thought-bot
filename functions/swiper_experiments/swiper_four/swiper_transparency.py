@@ -17,9 +17,10 @@ logger = logging.getLogger(__name__)
 
 # TODO oleksandr: give these constants more adequate names
 TRANSMISSION_NOT_FOUND_TEXT = '💔 Беседа не найдена'  # talk not found
-TRANSMISSION_REJECTED_TEXT = '❌ Беседа остановлена💔'  # talk stopped
+TRANSMISSION_REJECTED_TEXT = '❌ Беседа остановлена'  # talk stopped
 NEW_TRANSMISSION_STARTED_TEXT = 'Вы создали новую тему для бесед - ждите ответов ⏳'
 MESSAGE_NOT_TRANSMITTED_TEXT = 'Сообщение не отправлено 😞'
+FAILED_TO_EDIT_AT_RECEIVER_TEXT = 'Не удалось отредактировать у получателя 😞'
 
 
 class SwiperTransparency(BaseSwiperConversation):
@@ -107,10 +108,14 @@ class SwiperTransparency(BaseSwiperConversation):
                 receiver_chat_id=msg_transmission[RECEIVER_CHAT_ID_KEY],
                 receiver_bot=context.bot,  # msg_transmission[RECEIVER_BOT_ID_KEY] is of no use here
                 red_heart=msg_transmission.get(RED_HEART_KEY, red_heart_default),
-            ) or transmitted
+            ) and transmitted
 
         if not transmitted:
-            report_msg_not_transmitted(update)
+            update.effective_chat.send_message(
+                text=f"<i>{FAILED_TO_EDIT_AT_RECEIVER_TEXT}</i>",
+                parse_mode=ParseMode.HTML,
+                reply_to_message_id=msg.message_id,
+            )
 
     def force_reply(self, update, context):
         msg_transmission = find_original_transmission_by_msg(update.effective_message)
@@ -198,7 +203,7 @@ class SwiperTransparency(BaseSwiperConversation):
                 receiver_bot=context.bot,  # msg_transmission[RECEIVER_BOT_ID_KEY] is of no use here
                 reply_to_msg_id=msg_transmission[RECEIVER_MSG_ID_KEY],
                 red_heart=red_heart,
-            ) or transmitted
+            ) or transmitted  # TODO oleksandr: replace with "and" as in self.edit_message() handler ?
 
         if not transmitted:
             report_msg_not_transmitted(update)
