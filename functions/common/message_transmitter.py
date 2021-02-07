@@ -309,7 +309,6 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
         transmitted_msg = receiver_bot.send_location(
             chat_id=receiver_chat_id,
             location=msg.location,
-            caption=msg.caption,
             **kwargs,
         )
 
