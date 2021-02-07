@@ -1,6 +1,6 @@
 class CallbackData:
     REPLY = 'reply'
-    REJECT = 'reject'
+    REJECT = 'reject'  # TODO oleksandr: replace 'reject' with 'stop'
 
 
 class ConvState:

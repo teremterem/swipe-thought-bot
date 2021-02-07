@@ -15,9 +15,10 @@ from functions.common.utils import send_partitioned_text
 
 logger = logging.getLogger(__name__)
 
-TRANSMISSION_NOT_FOUND_TEXT = '💔 Беседа не найдена'
-TRANSMISSION_REJECTED_TEXT = '❌ Беседа отклонена💔'  # aka dismissed ?
-NEW_TRANSMISSION_STARTED_TEXT = 'Вы начали новую беседу - ждите ответов ⏳'
+# TODO oleksandr: give these constants more adequate names
+TRANSMISSION_NOT_FOUND_TEXT = '💔 Беседа не найдена'  # talk not found
+TRANSMISSION_REJECTED_TEXT = '❌ Беседа остановлена💔'  # talk stopped
+NEW_TRANSMISSION_STARTED_TEXT = 'Вы создали новую тему для бесед - ждите ответов ⏳'
 MESSAGE_NOT_TRANSMITTED_TEXT = 'Сообщение не отправлено 😞'
 
 
@@ -33,6 +34,9 @@ class SwiperTransparency(BaseSwiperConversation):
         # TODO oleksandr: guard CallbackQueryHandler as well ? any other types of handlers not covered ?
 
         dispatcher.add_handler(CommandHandler('start', self.start))
+        dispatcher.add_handler(MessageHandler(
+            Filters.update.edited_message | Filters.update.edited_channel_post, self.edit_message
+        ))
         dispatcher.add_handler(MessageHandler(Filters.reply, self.transmit_reply))
         dispatcher.add_handler(MessageHandler(Filters.all, self.start_topic))
         dispatcher.add_handler(CallbackQueryHandler(self.force_reply, pattern=CallbackData.REPLY))
@@ -71,6 +75,9 @@ class SwiperTransparency(BaseSwiperConversation):
             )
         else:
             report_msg_not_transmitted(update)
+
+    def edit_message(self, update, context):
+        update.effective_chat.send_message('edited')
 
     def force_reply(self, update, context):
         msg_transmission = find_original_transmission_by_msg(update.effective_message)
