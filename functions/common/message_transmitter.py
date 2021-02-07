@@ -6,7 +6,7 @@ from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ForceReply
 
 from functions.common import logging  # force log config of functions/common/__init__.py
 from functions.common.constants import CallbackData
-from functions.common.dynamodb import dynamodb, put_ddb_item
+from functions.common.dynamodb import dynamodb, put_ddb_item, delete_ddb_item
 from functions.common.s3 import put_s3_object, main_bucket
 
 logger = logging.getLogger(__name__)
@@ -23,6 +23,8 @@ SENDER_BOT_ID_KEY = 'sender_bot_id'
 RECEIVER_MSG_ID_KEY = 'receiver_msg_id'
 RECEIVER_CHAT_ID_KEY = 'receiver_chat_id'
 RECEIVER_BOT_ID_KEY = 'receiver_bot_id'
+
+RED_HEART_KEY = 'red_heart'
 
 SENDER_UPDATE_S3_KEY_KEY = 'sender_update_s3_key'
 RECEIVER_MSG_S3_KEY_KEY = 'receiver_msg_s3_key'
@@ -128,6 +130,8 @@ def transmit_message(
 
     receiver_chat_id = int(receiver_chat_id)
     receiver_bot_id = int(receiver_bot.id)
+
+    red_heart = bool(red_heart)
     if reply_to_msg_id is not None:
         reply_to_msg_id = int(reply_to_msg_id)
 
@@ -167,6 +171,8 @@ def transmit_message(
         RECEIVER_CHAT_ID_KEY: receiver_chat_id,
         RECEIVER_BOT_ID_KEY: receiver_bot_id,
 
+        RED_HEART_KEY: red_heart,
+
         SENDER_UPDATE_S3_KEY_KEY: swiper_update.telegram_update_s3_key,
         RECEIVER_MSG_S3_KEY_KEY: receiver_msg_s3_key,
     }
@@ -193,7 +199,7 @@ def force_reply(original_msg, original_msg_transmission):
     )
 
     msg_trans_copy = original_msg_transmission.copy()
-    msg_trans_copy[ORIGINAL_MSG_TRANS_ID_KEY] = msg_trans_copy[MSG_TRANS_ID_KEY]
+    msg_trans_copy[ORIGINAL_MSG_TRANS_ID_KEY] = original_msg_transmission[MSG_TRANS_ID_KEY]
     msg_trans_copy[MSG_TRANS_ID_KEY] = generate_msg_transmission_id()
 
     msg_trans_copy[RECEIVER_MSG_ID_KEY] = int(force_reply_msg.message_id)
@@ -203,6 +209,14 @@ def force_reply(original_msg, original_msg_transmission):
     put_ddb_item(
         ddb_table=msg_transmission_table,
         item=msg_trans_copy,
+    )
+
+    # TODO oleksandr: switch to soft deletes ?
+    delete_ddb_item(
+        ddb_table=msg_transmission_table,
+        key={
+            MSG_TRANS_ID_KEY: original_msg_transmission[MSG_TRANS_ID_KEY],
+        },
     )
 
 
@@ -315,7 +329,7 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
     return transmitted_msg
 
 
-def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, **kwargs):
+def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_heart, **kwargs):
     receiver_msg_id = int(receiver_msg_id)
     receiver_chat_id = int(receiver_chat_id)
 
@@ -324,6 +338,9 @@ def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, **kw
         chat_id=receiver_chat_id,
         message_id=receiver_msg_id,
         text=msg.text,
+        reply_markup=reply_reject_kbd_markup(
+            red_heart=red_heart,
+        ),
         **kwargs,
     )
     return edited_msg

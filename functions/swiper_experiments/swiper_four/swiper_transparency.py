@@ -8,7 +8,7 @@ from functions.common import logging  # force log config of functions/common/__i
 from functions.common.constants import CallbackData
 from functions.common.message_transmitter import transmit_message, find_original_transmission, SENDER_CHAT_ID_KEY, \
     SENDER_MSG_ID_KEY, reply_reject_kbd_markup, force_reply, find_transmissions_by_sender_msg, RECEIVER_CHAT_ID_KEY, \
-    RECEIVER_MSG_ID_KEY, edit_transmission
+    RECEIVER_MSG_ID_KEY, edit_transmission, RED_HEART_KEY
 from functions.common.swiper_chat_data import IS_SWIPER_AUTHORIZED_KEY, find_all_active_swiper_chat_ids
 from functions.common.swiper_telegram import BaseSwiperConversation
 from functions.common.utils import send_partitioned_text
@@ -92,6 +92,8 @@ class SwiperTransparency(BaseSwiperConversation):
             )
             return
 
+        red_heart_default = len(transmissions_by_sender_msg) < 2
+
         transmitted = False
         for msg_transmission in transmissions_by_sender_msg:
             # broadcast replies to own message
@@ -104,6 +106,7 @@ class SwiperTransparency(BaseSwiperConversation):
                 receiver_msg_id=msg_transmission[RECEIVER_MSG_ID_KEY],
                 receiver_chat_id=msg_transmission[RECEIVER_CHAT_ID_KEY],
                 receiver_bot=context.bot,  # msg_transmission[RECEIVER_BOT_ID_KEY] is of no use here
+                red_heart=msg_transmission.get(RED_HEART_KEY, red_heart_default),
             ) or transmitted
 
         if not transmitted:
