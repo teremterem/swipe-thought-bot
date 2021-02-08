@@ -3,10 +3,11 @@ import uuid
 
 from boto3.dynamodb.conditions import Key, Attr
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ForceReply
+from telegram.error import BadRequest
 
 from functions.common import logging  # force log config of functions/common/__init__.py
 from functions.common.constants import CallbackData
-from functions.common.dynamodb import dynamodb, put_ddb_item
+from functions.common.dynamodb import dynamodb, put_ddb_item, delete_ddb_item
 from functions.common.s3 import put_s3_object, main_bucket
 
 logger = logging.getLogger(__name__)
@@ -24,6 +25,8 @@ RECEIVER_MSG_ID_KEY = 'receiver_msg_id'
 RECEIVER_CHAT_ID_KEY = 'receiver_chat_id'
 RECEIVER_BOT_ID_KEY = 'receiver_bot_id'
 
+RED_HEART_KEY = 'red_heart'
+
 SENDER_UPDATE_S3_KEY_KEY = 'sender_update_s3_key'
 RECEIVER_MSG_S3_KEY_KEY = 'receiver_msg_s3_key'
 
@@ -31,7 +34,7 @@ msg_transmission_table = dynamodb.Table(MESSAGE_TRANSMISSION_DDB_TABLE_NAME)
 
 
 def reply_reject_kbd_markup(red_heart, reject_only=False):
-    kbd_row = [InlineKeyboardButton('❌Отклонить', callback_data=CallbackData.REJECT)]  # aka dismiss ?
+    kbd_row = [InlineKeyboardButton('❌Остановить', callback_data=CallbackData.REJECT)]
     if not reject_only:
         if red_heart:
             heart = '❤️'
@@ -128,6 +131,8 @@ def transmit_message(
 
     receiver_chat_id = int(receiver_chat_id)
     receiver_bot_id = int(receiver_bot.id)
+
+    red_heart = bool(red_heart)
     if reply_to_msg_id is not None:
         reply_to_msg_id = int(reply_to_msg_id)
 
@@ -167,6 +172,8 @@ def transmit_message(
         RECEIVER_CHAT_ID_KEY: receiver_chat_id,
         RECEIVER_BOT_ID_KEY: receiver_bot_id,
 
+        RED_HEART_KEY: red_heart,
+
         SENDER_UPDATE_S3_KEY_KEY: swiper_update.telegram_update_s3_key,
         RECEIVER_MSG_S3_KEY_KEY: receiver_msg_s3_key,
     }
@@ -174,6 +181,18 @@ def transmit_message(
         ddb_table=msg_transmission_table,
         item=msg_transmission,
     )
+
+    if reply_to_msg_id is not None:
+        try:
+            # TODO oleksandr: keep "stop" button at least ? no... I don't think so...
+            receiver_bot.edit_message_reply_markup(
+                chat_id=receiver_chat_id,
+                message_id=reply_to_msg_id,
+                reply_markup=InlineKeyboardMarkup(inline_keyboard=[]),
+            )
+        except BadRequest:
+            logger.warning('Failed to hide inline keyboard', exc_info=True)
+
     return True
 
 
@@ -193,7 +212,7 @@ def force_reply(original_msg, original_msg_transmission):
     )
 
     msg_trans_copy = original_msg_transmission.copy()
-    msg_trans_copy[ORIGINAL_MSG_TRANS_ID_KEY] = msg_trans_copy[MSG_TRANS_ID_KEY]
+    msg_trans_copy[ORIGINAL_MSG_TRANS_ID_KEY] = original_msg_transmission[MSG_TRANS_ID_KEY]
     msg_trans_copy[MSG_TRANS_ID_KEY] = generate_msg_transmission_id()
 
     msg_trans_copy[RECEIVER_MSG_ID_KEY] = int(force_reply_msg.message_id)
@@ -203,6 +222,14 @@ def force_reply(original_msg, original_msg_transmission):
     put_ddb_item(
         ddb_table=msg_transmission_table,
         item=msg_trans_copy,
+    )
+
+    # TODO oleksandr: switch to soft deletes ?
+    delete_ddb_item(
+        ddb_table=msg_transmission_table,
+        key={
+            MSG_TRANS_ID_KEY: original_msg_transmission[MSG_TRANS_ID_KEY],
+        },
     )
 
 
@@ -282,7 +309,6 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
         transmitted_msg = receiver_bot.send_location(
             chat_id=receiver_chat_id,
             location=msg.location,
-            caption=msg.caption,
             **kwargs,
         )
 
@@ -303,7 +329,7 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
 
     # # forwarding a poll will disclose its author's identity
     # # TODO oleksandr: try to recreate the poll with the same settings and delete the user's version of it
-    # #  (turns out bots can actually delete messages sent by users...)
+    # #  (turns out bots can delete messages sent by users...)
     # elif msg.poll:
     #     transmitted_msg = receiver_bot.forward_message(
     #         chat_id=receiver_chat_id,
@@ -313,3 +339,40 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
     #     )
 
     return transmitted_msg
+
+
+def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_heart, **kwargs):
+    receiver_msg_id = int(receiver_msg_id)
+    receiver_chat_id = int(receiver_chat_id)
+
+    edited_msg = None
+    try:
+        if msg.text:
+            edited_msg = receiver_bot.edit_message_text(
+                chat_id=receiver_chat_id,
+                message_id=receiver_msg_id,
+                text=msg.text,
+                reply_markup=reply_reject_kbd_markup(
+                    red_heart=red_heart,
+                ),
+                **kwargs,
+            )
+
+        # elif msg.caption:
+        #     edited_msg = receiver_bot.edit_message_caption(
+        #         chat_id=receiver_chat_id,
+        #         message_id=receiver_msg_id,
+        #         caption=msg.caption,
+        #         reply_markup=reply_reject_kbd_markup(
+        #             red_heart=red_heart,
+        #         ),
+        #         **kwargs,
+        #     )
+        #     # TODO oleksandr: report to the user somehow that only caption was edited and not the media itself ?
+
+    except BadRequest:
+        logger.warning('Failed to edit message at receiver\'s side', exc_info=True)
+        # TODO oleksandr: it is not because of inline keyboard (it can be added to a message without one no problem),
+        #  it is because of ForceReply... what to do about it ?
+
+    return edited_msg

@@ -8,17 +8,19 @@ from functions.common import logging  # force log config of functions/common/__i
 from functions.common.constants import CallbackData
 from functions.common.message_transmitter import transmit_message, find_original_transmission, SENDER_CHAT_ID_KEY, \
     SENDER_MSG_ID_KEY, reply_reject_kbd_markup, force_reply, find_transmissions_by_sender_msg, RECEIVER_CHAT_ID_KEY, \
-    RECEIVER_MSG_ID_KEY
+    RECEIVER_MSG_ID_KEY, edit_transmission, RED_HEART_KEY
 from functions.common.swiper_chat_data import IS_SWIPER_AUTHORIZED_KEY, find_all_active_swiper_chat_ids
 from functions.common.swiper_telegram import BaseSwiperConversation
 from functions.common.utils import send_partitioned_text
 
 logger = logging.getLogger(__name__)
 
-TRANSMISSION_NOT_FOUND_TEXT = '💔 Беседа не найдена'
-TRANSMISSION_REJECTED_TEXT = '❌ Беседа отклонена💔'  # aka dismissed ?
-NEW_TRANSMISSION_STARTED_TEXT = 'Вы начали новую беседу - ждите ответов ⏳'
+# TODO oleksandr: give these constants more adequate names
+TRANSMISSION_NOT_FOUND_TEXT = '💔 Беседа не найдена'  # talk not found
+TRANSMISSION_REJECTED_TEXT = '❌ Беседа остановлена'  # talk stopped
+NEW_TRANSMISSION_STARTED_TEXT = 'Вы создали новую тему для бесед - ждите ответов ⏳'
 MESSAGE_NOT_TRANSMITTED_TEXT = 'Сообщение не отправлено 😞'
+FAILED_TO_EDIT_AT_RECEIVER_TEXT = 'Не удалось отредактировать у получателя 😞'
 
 
 class SwiperTransparency(BaseSwiperConversation):
@@ -33,6 +35,9 @@ class SwiperTransparency(BaseSwiperConversation):
         # TODO oleksandr: guard CallbackQueryHandler as well ? any other types of handlers not covered ?
 
         dispatcher.add_handler(CommandHandler('start', self.start))
+        dispatcher.add_handler(MessageHandler(
+            Filters.update.edited_message | Filters.update.edited_channel_post, self.edit_message
+        ))
         dispatcher.add_handler(MessageHandler(Filters.reply, self.transmit_reply))
         dispatcher.add_handler(MessageHandler(Filters.all, self.start_topic))
         dispatcher.add_handler(CallbackQueryHandler(self.force_reply, pattern=CallbackData.REPLY))
@@ -71,6 +76,46 @@ class SwiperTransparency(BaseSwiperConversation):
             )
         else:
             report_msg_not_transmitted(update)
+
+    def edit_message(self, update, context):
+        msg = update.effective_message
+        transmissions_by_sender_msg = find_transmissions_by_sender_msg(
+            sender_msg_id=msg.message_id,
+            sender_chat_id=msg.chat.id,
+            sender_bot_id=msg.bot.id,
+        )
+
+        if not transmissions_by_sender_msg:
+            update.effective_chat.send_message(
+                text=f"<i>{TRANSMISSION_NOT_FOUND_TEXT}</i>",
+                parse_mode=ParseMode.HTML,
+                reply_to_message_id=msg.message_id,
+            )
+            return
+
+        red_heart_default = len(transmissions_by_sender_msg) < 2
+
+        edited_at_receiver = True
+        for msg_transmission in transmissions_by_sender_msg:
+            # broadcast replies to own message
+
+            # TODO oleksandr: use thread-workers to broadcast in parallel (remember about Telegram limits too);
+            #  as a side effect it should also ensure that one failure doesn't stop the rest of broadcast
+            #  (an exception may happen if, for ex., a receiver has blocked the bot)
+            edited_at_receiver = edit_transmission(
+                msg=msg,
+                receiver_msg_id=msg_transmission[RECEIVER_MSG_ID_KEY],
+                receiver_chat_id=msg_transmission[RECEIVER_CHAT_ID_KEY],
+                receiver_bot=context.bot,  # msg_transmission[RECEIVER_BOT_ID_KEY] is of no use here
+                red_heart=msg_transmission.get(RED_HEART_KEY, red_heart_default),
+            ) and edited_at_receiver
+
+        if not edited_at_receiver:
+            update.effective_chat.send_message(
+                text=f"<i>{FAILED_TO_EDIT_AT_RECEIVER_TEXT}</i>",
+                parse_mode=ParseMode.HTML,
+                reply_to_message_id=msg.message_id,
+            )
 
     def force_reply(self, update, context):
         msg_transmission = find_original_transmission_by_msg(update.effective_message)
@@ -158,7 +203,7 @@ class SwiperTransparency(BaseSwiperConversation):
                 receiver_bot=context.bot,  # msg_transmission[RECEIVER_BOT_ID_KEY] is of no use here
                 reply_to_msg_id=msg_transmission[RECEIVER_MSG_ID_KEY],
                 red_heart=red_heart,
-            ) or transmitted
+            ) or transmitted  # TODO oleksandr: replace with "and" as in self.edit_message() handler ?
 
         if not transmitted:
             report_msg_not_transmitted(update)
