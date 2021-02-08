@@ -347,15 +347,29 @@ def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_
 
     edited_msg = None
     try:
-        edited_msg = receiver_bot.edit_message_text(
-            chat_id=receiver_chat_id,
-            message_id=receiver_msg_id,
-            text=msg.text,
-            reply_markup=reply_reject_kbd_markup(
-                red_heart=red_heart,
-            ),
-            **kwargs,
-        )
+        if msg.text:
+            edited_msg = receiver_bot.edit_message_text(
+                chat_id=receiver_chat_id,
+                message_id=receiver_msg_id,
+                text=msg.text,
+                reply_markup=reply_reject_kbd_markup(
+                    red_heart=red_heart,
+                ),
+                **kwargs,
+            )
+
+        # elif msg.caption:
+        #     edited_msg = receiver_bot.edit_message_caption(
+        #         chat_id=receiver_chat_id,
+        #         message_id=receiver_msg_id,
+        #         caption=msg.caption,
+        #         reply_markup=reply_reject_kbd_markup(
+        #             red_heart=red_heart,
+        #         ),
+        #         **kwargs,
+        #     )
+        #     # TODO oleksandr: report to the user somehow that only caption was edited and not the media itself ?
+
     except BadRequest:
         logger.warning('Failed to edit message at receiver\'s side', exc_info=True)
         # TODO oleksandr: it is not because of inline keyboard (it can be added to a message without one no problem),
