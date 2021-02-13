@@ -5,7 +5,7 @@ from telegram.error import BadRequest
 from telegram.ext import CommandHandler, DispatcherHandlerStop, Filters, MessageHandler, CallbackQueryHandler
 
 from functions.common import logging  # force log config of functions/common/__init__.py
-from functions.common.constants import CallbackData
+from functions.common.constants import CallbackData, Text
 from functions.common.message_transmitter import transmit_message, find_original_transmission, SENDER_CHAT_ID_KEY, \
     SENDER_MSG_ID_KEY, reply_stop_kbd_markup, force_reply, find_transmissions_by_sender_msg, RECEIVER_CHAT_ID_KEY, \
     RECEIVER_MSG_ID_KEY, edit_transmission, RED_HEART_KEY
@@ -14,16 +14,6 @@ from functions.common.swiper_telegram import BaseSwiperConversation
 from functions.common.utils import send_partitioned_text
 
 logger = logging.getLogger(__name__)
-
-# TODO oleksandr: give these constants more adequate names
-TRANSMISSION_NOT_FOUND_TEXT = '💔 Розмову не знайдено'  # talk not found
-TALK_STOPPED_TEXT = '❌ Розмову зупинено'  # talk stopped
-
-NEW_TRANSMISSION_STARTED_TEXT = 'Ви створили нову тему для розмов - очікуйте відповідей ⏳'
-REVOKE_TOPIC = '⛔️Відкликати'
-
-MESSAGE_NOT_TRANSMITTED_TEXT = 'Повідомлення не відправлене 😞'
-FAILED_TO_EDIT_AT_RECEIVER_TEXT = 'Не вдалося відредакгувати у отримувача 😞'
 
 
 class SwiperTransparency(BaseSwiperConversation):
@@ -50,7 +40,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
     def start(self, update, context):
         update.effective_chat.send_message(
-            text='Здоров',  # TODO oleksandr: come up with a conversation starter ?
+            text=Text.HELLO,  # TODO oleksandr: come up with a conversation starter ?
             reply_markup=reply_stop_kbd_markup(
                 red_heart=False,
             ),
@@ -73,7 +63,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
         if transmitted:
             update.effective_chat.send_message(
-                text=f"<i>{NEW_TRANSMISSION_STARTED_TEXT}</i>",
+                text=f"<i>{Text.NEW_TOPIC_STARTED}</i>",
                 parse_mode=ParseMode.HTML,
                 # reply_to_message_id=update.effective_message.message_id,
             )
@@ -90,7 +80,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
         if not transmissions_by_sender_msg:
             update.effective_chat.send_message(
-                text=f"<i>{TRANSMISSION_NOT_FOUND_TEXT}</i>",
+                text=f"<i>{Text.TALK_NOT_FOUND}</i>",
                 parse_mode=ParseMode.HTML,
                 reply_to_message_id=msg.message_id,
             )
@@ -115,7 +105,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
         if not edited_at_receiver:
             update.effective_chat.send_message(
-                text=f"<i>{FAILED_TO_EDIT_AT_RECEIVER_TEXT}</i>",
+                text=f"<i>{Text.FAILED_TO_EDIT_AT_RECEIVER}</i>",
                 parse_mode=ParseMode.HTML,
                 reply_to_message_id=msg.message_id,
             )
@@ -129,7 +119,7 @@ class SwiperTransparency(BaseSwiperConversation):
             #     parse_mode=ParseMode.HTML,
             #     reply_to_message_id=update.effective_message.message_id,
             # )
-            update.callback_query.answer(text=TRANSMISSION_NOT_FOUND_TEXT)
+            update.callback_query.answer(text=Text.TALK_NOT_FOUND)
             update.effective_message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=[]))
             return
 
@@ -144,7 +134,7 @@ class SwiperTransparency(BaseSwiperConversation):
         # TODO oleksandr: delete correspondent transmission(s) as well
 
         update.effective_message.delete()
-        update.callback_query.answer(text=TALK_STOPPED_TEXT)
+        update.callback_query.answer(text=Text.TALK_STOPPED)
 
         # update.callback_query.answer()  # TODO oleksandr: make it failsafe
         #
@@ -183,7 +173,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
         if not transmissions_by_sender_msg:
             update.effective_chat.send_message(
-                text=f"<i>{TRANSMISSION_NOT_FOUND_TEXT}</i>",
+                text=f"<i>{Text.TALK_NOT_FOUND}</i>",
                 parse_mode=ParseMode.HTML,
                 reply_to_message_id=update.effective_message.reply_to_message.message_id,
             )
@@ -219,7 +209,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
 def report_msg_not_transmitted(update):
     report_msg = update.effective_chat.send_message(
-        text=f"<i>{MESSAGE_NOT_TRANSMITTED_TEXT}</i>",
+        text=f"<i>{Text.MESSAGE_NOT_TRANSMITTED}</i>",
         parse_mode=ParseMode.HTML,
         reply_to_message_id=update.effective_message.message_id,
     )
