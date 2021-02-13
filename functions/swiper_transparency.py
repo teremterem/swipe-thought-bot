@@ -65,7 +65,7 @@ class SwiperTransparency(BaseSwiperConversation):
             update.effective_chat.send_message(
                 text=f"<i>{Text.NEW_TOPIC_STARTED}</i>",
                 parse_mode=ParseMode.HTML,
-                # reply_to_message_id=update.effective_message.message_id,
+                reply_to_message_id=update.effective_message.message_id,
             )
         else:
             report_msg_not_transmitted(update)
@@ -113,13 +113,13 @@ class SwiperTransparency(BaseSwiperConversation):
     def force_reply(self, update, context):
         msg_transmission = find_original_transmission_by_msg(update.effective_message)
         if not msg_transmission:
-            # update.callback_query.answer()  # TODO oleksandr: make it failsafe
-            # update.effective_chat.send_message(
-            #     text=f"<i>{TRANSMISSION_NOT_FOUND_TEXT}</i>",
-            #     parse_mode=ParseMode.HTML,
-            #     reply_to_message_id=update.effective_message.message_id,
-            # )
-            update.callback_query.answer(text=Text.TALK_NOT_FOUND)
+            update.callback_query.answer()  # TODO oleksandr: make it failsafe
+            update.effective_chat.send_message(
+                text=f"<i>{Text.TALK_NOT_FOUND}</i>",
+                parse_mode=ParseMode.HTML,
+                reply_to_message_id=update.effective_message.message_id,
+            )
+            # update.callback_query.answer(text=Text.TALK_NOT_FOUND)
             update.effective_message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=[]))
             return
 
@@ -131,19 +131,19 @@ class SwiperTransparency(BaseSwiperConversation):
         update.effective_message.delete()
 
     def stop(self, update, context):
-        # TODO oleksandr: delete correspondent transmission(s) as well
+        # TODO oleksandr: delete correspondent talk
 
-        update.effective_message.delete()
-        update.callback_query.answer(text=Text.TALK_STOPPED)
+        # update.effective_message.delete()
+        # update.callback_query.answer(text=Text.TALK_STOPPED)
 
-        # update.callback_query.answer()  # TODO oleksandr: make it failsafe
-        #
-        # update.effective_chat.send_message(
-        #     text=f"<i></i>",
-        #     parse_mode=ParseMode.HTML,
-        #     reply_to_message_id=update.effective_message.message_id,
-        # )
-        # update.effective_message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=[]))
+        update.callback_query.answer()  # TODO oleksandr: make it failsafe
+
+        update.effective_chat.send_message(
+            text=f"<i>{Text.TALK_STOPPED}</i>",
+            parse_mode=ParseMode.HTML,
+            reply_to_message_id=update.effective_message.message_id,
+        )
+        update.effective_message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=[]))
 
     def transmit_reply(self, update, context):
         reply_to_msg = update.effective_message.reply_to_message
