@@ -33,9 +33,9 @@ RECEIVER_MSG_S3_KEY_KEY = 'receiver_msg_s3_key'
 msg_transmission_table = dynamodb.Table(MESSAGE_TRANSMISSION_DDB_TABLE_NAME)
 
 
-def reply_reject_kbd_markup(red_heart, reject_only=False):
-    kbd_row = [InlineKeyboardButton('❌Зупинити', callback_data=CallbackData.REJECT)]
-    if not reject_only:
+def reply_stop_kbd_markup(red_heart, stop_only=False):
+    kbd_row = [InlineKeyboardButton('❌Зупинити', callback_data=CallbackData.STOP)]
+    if not stop_only:
         if red_heart:
             heart = '❤️'
         else:
@@ -142,7 +142,7 @@ def transmit_message(
         receiver_bot=receiver_bot,
 
         reply_to_message_id=reply_to_msg_id,
-        reply_markup=reply_reject_kbd_markup(
+        reply_markup=reply_stop_kbd_markup(
             red_heart=red_heart,
         ),
     )
@@ -352,7 +352,7 @@ def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_
                 chat_id=receiver_chat_id,
                 message_id=receiver_msg_id,
                 text=msg.text,
-                reply_markup=reply_reject_kbd_markup(
+                reply_markup=reply_stop_kbd_markup(
                     red_heart=red_heart,
                 ),
                 **kwargs,
@@ -363,7 +363,7 @@ def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_
         #         chat_id=receiver_chat_id,
         #         message_id=receiver_msg_id,
         #         caption=msg.caption,
-        #         reply_markup=reply_reject_kbd_markup(
+        #         reply_markup=reply_stop_kbd_markup(
         #             red_heart=red_heart,
         #         ),
         #         **kwargs,
