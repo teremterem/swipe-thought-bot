@@ -16,11 +16,14 @@ from functions.common.utils import send_partitioned_text
 logger = logging.getLogger(__name__)
 
 # TODO oleksandr: give these constants more adequate names
-TRANSMISSION_NOT_FOUND_TEXT = '💔 Беседа не найдена'  # talk not found
-TRANSMISSION_REJECTED_TEXT = '❌ Беседа остановлена'  # talk stopped
-NEW_TRANSMISSION_STARTED_TEXT = 'Вы создали новую тему для бесед - ждите ответов ⏳'
-MESSAGE_NOT_TRANSMITTED_TEXT = 'Сообщение не отправлено 😞'
-FAILED_TO_EDIT_AT_RECEIVER_TEXT = 'Не удалось отредактировать у получателя 😞'
+TRANSMISSION_NOT_FOUND_TEXT = '💔 Розмову не знайдено'  # talk not found
+TRANSMISSION_REJECTED_TEXT = '❌ Розмову зупинено'  # talk stopped
+
+NEW_TRANSMISSION_STARTED_TEXT = 'Ви створили нову тему для розмов - очікуйте відповідей ⏳'
+REVOKE_TOPIC = '⛔️Відкликати'
+
+MESSAGE_NOT_TRANSMITTED_TEXT = 'Повідомлення не відправлене 😞'
+FAILED_TO_EDIT_AT_RECEIVER_TEXT = 'Не вдалося відредакгувати у отримувача 😞'
 
 
 class SwiperTransparency(BaseSwiperConversation):
@@ -47,7 +50,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
     def start(self, update, context):
         update.effective_chat.send_message(
-            text='Привет',  # TODO oleksandr: come up with a conversation starter ?
+            text='Здоров',  # TODO oleksandr: come up with a conversation starter ?
             reply_markup=reply_reject_kbd_markup(
                 red_heart=False,
             ),

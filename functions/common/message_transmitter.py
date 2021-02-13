@@ -34,13 +34,13 @@ msg_transmission_table = dynamodb.Table(MESSAGE_TRANSMISSION_DDB_TABLE_NAME)
 
 
 def reply_reject_kbd_markup(red_heart, reject_only=False):
-    kbd_row = [InlineKeyboardButton('❌Остановить', callback_data=CallbackData.REJECT)]
+    kbd_row = [InlineKeyboardButton('❌Зупинити', callback_data=CallbackData.REJECT)]
     if not reject_only:
         if red_heart:
             heart = '❤️'
         else:
             heart = '🖤'
-        kbd_row.insert(0, InlineKeyboardButton(f"{heart}Ответить", callback_data=CallbackData.REPLY))
+        kbd_row.insert(0, InlineKeyboardButton(f"{heart}Відповісти", callback_data=CallbackData.REPLY))
 
     kbd_markup = InlineKeyboardMarkup(inline_keyboard=[kbd_row])
     return kbd_markup
