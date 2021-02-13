@@ -2,7 +2,7 @@ import os
 
 from functions.common import logging  # force log config of functions/common/__init__.py
 from functions.common.utils import log_event_and_response
-from functions.swiper_transparency import SwiperTransparency
+from functions.swiper_experiments.swiper_transparency import SwiperTransparency
 
 logger = logging.getLogger()
 
