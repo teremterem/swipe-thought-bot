@@ -9,7 +9,6 @@ from telegram import Bot, Update
 from telegram.ext import Dispatcher, BasePersistence
 from telegram.utils.types import ConversationDict
 
-from .constants import DataKey
 from .s3 import main_bucket
 from .swiper_chat_data import read_swiper_chat_data, write_swiper_chat_data, CHAT_ID_KEY, \
     PTB_CONVERSATIONS_KEY, PTB_CHAT_DATA_KEY
@@ -17,6 +16,9 @@ from .swiper_chat_data import read_swiper_chat_data, write_swiper_chat_data, CHA
 logger = logging.getLogger(__name__)
 
 TELEGRAM_TOKEN = os.environ['TELEGRAM_TOKEN']
+
+SWIPER_STATE_KEY = 'swiper_state'
+CHAT_KEY = 'chat'
 
 
 class Swiper:
@@ -35,11 +37,11 @@ class Swiper:
 
     @property
     def swiper_state(self):
-        return self._swiper_data.get(DataKey.SWIPER_STATE)
+        return self._swiper_data.get(SWIPER_STATE_KEY)
 
     @swiper_state.setter
     def swiper_state(self, swiper_state):
-        self._swiper_data[DataKey.SWIPER_STATE] = swiper_state
+        self._swiper_data[SWIPER_STATE_KEY] = swiper_state
 
     def is_initialized(self):
         return self._swiper_data is not None
@@ -81,7 +83,7 @@ class SwiperUpdate:
 
     def persist_swipers(self):
         if self.current_swiper.is_initialized() and self.ptb_update.effective_chat:
-            self.current_swiper.swiper_data[DataKey.CHAT] = self.ptb_update.effective_chat.to_dict()
+            self.current_swiper.swiper_data[CHAT_KEY] = self.ptb_update.effective_chat.to_dict()
 
         for swiper in self._swipers.values():
             swiper.persist()

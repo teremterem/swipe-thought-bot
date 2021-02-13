@@ -6,7 +6,7 @@ from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ForceReply
 from telegram.error import BadRequest
 
 from functions.common import logging  # force log config of functions/common/__init__.py
-from functions.common.constants import CallbackData
+from functions.common.constants import CallbackData, Text
 from functions.common.dynamodb import dynamodb, put_ddb_item, delete_ddb_item
 from functions.common.s3 import put_s3_object, main_bucket
 
@@ -33,14 +33,14 @@ RECEIVER_MSG_S3_KEY_KEY = 'receiver_msg_s3_key'
 msg_transmission_table = dynamodb.Table(MESSAGE_TRANSMISSION_DDB_TABLE_NAME)
 
 
-def reply_reject_kbd_markup(red_heart, reject_only=False):
-    kbd_row = [InlineKeyboardButton('❌Остановить', callback_data=CallbackData.REJECT)]
-    if not reject_only:
+def reply_stop_kbd_markup(red_heart, stop_only=False):
+    kbd_row = [InlineKeyboardButton(Text.STOP, callback_data=CallbackData.STOP)]
+    if not stop_only:
         if red_heart:
-            heart = '❤️'
+            heart = Text.READ_HEART
         else:
-            heart = '🖤'
-        kbd_row.insert(0, InlineKeyboardButton(f"{heart}Ответить", callback_data=CallbackData.REPLY))
+            heart = Text.BLACK_HEART
+        kbd_row.insert(0, InlineKeyboardButton(f"{heart}{Text.REPLY}", callback_data=CallbackData.REPLY))
 
     kbd_markup = InlineKeyboardMarkup(inline_keyboard=[kbd_row])
     return kbd_markup
@@ -142,7 +142,7 @@ def transmit_message(
         receiver_bot=receiver_bot,
 
         reply_to_message_id=reply_to_msg_id,
-        reply_markup=reply_reject_kbd_markup(
+        reply_markup=reply_stop_kbd_markup(
             red_heart=red_heart,
         ),
     )
@@ -352,7 +352,7 @@ def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_
                 chat_id=receiver_chat_id,
                 message_id=receiver_msg_id,
                 text=msg.text,
-                reply_markup=reply_reject_kbd_markup(
+                reply_markup=reply_stop_kbd_markup(
                     red_heart=red_heart,
                 ),
                 **kwargs,
@@ -363,7 +363,7 @@ def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_
         #         chat_id=receiver_chat_id,
         #         message_id=receiver_msg_id,
         #         caption=msg.caption,
-        #         reply_markup=reply_reject_kbd_markup(
+        #         reply_markup=reply_stop_kbd_markup(
         #             red_heart=red_heart,
         #         ),
         #         **kwargs,

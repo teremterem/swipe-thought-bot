@@ -4,7 +4,6 @@ from pprint import pformat
 
 from boto3.dynamodb.conditions import Attr
 
-from .constants import DataKey, SwiperState
 from .dynamodb import dynamodb
 
 logger = logging.getLogger(__name__)
@@ -35,7 +34,6 @@ def read_swiper_chat_data(chat_id, bot_id):
     if not item:
         # does not exist yet
         empty_item[IS_SWIPER_AUTHORIZED_KEY] = False  # don't talk to strangers
-        empty_item[DataKey.SWIPER_STATE] = SwiperState.IDLE
         return empty_item
 
     return item
