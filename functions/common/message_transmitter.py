@@ -9,6 +9,7 @@ from functions.common import logging  # force log config of functions/common/__i
 from functions.common.constants import CallbackData, Text
 from functions.common.dynamodb import dynamodb, put_ddb_item, delete_ddb_item
 from functions.common.s3 import put_s3_object, main_bucket
+from functions.common.utils import fail_safely
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +118,7 @@ def find_transmissions_by_sender_msg(
     return items
 
 
+@fail_safely()
 def transmit_message(
         swiper_update,
         sender_bot_id,
@@ -341,12 +343,13 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
     return transmitted_msg
 
 
+@fail_safely()
 def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_heart, **kwargs):
     receiver_msg_id = int(receiver_msg_id)
     receiver_chat_id = int(receiver_chat_id)
 
     edited_msg = None
-    try:
+    try:  # TODO oleksandr: get rid of this try block - we already decorated the function with @fail_safely()
         if msg.text:
             edited_msg = receiver_bot.edit_message_text(
                 chat_id=receiver_chat_id,

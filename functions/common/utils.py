@@ -44,18 +44,18 @@ def log_event_and_response(lambda_handler):
 
 def fail_safely(static_response=None):
     # TODO oleksandr: make decoration possible with and without parameters ?
-    #  @fail_quietly should have the same effect as @fail_quietly()
-    def decorator(lambda_handler):
-        @wraps(lambda_handler)
+    #  @fail_safely should have the same effect as @fail_safely()
+    def decorator(func):
+        @wraps(func)
         def wrapper(*args, **kwargs):
             response = None
             try:
-                response = lambda_handler(*args, **kwargs)
+                response = func(*args, **kwargs)
             except:
                 logger.exception('')
 
             if response is None:
-                # static_response in two cases: exception happened or lambda worked fine but did not return anything
+                # static_response in two cases: exception happened or func worked fine but returned None
                 response = static_response
             return response
 
