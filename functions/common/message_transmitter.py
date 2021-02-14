@@ -349,7 +349,7 @@ def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_
     receiver_chat_id = int(receiver_chat_id)
 
     edited_msg = None
-    try:
+    try:  # TODO oleksandr: get rid of this try block - we already decorated the function with @fail_safely()
         if msg.text:
             edited_msg = receiver_bot.edit_message_text(
                 chat_id=receiver_chat_id,
