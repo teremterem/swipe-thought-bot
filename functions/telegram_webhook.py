@@ -1,7 +1,7 @@
 import os
 
 from functions.common import logging  # force log config of functions/common/__init__.py
-from functions.common.utils import log_event_and_response
+from functions.common.utils import log_event_and_response, fail_safely
 from functions.swiper_experiments.swiper_transparency import SwiperTransparency
 
 logger = logging.getLogger()
@@ -10,6 +10,7 @@ swiper_conversation = SwiperTransparency()
 
 
 @log_event_and_response
+@fail_safely()
 def webhook(event, context):
     update_json = event['body']
     swiper_conversation.process_update_json(update_json)

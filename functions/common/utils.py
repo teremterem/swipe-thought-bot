@@ -44,7 +44,7 @@ def log_event_and_response(lambda_handler):
 
 def fail_safely(static_response=None):
     # TODO oleksandr: make decoration possible with and without parameters ?
-    #  @fail_quietly should have the same effect as @fail_quietly()
+    #  @fail_safely should have the same effect as @fail_safely()
     def decorator(lambda_handler):
         @wraps(lambda_handler)
         def wrapper(*args, **kwargs):
