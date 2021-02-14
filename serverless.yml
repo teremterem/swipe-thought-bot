@@ -82,6 +82,7 @@ functions:
     handler: functions/telegram_webhook.set_webhook
     package:
       include:
+        - './functions/swiper_experiments/**'
         - './functions/telegram_webhook.py'
     events:
       - http: POST /${self:custom.constants.WEBHOOK_TOKEN}/set_webhook
