@@ -35,7 +35,8 @@ msg_transmission_table = dynamodb.Table(MESSAGE_TRANSMISSION_DDB_TABLE_NAME)
 
 
 def reply_stop_kbd_markup(red_heart, stop_only=False):
-    kbd_row = [InlineKeyboardButton(Text.STOP, callback_data=CallbackData.STOP)]
+    # kbd_row = [InlineKeyboardButton(Text.STOP, callback_data=CallbackData.STOP)]
+    kbd_row = []
     if not stop_only:
         if red_heart:
             heart = Text.READ_HEART
