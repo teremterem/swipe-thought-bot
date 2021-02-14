@@ -35,7 +35,7 @@ def read_swiper_chat_data(chat_id, bot_id):
     item = response.get('Item')
     if not item:
         # does not exist yet
-        empty_item[IS_SWIPER_AUTHORIZED_KEY] = False  # don't talk to strangers
+        empty_item[IS_SWIPER_AUTHORIZED_KEY] = AUTHORIZE_STRANGERS_BY_DEFAULT
         return empty_item
 
     return item
