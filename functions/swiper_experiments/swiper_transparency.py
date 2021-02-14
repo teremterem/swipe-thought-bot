@@ -7,7 +7,7 @@ from telegram.ext import CommandHandler, DispatcherHandlerStop, Filters, Message
 from functions.common import logging  # force log config of functions/common/__init__.py
 from functions.common.constants import CallbackData, Text
 from functions.common.message_transmitter import transmit_message, find_original_transmission, SENDER_CHAT_ID_KEY, \
-    SENDER_MSG_ID_KEY, reply_stop_kbd_markup, force_reply, find_transmissions_by_sender_msg, RECEIVER_CHAT_ID_KEY, \
+    SENDER_MSG_ID_KEY, force_reply, find_transmissions_by_sender_msg, RECEIVER_CHAT_ID_KEY, \
     RECEIVER_MSG_ID_KEY, edit_transmission, RED_HEART_KEY
 from functions.common.swiper_chat_data import IS_SWIPER_AUTHORIZED_KEY, find_all_active_swiper_chat_ids
 from functions.common.swiper_telegram import BaseSwiperConversation
@@ -40,10 +40,8 @@ class SwiperTransparency(BaseSwiperConversation):
 
     def start(self, update, context):
         update.effective_chat.send_message(
-            text=Text.HELLO,  # TODO oleksandr: come up with a conversation starter ?
-            reply_markup=reply_stop_kbd_markup(
-                red_heart=False,
-            ),
+            text=Text.HELLO,
+            parse_mode=ParseMode.HTML,
         )
 
     def start_topic(self, update, context):
