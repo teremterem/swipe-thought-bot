@@ -330,7 +330,7 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
             **kwargs,
         )
 
-    elif msg.poll:
+    elif msg.poll and msg.poll.is_anonymous:
         transmitted_msg = receiver_bot.forward_message(
             chat_id=receiver_chat_id,
             from_chat_id=msg.chat_id,
