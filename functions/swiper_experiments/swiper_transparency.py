@@ -67,7 +67,7 @@ class SwiperTransparency(BaseSwiperConversation):
             update.effective_chat.send_message(
                 text=f"<i>{Text.NEW_TOPIC_STARTED}</i>",
                 parse_mode=ParseMode.HTML,
-                reply_to_message_id=update.effective_message.message_id,
+                # reply_to_message_id=msg.message_id,  # TODO oleksandr: are you 100% sure we don't need it ?
                 disable_notification=True,
             )
         else:
