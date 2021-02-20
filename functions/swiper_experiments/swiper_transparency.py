@@ -11,7 +11,7 @@ from functions.common.swiper_telegram import BaseSwiperConversation
 from functions.common.utils import send_partitioned_text
 from functions.swiper_experiments.message_transmitter import transmit_message, find_original_transmission, \
     SENDER_CHAT_ID_KEY, SENDER_MSG_ID_KEY, force_reply, find_transmissions_by_sender_msg, RECEIVER_CHAT_ID_KEY, \
-    RECEIVER_MSG_ID_KEY, edit_transmission, RED_HEART_KEY
+    RECEIVER_MSG_ID_KEY, edit_transmission, RED_HEART_KEY, prepare_msg_for_transmission
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +46,8 @@ class SwiperTransparency(BaseSwiperConversation):
         )
 
     def start_topic(self, update, context):
+        msg = prepare_msg_for_transmission(update.effective_message, context.bot)
+
         transmitted = False
         for swiper_chat_id in find_all_active_swiper_chat_ids(context.bot.id):
             # TODO oleksandr: use thread-workers to broadcast in parallel (remember about Telegram limits too);
@@ -54,6 +56,7 @@ class SwiperTransparency(BaseSwiperConversation):
             if str(swiper_chat_id) != str(update.effective_chat.id):
                 transmitted = transmit_message(
                     swiper_update=self.swiper_update,  # non-async single-threaded environment
+                    msg=msg,
                     sender_bot_id=context.bot.id,
                     receiver_chat_id=swiper_chat_id,
                     receiver_bot=context.bot,
@@ -113,25 +116,24 @@ class SwiperTransparency(BaseSwiperConversation):
             )
 
     def force_reply(self, update, context):
+        update.callback_query.answer()  # TODO oleksandr: make it failsafe
+
         msg_transmission = find_original_transmission_by_msg(update.effective_message)
         if not msg_transmission:
-            update.callback_query.answer()  # TODO oleksandr: make it failsafe
             update.effective_chat.send_message(
                 text=f"<i>{Text.TALK_NOT_FOUND}</i>",
                 parse_mode=ParseMode.HTML,
                 reply_to_message_id=update.effective_message.message_id,
                 # disable_notification=True,
             )
-            # update.callback_query.answer(text=Text.TALK_NOT_FOUND)
             update.effective_message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=[]))
             return
 
-        update.callback_query.answer()  # TODO oleksandr: make it failsafe
         force_reply(
             original_msg=update.effective_message,
             original_msg_transmission=msg_transmission,
         )
-        update.effective_message.delete()
+        update.effective_message.delete()  # TODO oleksandr: make it failsafe ?
 
     def stop(self, update, context):
         # TODO oleksandr: delete correspondent talk
@@ -155,10 +157,13 @@ class SwiperTransparency(BaseSwiperConversation):
         except BadRequest:
             logger.warning('Failed to hide inline keyboard', exc_info=True)
 
+        msg = prepare_msg_for_transmission(update.effective_message, context.bot)
+
         msg_transmission = find_original_transmission_by_msg(reply_to_msg)
         if msg_transmission:
             if not transmit_message(
                     swiper_update=self.swiper_update,  # non-async single-threaded environment
+                    msg=msg,
                     sender_bot_id=context.bot.id,
                     receiver_chat_id=msg_transmission[SENDER_CHAT_ID_KEY],
                     receiver_bot=context.bot,  # msg_transmission[SENDER_BOT_ID_KEY] is of no use here
@@ -194,6 +199,7 @@ class SwiperTransparency(BaseSwiperConversation):
             #  (an exception may happen if, for ex., a receiver has blocked the bot)
             transmitted = transmit_message(
                 swiper_update=self.swiper_update,  # non-async single-threaded environment
+                msg=msg,
                 sender_bot_id=context.bot.id,
                 receiver_chat_id=msg_transmission[RECEIVER_CHAT_ID_KEY],
                 receiver_bot=context.bot,  # msg_transmission[RECEIVER_BOT_ID_KEY] is of no use here

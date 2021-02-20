@@ -122,14 +122,15 @@ def find_transmissions_by_sender_msg(
 @fail_safely()
 def transmit_message(
         swiper_update,
+        msg,
         sender_bot_id,
         receiver_chat_id,
         receiver_bot,
         red_heart,
         reply_to_msg_id=None,
 ):
-    sender_msg_id = int(swiper_update.ptb_update.effective_message.message_id)
-    sender_chat_id = int(swiper_update.ptb_update.effective_chat.id)
+    sender_msg_id = int(msg.message_id)
+    sender_chat_id = int(msg.chat_id)
     sender_bot_id = int(sender_bot_id)
 
     receiver_chat_id = int(receiver_chat_id)
@@ -140,7 +141,7 @@ def transmit_message(
         reply_to_msg_id = int(reply_to_msg_id)
 
     transmitted_msg = _ptb_transmit(
-        msg=swiper_update.ptb_update.effective_message,
+        msg=msg,
         receiver_chat_id=receiver_chat_id,
         receiver_bot=receiver_bot,
 
@@ -156,7 +157,7 @@ def transmit_message(
 
     receiver_msg_id = int(transmitted_msg.message_id)
 
-    msg_transmission_id = generate_msg_transmission_id()
+    msg_transmission_id = str(uuid.uuid4())
 
     receiver_msg_s3_key = f"{swiper_update.update_s3_key_prefix}.transmission.{msg_transmission_id}.json"
     put_s3_object(
@@ -218,7 +219,7 @@ def force_reply(original_msg, original_msg_transmission):
 
     msg_trans_copy = original_msg_transmission.copy()
     msg_trans_copy[ORIGINAL_MSG_TRANS_ID_KEY] = original_msg_transmission[MSG_TRANS_ID_KEY]
-    msg_trans_copy[MSG_TRANS_ID_KEY] = generate_msg_transmission_id()
+    msg_trans_copy[MSG_TRANS_ID_KEY] = str(uuid.uuid4())
 
     msg_trans_copy[RECEIVER_MSG_ID_KEY] = int(force_reply_msg.message_id)
     msg_trans_copy[RECEIVER_CHAT_ID_KEY] = int(force_reply_msg.chat.id)
@@ -238,9 +239,30 @@ def force_reply(original_msg, original_msg_transmission):
     )
 
 
-def generate_msg_transmission_id():
-    msg_transmission_id = str(uuid.uuid4())
-    return msg_transmission_id
+def prepare_msg_for_transmission(msg, sender_bot, **kwargs):
+    if msg.poll:
+        original_msg = msg
+        msg = sender_bot.send_poll(
+            chat_id=msg.chat_id,
+            question=msg.poll.question,
+            options=[po.text for po in msg.poll.options],
+            is_anonymous=True,  # msg.poll.is_anonymous,
+            type=msg.poll.type,
+            allows_multiple_answers=msg.poll.allows_multiple_answers,
+            correct_option_id=msg.poll.correct_option_id,
+            is_closed=False,  # TODO oleksandr: support inline button that closes the poll ?
+            disable_notification=True,
+            reply_to_message_id=msg.reply_to_message.message_id if msg.reply_to_message else None,
+            explanation=msg.poll.explanation,
+            open_period=msg.poll.open_period,
+            close_date=msg.poll.close_date,
+            allow_sending_without_reply=True,
+            explanation_entities=msg.poll.explanation_entities,
+            **kwargs,
+        )
+        original_msg.delete()  # TODO oleksandr: make it failsafe ?
+
+    return msg
 
 
 def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
@@ -339,25 +361,11 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
             **kwargs,
         )
 
-    # forwarding a poll will disclose its author's identity
-    # TODO oleksandr: try to recreate the poll with the same settings and delete the user's version of it
-    #  (turns out bots can delete messages sent by users...)
     elif msg.poll:
-        transmitted_msg = receiver_bot.send_poll(
+        transmitted_msg = receiver_bot.forward_message(
             chat_id=receiver_chat_id,
-            question=msg.poll.question,
-            options=[po.text for po in msg.poll.options],
-            is_anonymous=True,  # msg.poll.is_anonymous,
-            type=msg.poll.type,
-            allows_multiple_answers=msg.poll.allows_multiple_answers,
-            correct_option_id=msg.poll.correct_option_id,
-            is_closed=False,  # TODO oleksandr: support inline button that closes the poll ?
-            disable_notification=True,
-            explanation=msg.poll.explanation,
-            open_period=msg.poll.open_period,
-            close_date=msg.poll.close_date,
-            explanation_entities=msg.poll.explanation_entities,
-            **kwargs,
+            from_chat_id=msg.chat_id,
+            message_id=msg.message_id,
         )
 
     return transmitted_msg
