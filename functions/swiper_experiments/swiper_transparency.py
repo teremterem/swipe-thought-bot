@@ -42,6 +42,7 @@ class SwiperTransparency(BaseSwiperConversation):
         update.effective_chat.send_message(
             text=Text.HELLO,
             parse_mode=ParseMode.HTML,
+            disable_notification=True,
         )
 
     def start_topic(self, update, context):
@@ -64,6 +65,7 @@ class SwiperTransparency(BaseSwiperConversation):
                 text=f"<i>{Text.NEW_TOPIC_STARTED}</i>",
                 parse_mode=ParseMode.HTML,
                 reply_to_message_id=update.effective_message.message_id,
+                disable_notification=True,
             )
         else:
             report_msg_not_transmitted(update)
@@ -81,6 +83,7 @@ class SwiperTransparency(BaseSwiperConversation):
                 text=f"<i>{Text.TALK_NOT_FOUND}</i>",
                 parse_mode=ParseMode.HTML,
                 reply_to_message_id=msg.message_id,
+                # disable_notification=True,
             )
             return
 
@@ -106,6 +109,7 @@ class SwiperTransparency(BaseSwiperConversation):
                 text=f"<i>{Text.FAILED_TO_EDIT_AT_RECEIVER}</i>",
                 parse_mode=ParseMode.HTML,
                 reply_to_message_id=msg.message_id,
+                # disable_notification=True,
             )
 
     def force_reply(self, update, context):
@@ -116,6 +120,7 @@ class SwiperTransparency(BaseSwiperConversation):
                 text=f"<i>{Text.TALK_NOT_FOUND}</i>",
                 parse_mode=ParseMode.HTML,
                 reply_to_message_id=update.effective_message.message_id,
+                # disable_notification=True,
             )
             # update.callback_query.answer(text=Text.TALK_NOT_FOUND)
             update.effective_message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=[]))
@@ -174,6 +179,7 @@ class SwiperTransparency(BaseSwiperConversation):
                 text=f"<i>{Text.TALK_NOT_FOUND}</i>",
                 parse_mode=ParseMode.HTML,
                 reply_to_message_id=update.effective_message.reply_to_message.message_id,
+                # disable_notification=True,
             )
             return
 
@@ -210,6 +216,7 @@ def report_msg_not_transmitted(update):
         text=f"<i>{Text.MESSAGE_NOT_TRANSMITTED}</i>",
         parse_mode=ParseMode.HTML,
         reply_to_message_id=update.effective_message.message_id,
+        # disable_notification=True,
     )
     return report_msg
 

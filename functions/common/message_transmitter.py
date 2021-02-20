@@ -145,6 +145,7 @@ def transmit_message(
         receiver_bot=receiver_bot,
 
         reply_to_message_id=reply_to_msg_id,
+        # TODO oleksandr: allow_sending_without_reply=True, ?
         reply_markup=reply_stop_kbd_markup(
             red_heart=red_heart,
         ),
@@ -212,6 +213,7 @@ def force_reply(original_msg, original_msg_transmission):
 
         reply_to_message_id=reply_to_msg_id,
         reply_markup=ForceReply(),
+        allow_sending_without_reply=True,
     )
 
     msg_trans_copy = original_msg_transmission.copy()
@@ -330,23 +332,27 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
             **kwargs,
         )
 
-    elif msg.poll and msg.poll.is_anonymous:
-        transmitted_msg = receiver_bot.forward_message(
+    # forwarding a poll will disclose its author's identity
+    # TODO oleksandr: try to recreate the poll with the same settings and delete the user's version of it
+    #  (turns out bots can delete messages sent by users...)
+    elif msg.poll:
+        transmitted_msg = receiver_bot.send_poll(
             chat_id=receiver_chat_id,
-            from_chat_id=msg.chat_id,
-            message_id=msg.message_id,
+            question=msg.poll.question,
+            options=[po.text for po in msg.poll.options],
+            is_anonymous=True,  # msg.poll.is_anonymous,
+            type=msg.poll.type,
+            allows_multiple_answers=msg.poll.allows_multiple_answers,
+            correct_option_id=msg.poll.correct_option_id,
+            is_closed=False,  # TODO oleksandr: support inline button that closes the poll ?
+            disable_notification=True,
+            explanation=msg.poll.explanation,
+            # explanation_parse_mode: Union[str, DefaultValue, None] = DEFAULT_NONE,
+            open_period=msg.poll.open_period,
+            close_date=msg.poll.close_date,
+            explanation_entities=msg.poll.explanation_entities,
+            **kwargs,
         )
-
-    # # forwarding a poll will disclose its author's identity
-    # # TODO oleksandr: try to recreate the poll with the same settings and delete the user's version of it
-    # #  (turns out bots can delete messages sent by users...)
-    # elif msg.poll:
-    #     transmitted_msg = receiver_bot.forward_message(
-    #         chat_id=receiver_chat_id,
-    #         from_chat_id=msg.chat_id,
-    #         message_id=msg.message_id,
-    #         # **kwargs,
-    #     )
 
     return transmitted_msg
 
@@ -357,33 +363,28 @@ def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_
     receiver_chat_id = int(receiver_chat_id)
 
     edited_msg = None
-    try:  # TODO oleksandr: get rid of this try block - we already decorated the function with @fail_safely()
-        if msg.text:
-            edited_msg = receiver_bot.edit_message_text(
-                chat_id=receiver_chat_id,
-                message_id=receiver_msg_id,
-                text=msg.text,
-                reply_markup=reply_stop_kbd_markup(
-                    red_heart=red_heart,
-                ),
-                **kwargs,
-            )
 
-        # elif msg.caption:
-        #     edited_msg = receiver_bot.edit_message_caption(
-        #         chat_id=receiver_chat_id,
-        #         message_id=receiver_msg_id,
-        #         caption=msg.caption,
-        #         reply_markup=reply_stop_kbd_markup(
-        #             red_heart=red_heart,
-        #         ),
-        #         **kwargs,
-        #     )
-        #     # TODO oleksandr: report to the user somehow that only caption was edited and not the media itself ?
+    if msg.text:
+        edited_msg = receiver_bot.edit_message_text(
+            chat_id=receiver_chat_id,
+            message_id=receiver_msg_id,
+            text=msg.text,
+            reply_markup=reply_stop_kbd_markup(
+                red_heart=red_heart,
+            ),
+            **kwargs,
+        )
 
-    except BadRequest:
-        logger.warning('Failed to edit message at receiver\'s side', exc_info=True)
-        # TODO oleksandr: it is not because of inline keyboard (it can be added to a message without one no problem),
-        #  it is because of ForceReply... what to do about it ?
+    # elif msg.caption:
+    #     edited_msg = receiver_bot.edit_message_caption(
+    #         chat_id=receiver_chat_id,
+    #         message_id=receiver_msg_id,
+    #         caption=msg.caption,
+    #         reply_markup=reply_stop_kbd_markup(
+    #             red_heart=red_heart,
+    #         ),
+    #         **kwargs,
+    #     )
+    #     # TODO oleksandr: report to the user somehow that only caption was edited and not the media itself ?
 
     return edited_msg
