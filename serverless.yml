@@ -73,7 +73,7 @@ functions:
           method: POST
           path: /${self:custom.constants.WEBHOOK_TOKEN}
           async: true
-    timeout: 20 # seconds (default is 6)
+    timeout: 120 # seconds (default is 6)
     maximumRetryAttempts: 0
     layers:
       - { Ref: PythonRequirementsLambdaLayer }

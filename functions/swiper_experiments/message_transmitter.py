@@ -122,14 +122,15 @@ def find_transmissions_by_sender_msg(
 @fail_safely()
 def transmit_message(
         swiper_update,
+        msg,
         sender_bot_id,
         receiver_chat_id,
         receiver_bot,
         red_heart,
         reply_to_msg_id=None,
 ):
-    sender_msg_id = int(swiper_update.ptb_update.effective_message.message_id)
-    sender_chat_id = int(swiper_update.ptb_update.effective_chat.id)
+    sender_msg_id = int(msg.message_id)
+    sender_chat_id = int(msg.chat_id)
     sender_bot_id = int(sender_bot_id)
 
     receiver_chat_id = int(receiver_chat_id)
@@ -140,11 +141,12 @@ def transmit_message(
         reply_to_msg_id = int(reply_to_msg_id)
 
     transmitted_msg = _ptb_transmit(
-        msg=swiper_update.ptb_update.effective_message,
+        msg=msg,
         receiver_chat_id=receiver_chat_id,
         receiver_bot=receiver_bot,
 
         reply_to_message_id=reply_to_msg_id,
+        # TODO oleksandr: allow_sending_without_reply=True, ?
         reply_markup=reply_stop_kbd_markup(
             red_heart=red_heart,
         ),
@@ -155,7 +157,7 @@ def transmit_message(
 
     receiver_msg_id = int(transmitted_msg.message_id)
 
-    msg_transmission_id = generate_msg_transmission_id()
+    msg_transmission_id = str(uuid.uuid4())
 
     receiver_msg_s3_key = f"{swiper_update.update_s3_key_prefix}.transmission.{msg_transmission_id}.json"
     put_s3_object(
@@ -212,11 +214,12 @@ def force_reply(original_msg, original_msg_transmission):
 
         reply_to_message_id=reply_to_msg_id,
         reply_markup=ForceReply(),
+        allow_sending_without_reply=True,
     )
 
     msg_trans_copy = original_msg_transmission.copy()
     msg_trans_copy[ORIGINAL_MSG_TRANS_ID_KEY] = original_msg_transmission[MSG_TRANS_ID_KEY]
-    msg_trans_copy[MSG_TRANS_ID_KEY] = generate_msg_transmission_id()
+    msg_trans_copy[MSG_TRANS_ID_KEY] = str(uuid.uuid4())
 
     msg_trans_copy[RECEIVER_MSG_ID_KEY] = int(force_reply_msg.message_id)
     msg_trans_copy[RECEIVER_CHAT_ID_KEY] = int(force_reply_msg.chat.id)
@@ -236,9 +239,30 @@ def force_reply(original_msg, original_msg_transmission):
     )
 
 
-def generate_msg_transmission_id():
-    msg_transmission_id = str(uuid.uuid4())
-    return msg_transmission_id
+def prepare_msg_for_transmission(msg, sender_bot, **kwargs):
+    if msg.poll:
+        original_msg = msg
+        msg = sender_bot.send_poll(
+            chat_id=msg.chat_id,
+            question=msg.poll.question,
+            options=[po.text for po in msg.poll.options],
+            is_anonymous=True,  # msg.poll.is_anonymous,
+            type=msg.poll.type,
+            allows_multiple_answers=msg.poll.allows_multiple_answers,
+            correct_option_id=msg.poll.correct_option_id,
+            is_closed=False,  # TODO oleksandr: support inline button that closes the poll ?
+            disable_notification=True,
+            reply_to_message_id=msg.reply_to_message.message_id if msg.reply_to_message else None,
+            explanation=msg.poll.explanation,
+            open_period=msg.poll.open_period,
+            close_date=msg.poll.close_date,
+            allow_sending_without_reply=True,
+            explanation_entities=msg.poll.explanation_entities,
+            **kwargs,
+        )
+        original_msg.delete()  # TODO oleksandr: make it failsafe ?
+
+    return msg
 
 
 def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
@@ -248,6 +272,7 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
         transmitted_msg = receiver_bot.send_message(
             chat_id=receiver_chat_id,
             text=msg.text,
+            entities=msg.entities,
             **kwargs,
         )
 
@@ -266,6 +291,7 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
             chat_id=receiver_chat_id,
             photo=biggest_photo,
             caption=msg.caption,
+            caption_entities=msg.caption_entities,
             **kwargs,
         )
 
@@ -274,6 +300,7 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
             chat_id=receiver_chat_id,
             animation=msg.animation,
             caption=msg.caption,
+            caption_entities=msg.caption_entities,
             **kwargs,
         )
 
@@ -282,6 +309,7 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
             chat_id=receiver_chat_id,
             video=msg.video,
             caption=msg.caption,
+            caption_entities=msg.caption_entities,
             **kwargs,
         )
 
@@ -290,6 +318,7 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
             chat_id=receiver_chat_id,
             audio=msg.audio,
             caption=msg.caption,
+            caption_entities=msg.caption_entities,
             **kwargs,
         )
 
@@ -305,6 +334,7 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
             chat_id=receiver_chat_id,
             voice=msg.voice,
             caption=msg.caption,
+            caption_entities=msg.caption_entities,
             **kwargs,
         )
 
@@ -327,26 +357,16 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
             chat_id=receiver_chat_id,
             document=msg.document,
             caption=msg.caption,
+            caption_entities=msg.caption_entities,
             **kwargs,
         )
 
-    elif msg.poll and msg.poll.is_anonymous:
+    elif msg.poll:
         transmitted_msg = receiver_bot.forward_message(
             chat_id=receiver_chat_id,
             from_chat_id=msg.chat_id,
             message_id=msg.message_id,
         )
-
-    # # forwarding a poll will disclose its author's identity
-    # # TODO oleksandr: try to recreate the poll with the same settings and delete the user's version of it
-    # #  (turns out bots can delete messages sent by users...)
-    # elif msg.poll:
-    #     transmitted_msg = receiver_bot.forward_message(
-    #         chat_id=receiver_chat_id,
-    #         from_chat_id=msg.chat_id,
-    #         message_id=msg.message_id,
-    #         # **kwargs,
-    #     )
 
     return transmitted_msg
 
@@ -357,33 +377,30 @@ def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_
     receiver_chat_id = int(receiver_chat_id)
 
     edited_msg = None
-    try:  # TODO oleksandr: get rid of this try block - we already decorated the function with @fail_safely()
-        if msg.text:
-            edited_msg = receiver_bot.edit_message_text(
-                chat_id=receiver_chat_id,
-                message_id=receiver_msg_id,
-                text=msg.text,
-                reply_markup=reply_stop_kbd_markup(
-                    red_heart=red_heart,
-                ),
-                **kwargs,
-            )
 
-        # elif msg.caption:
-        #     edited_msg = receiver_bot.edit_message_caption(
-        #         chat_id=receiver_chat_id,
-        #         message_id=receiver_msg_id,
-        #         caption=msg.caption,
-        #         reply_markup=reply_stop_kbd_markup(
-        #             red_heart=red_heart,
-        #         ),
-        #         **kwargs,
-        #     )
-        #     # TODO oleksandr: report to the user somehow that only caption was edited and not the media itself ?
+    if msg.text:
+        edited_msg = receiver_bot.edit_message_text(
+            chat_id=receiver_chat_id,
+            message_id=receiver_msg_id,
+            text=msg.text,
+            entities=msg.entities,
+            reply_markup=reply_stop_kbd_markup(
+                red_heart=red_heart,
+            ),
+            **kwargs,
+        )
 
-    except BadRequest:
-        logger.warning('Failed to edit message at receiver\'s side', exc_info=True)
-        # TODO oleksandr: it is not because of inline keyboard (it can be added to a message without one no problem),
-        #  it is because of ForceReply... what to do about it ?
+    # elif msg.caption:
+    #     edited_msg = receiver_bot.edit_message_caption(
+    #         chat_id=receiver_chat_id,
+    #         message_id=receiver_msg_id,
+    #         caption=msg.caption,
+    #         caption_entities = msg.caption_entities,
+    #         reply_markup=reply_stop_kbd_markup(
+    #             red_heart=red_heart,
+    #         ),
+    #         **kwargs,
+    #     )
+    #     # TODO oleksandr: report to the user somehow that only caption was edited and not the media itself ?
 
     return edited_msg
