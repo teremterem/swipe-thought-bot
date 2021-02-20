@@ -250,6 +250,7 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
         transmitted_msg = receiver_bot.send_message(
             chat_id=receiver_chat_id,
             text=msg.text,
+            entities=msg.entities,
             **kwargs,
         )
 
