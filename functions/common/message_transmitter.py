@@ -269,6 +269,7 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
             chat_id=receiver_chat_id,
             photo=biggest_photo,
             caption=msg.caption,
+            caption_entities=msg.caption_entities,
             **kwargs,
         )
 
@@ -277,6 +278,7 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
             chat_id=receiver_chat_id,
             animation=msg.animation,
             caption=msg.caption,
+            caption_entities=msg.caption_entities,
             **kwargs,
         )
 
@@ -285,6 +287,7 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
             chat_id=receiver_chat_id,
             video=msg.video,
             caption=msg.caption,
+            caption_entities=msg.caption_entities,
             **kwargs,
         )
 
@@ -293,6 +296,7 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
             chat_id=receiver_chat_id,
             audio=msg.audio,
             caption=msg.caption,
+            caption_entities=msg.caption_entities,
             **kwargs,
         )
 
@@ -308,6 +312,7 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
             chat_id=receiver_chat_id,
             voice=msg.voice,
             caption=msg.caption,
+            caption_entities=msg.caption_entities,
             **kwargs,
         )
 
@@ -330,6 +335,7 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
             chat_id=receiver_chat_id,
             document=msg.document,
             caption=msg.caption,
+            caption_entities=msg.caption_entities,
             **kwargs,
         )
 
@@ -348,7 +354,6 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
             is_closed=False,  # TODO oleksandr: support inline button that closes the poll ?
             disable_notification=True,
             explanation=msg.poll.explanation,
-            # explanation_parse_mode: Union[str, DefaultValue, None] = DEFAULT_NONE,
             open_period=msg.poll.open_period,
             close_date=msg.poll.close_date,
             explanation_entities=msg.poll.explanation_entities,
@@ -370,6 +375,7 @@ def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_
             chat_id=receiver_chat_id,
             message_id=receiver_msg_id,
             text=msg.text,
+            entities=msg.entities,
             reply_markup=reply_stop_kbd_markup(
                 red_heart=red_heart,
             ),
@@ -381,6 +387,7 @@ def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_
     #         chat_id=receiver_chat_id,
     #         message_id=receiver_msg_id,
     #         caption=msg.caption,
+    #         caption_entities = msg.caption_entities,
     #         reply_markup=reply_stop_kbd_markup(
     #             red_heart=red_heart,
     #         ),
