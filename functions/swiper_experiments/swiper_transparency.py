@@ -73,7 +73,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
         if transmitted:
             update.effective_chat.send_message(
-                text=f"<i>{Text.NEW_TOPIC_STARTED}</i>",
+                text=Text.NEW_TOPIC_STARTED,
                 parse_mode=ParseMode.HTML,
                 # reply_to_message_id=msg.message_id,  # TODO oleksandr: are you 100% sure we don't need it ?
                 disable_notification=True,
@@ -91,7 +91,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
         if not transmissions_by_sender_msg:
             update.effective_chat.send_message(
-                text=f"<i>{Text.TALK_NOT_FOUND}</i>",
+                text=Text.TALK_NOT_FOUND,
                 parse_mode=ParseMode.HTML,
                 reply_to_message_id=msg.message_id,
                 # disable_notification=True,
@@ -117,7 +117,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
         if not edited_at_receiver:
             update.effective_chat.send_message(
-                text=f"<i>{Text.FAILED_TO_EDIT_AT_RECEIVER}</i>",
+                text=Text.FAILED_TO_EDIT_AT_RECEIVER,
                 parse_mode=ParseMode.HTML,
                 reply_to_message_id=msg.message_id,
                 # disable_notification=True,
@@ -129,7 +129,7 @@ class SwiperTransparency(BaseSwiperConversation):
         msg_transmission = find_original_transmission_by_msg(update.effective_message)
         if not msg_transmission:
             update.effective_chat.send_message(
-                text=f"<i>{Text.TALK_NOT_FOUND}</i>",
+                text=Text.TALK_NOT_FOUND,
                 parse_mode=ParseMode.HTML,
                 reply_to_message_id=update.effective_message.message_id,
                 # disable_notification=True,
@@ -189,7 +189,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
         if not transmissions_by_sender_msg:
             update.effective_chat.send_message(
-                text=f"<i>{Text.TALK_NOT_FOUND}</i>",
+                text=Text.TALK_NOT_FOUND,
                 parse_mode=ParseMode.HTML,
                 reply_to_message_id=update.effective_message.reply_to_message.message_id,
                 # disable_notification=True,
@@ -227,7 +227,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
 def report_msg_not_transmitted(update):
     report_msg = update.effective_chat.send_message(
-        text=f"<i>{Text.MESSAGE_NOT_TRANSMITTED}</i>",
+        text=Text.MESSAGE_NOT_TRANSMITTED,
         parse_mode=ParseMode.HTML,
         reply_to_message_id=update.effective_message.message_id,
         # disable_notification=True,
