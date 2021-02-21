@@ -34,16 +34,13 @@ RECEIVER_MSG_S3_KEY_KEY = 'receiver_msg_s3_key'
 msg_transmission_table = dynamodb.Table(MESSAGE_TRANSMISSION_DDB_TABLE_NAME)
 
 
-def reply_stop_kbd_markup(red_heart, stop_only=False):
-    # kbd_row = [InlineKeyboardButton(Text.STOP, callback_data=CallbackData.STOP)]
-    kbd_row = []
-    if not stop_only:
-        if red_heart:
-            heart = Text.READ_HEART
-        else:
-            heart = Text.BLACK_HEART
-        kbd_row.insert(0, InlineKeyboardButton(f"{heart}{Text.REPLY}", callback_data=CallbackData.REPLY))
+def reply_stop_kbd_markup(red_heart):
+    if red_heart:
+        heart = Text.READ_HEART
+    else:
+        heart = Text.BLACK_HEART
 
+    kbd_row = [InlineKeyboardButton(f"{heart}{Text.REPLY}", callback_data=CallbackData.REPLY)]
     kbd_markup = InlineKeyboardMarkup(inline_keyboard=[kbd_row])
     return kbd_markup
 

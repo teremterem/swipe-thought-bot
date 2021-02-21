@@ -29,14 +29,13 @@ class SwiperTransparency(BaseSwiperConversation):
 
         dispatcher.add_handler(CommandHandler(Commands.START, self.help))
         dispatcher.add_handler(CommandHandler(Commands.HELP, self.help))
-        dispatcher.add_handler(CommandHandler(Commands.ABOUT, self.read_more))
+        dispatcher.add_handler(CommandHandler(Commands.ABOUT, self.about))
         dispatcher.add_handler(MessageHandler(
             Filters.update.edited_message | Filters.update.edited_channel_post, self.edit_message
         ))
         dispatcher.add_handler(MessageHandler(Filters.reply, self.transmit_reply))
         dispatcher.add_handler(MessageHandler(Filters.all, self.start_topic))
         dispatcher.add_handler(CallbackQueryHandler(self.force_reply, pattern=CallbackData.REPLY))
-        dispatcher.add_handler(CallbackQueryHandler(self.stop, pattern=CallbackData.STOP))
 
         dispatcher.add_error_handler(self.handle_error)
 
@@ -47,7 +46,7 @@ class SwiperTransparency(BaseSwiperConversation):
             disable_notification=True,
         )
 
-    def read_more(self, update, context):
+    def about(self, update, context):
         update.effective_chat.send_message(
             text=Text.READ_MORE,
             parse_mode=ParseMode.HTML,
@@ -59,9 +58,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
         transmitted = False
         for swiper_chat_id in find_all_active_swiper_chat_ids(context.bot.id):
-            # TODO oleksandr: use thread-workers to broadcast in parallel (remember about Telegram limits too);
-            #  as a side effect it should also ensure that one failure doesn't stop the rest of broadcast
-            #  (an exception may happen if, for ex., a receiver has blocked the bot)
+            # TODO oleksandr: use thread-workers to broadcast in parallel ? (remember about Telegram limits too)
             if str(swiper_chat_id) != str(update.effective_chat.id):
                 transmitted = transmit_message(
                     swiper_update=self.swiper_update,  # non-async single-threaded environment
@@ -105,9 +102,7 @@ class SwiperTransparency(BaseSwiperConversation):
         for msg_transmission in transmissions_by_sender_msg:
             # broadcast replies to own message
 
-            # TODO oleksandr: use thread-workers to broadcast in parallel (remember about Telegram limits too);
-            #  as a side effect it should also ensure that one failure doesn't stop the rest of broadcast
-            #  (an exception may happen if, for ex., a receiver has blocked the bot)
+            # TODO oleksandr: use thread-workers to broadcast in parallel ? (remember about Telegram limits too)
             edited_at_receiver = edit_transmission(
                 msg=msg,
                 receiver_msg_id=msg_transmission[RECEIVER_MSG_ID_KEY],
@@ -143,21 +138,6 @@ class SwiperTransparency(BaseSwiperConversation):
             original_msg_transmission=msg_transmission,
         )
         update.effective_message.delete()  # TODO oleksandr: make it failsafe ?
-
-    def stop(self, update, context):
-        # TODO oleksandr: delete correspondent talk
-
-        # update.effective_message.delete()
-        update.callback_query.answer(text=Text.TALK_STOPPED)
-
-        # update.callback_query.answer()  # TODO oleksandr: make it failsafe
-        #
-        # update.effective_chat.send_message(
-        #     text=f"<i>{Text.TALK_STOPPED}</i>",
-        #     parse_mode=ParseMode.HTML,
-        #     reply_to_message_id=update.effective_message.message_id,
-        # )
-        # update.effective_message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=[]))
 
     def transmit_reply(self, update, context):
         reply_to_msg = update.effective_message.reply_to_message
