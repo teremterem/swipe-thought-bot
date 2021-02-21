@@ -33,9 +33,7 @@ class Text:
         f"/{Commands.HELP} - показати цей текст\n"
         f"/{Commands.ABOUT} - про бота"
     )
-    READ_MORE = (
-        "<i>https://toporok.medium.com/як-swipy-працює-зараз-404d70a64cfb</i>"
-    )
+    READ_MORE = "<i>https://toporok.medium.com/як-swipy-працює-зараз-404d70a64cfb</i>"
 
     TALK_NOT_FOUND = f"<i>💔 Розмову не знайдено</i>\n/{Commands.HELP}"
     TALK_STOPPED = "🚧 Ця функція поки що не реалізована"
