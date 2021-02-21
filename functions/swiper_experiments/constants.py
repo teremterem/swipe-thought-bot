@@ -31,7 +31,7 @@ class Text:
         f"Отримати про це більше інформації: /{Commands.ABOUT}\n"
         f"Показати цей текст ще раз: /{Commands.HELP}"
     )
-    READ_MORE = "<i>https://toporok.medium.com/як-swipy-працює-зараз-404d70a64cfb</i>"
+    READ_MORE = "<i>https://toporok.medium.com/що-таке-swipy-de15d59b1f0b</i>"
 
     READ_HEART = "❤️"
     BLACK_HEART = "🖤"
