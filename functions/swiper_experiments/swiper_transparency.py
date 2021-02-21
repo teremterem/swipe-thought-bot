@@ -29,7 +29,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
         dispatcher.add_handler(CommandHandler(Commands.START, self.help))
         dispatcher.add_handler(CommandHandler(Commands.HELP, self.help))
-        dispatcher.add_handler(CommandHandler(Commands.READ_MORE, self.read_more))
+        dispatcher.add_handler(CommandHandler(Commands.ABOUT, self.read_more))
         dispatcher.add_handler(MessageHandler(
             Filters.update.edited_message | Filters.update.edited_channel_post, self.edit_message
         ))
@@ -50,6 +50,7 @@ class SwiperTransparency(BaseSwiperConversation):
     def read_more(self, update, context):
         update.effective_chat.send_message(
             text=Text.READ_MORE,
+            parse_mode=ParseMode.HTML,
             disable_notification=True,
         )
 
