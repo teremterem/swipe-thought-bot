@@ -6,10 +6,10 @@ from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ForceReply
 from telegram.error import BadRequest
 
 from functions.common import logging  # force log config of functions/common/__init__.py
-from functions.common.constants import CallbackData, Text
 from functions.common.dynamodb import dynamodb, put_ddb_item, delete_ddb_item
 from functions.common.s3 import put_s3_object, main_bucket
 from functions.common.utils import fail_safely
+from functions.swiper_experiments.constants import CallbackData, Text
 
 logger = logging.getLogger(__name__)
 
