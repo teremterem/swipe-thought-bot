@@ -8,7 +8,7 @@ from functions.common import logging  # force log config of functions/common/__i
 from functions.common.swiper_chat_data import IS_SWIPER_AUTHORIZED_KEY, find_all_active_swiper_chat_ids
 from functions.common.swiper_telegram import BaseSwiperConversation
 from functions.common.utils import send_partitioned_text
-from functions.swiper_experiments.constants import CallbackData, Text
+from functions.swiper_experiments.constants import CallbackData, Text, Commands
 from functions.swiper_experiments.message_transmitter import transmit_message, find_original_transmission, \
     SENDER_CHAT_ID_KEY, SENDER_MSG_ID_KEY, force_reply, find_transmissions_by_sender_msg, RECEIVER_CHAT_ID_KEY, \
     RECEIVER_MSG_ID_KEY, edit_transmission, RED_HEART_KEY, prepare_msg_for_transmission
@@ -27,7 +27,9 @@ class SwiperTransparency(BaseSwiperConversation):
         dispatcher.add_handler(MessageHandler(Filters.all, self.assert_swiper_authorized), -100500)
         # TODO oleksandr: guard CallbackQueryHandler as well ? any other types of handlers not covered ?
 
-        dispatcher.add_handler(CommandHandler('start', self.start))
+        dispatcher.add_handler(CommandHandler(Commands.START, self.help))
+        dispatcher.add_handler(CommandHandler(Commands.HELP, self.help))
+        dispatcher.add_handler(CommandHandler(Commands.READ_MORE, self.read_more))
         dispatcher.add_handler(MessageHandler(
             Filters.update.edited_message | Filters.update.edited_channel_post, self.edit_message
         ))
@@ -38,10 +40,16 @@ class SwiperTransparency(BaseSwiperConversation):
 
         dispatcher.add_error_handler(self.handle_error)
 
-    def start(self, update, context):
+    def help(self, update, context):
         update.effective_chat.send_message(
-            text=Text.HELLO,
+            text=Text.HELP,
             parse_mode=ParseMode.HTML,
+            disable_notification=True,
+        )
+
+    def read_more(self, update, context):
+        update.effective_chat.send_message(
+            text=Text.READ_MORE,
             disable_notification=True,
         )
 
