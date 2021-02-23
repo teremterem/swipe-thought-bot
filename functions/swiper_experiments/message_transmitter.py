@@ -387,17 +387,17 @@ def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_
             **kwargs,
         )
 
-    # elif msg.caption:
-    #     edited_msg = receiver_bot.edit_message_caption(
-    #         chat_id=receiver_chat_id,
-    #         message_id=receiver_msg_id,
-    #         caption=msg.caption,
-    #         caption_entities = msg.caption_entities,
-    #         reply_markup=reply_stop_kbd_markup(
-    #             red_heart=red_heart,
-    #         ),
-    #         **kwargs,
-    #     )
-    #     # TODO oleksandr: report to the user somehow that only caption was edited and not the media itself ?
+    elif msg.caption:
+        edited_msg = receiver_bot.edit_message_caption(
+            chat_id=receiver_chat_id,
+            message_id=receiver_msg_id,
+            caption=msg.caption,
+            caption_entities=msg.caption_entities,
+            reply_markup=reply_stop_kbd_markup(
+                red_heart=red_heart,
+            ),
+            **kwargs,
+        )
+        # TODO oleksandr: report to the user somehow that only caption was edited and not the media itself
 
     return edited_msg
