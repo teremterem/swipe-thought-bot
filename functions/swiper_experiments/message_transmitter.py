@@ -147,6 +147,7 @@ def transmit_message(
         reply_markup=reply_stop_kbd_markup(
             red_heart=red_heart,
         ),
+        disable_notification=not red_heart,  # TODO oleksandr: allow it to be configured independently ?
     )
     if not transmitted_msg:
         # message was not transmitted
@@ -212,6 +213,7 @@ def force_reply(original_msg, original_msg_transmission):
         reply_to_message_id=reply_to_msg_id,
         reply_markup=ForceReply(),
         allow_sending_without_reply=True,
+        disable_notification=True,
     )
 
     msg_trans_copy = original_msg_transmission.copy()
