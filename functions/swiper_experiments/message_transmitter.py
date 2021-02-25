@@ -367,6 +367,7 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
             chat_id=receiver_chat_id,
             from_chat_id=msg.chat_id,
             message_id=msg.message_id,
+            disable_notification=BLACK_HEARTS_ARE_SILENT,  # poll with a read heart does not make much sense
         )
 
     return transmitted_msg
