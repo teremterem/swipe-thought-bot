@@ -42,6 +42,7 @@ provider:
     MAIN_S3_BUCKET_NAME: ${self:resources.Resources.mainBucket.Properties.BucketName}
 
     AUTHORIZE_STRANGERS_BY_DEFAULT: ${${self:custom.env_file}:AUTHORIZE_STRANGERS_BY_DEFAULT, 'no'}
+    BLACK_HEARTS_ARE_SILENT: ${${self:custom.env_file}:BLACK_HEARTS_ARE_SILENT, 'yes'}
 
   iamRoleStatements:
     - Effect: "Allow"
