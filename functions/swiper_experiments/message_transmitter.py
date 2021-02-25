@@ -1,5 +1,6 @@
 import os
 import uuid
+from distutils.util import strtobool
 
 from boto3.dynamodb.conditions import Key, Attr
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ForceReply
@@ -14,6 +15,7 @@ from functions.swiper_experiments.constants import CallbackData, Text
 logger = logging.getLogger(__name__)
 
 MESSAGE_TRANSMISSION_DDB_TABLE_NAME = os.environ['MESSAGE_TRANSMISSION_DDB_TABLE_NAME']
+BLACK_HEARTS_ARE_SILENT = bool(strtobool(os.environ['BLACK_HEARTS_ARE_SILENT']))
 
 MSG_TRANS_ID_KEY = 'id'
 ORIGINAL_MSG_TRANS_ID_KEY = 'original_msg_trans_id'
@@ -147,6 +149,7 @@ def transmit_message(
         reply_markup=reply_stop_kbd_markup(
             red_heart=red_heart,
         ),
+        disable_notification=BLACK_HEARTS_ARE_SILENT and not red_heart,
     )
     if not transmitted_msg:
         # message was not transmitted
@@ -212,6 +215,7 @@ def force_reply(original_msg, original_msg_transmission):
         reply_to_message_id=reply_to_msg_id,
         reply_markup=ForceReply(),
         allow_sending_without_reply=True,
+        disable_notification=True,
     )
 
     msg_trans_copy = original_msg_transmission.copy()
