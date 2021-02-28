@@ -5,7 +5,7 @@ from pprint import pformat
 
 from boto3.dynamodb.conditions import Attr
 
-from .dynamodb import swiper_chat_data_table
+from functions.common.dynamodb import swiper_chat_data_table
 
 logger = logging.getLogger(__name__)
 
