@@ -8,7 +8,7 @@ class Commands:
     ABOUT = 'about'
 
 
-class Text:
+class Texts:
     HELP = (
         "👋 Вітаю! Мене звати Свайпі🙃\n"
         "\n"

@@ -20,6 +20,33 @@ msg_transmission_table = dynamodb.Table(MESSAGE_TRANSMISSION_DDB_TABLE_NAME)
 topic_table = dynamodb.Table(MESSAGE_TRANSMISSION_DDB_TABLE_NAME)
 allogrooming_table = dynamodb.Table(ALLOGROOMING_DDB_TABLE_NAME)
 
+ID_FIELD = 'id'
+
+
+class SwiperChatDataFields:
+    CHAT_ID = 'chat_id'
+    BOT_ID = 'bot_id'
+    PTB_CONVERSATIONS = 'ptb_conversations'
+    PTB_CHAT_DATA = 'ptb_chat_data'
+    IS_SWIPER_AUTHORIZED = 'is_swiper_authorized'
+
+
+class MsgTransFields:
+    ORIGINAL_MSG_TRANS_ID = 'original_msg_trans_id'
+
+    SENDER_MSG_ID = 'sender_msg_id'
+    SENDER_CHAT_ID = 'sender_chat_id'
+    SENDER_BOT_ID = 'sender_bot_id'
+
+    RECEIVER_MSG_ID = 'receiver_msg_id'
+    RECEIVER_CHAT_ID = 'receiver_chat_id'
+    RECEIVER_BOT_ID = 'receiver_bot_id'
+
+    RED_HEART = 'red_heart'
+
+    SENDER_UPDATE_S3_KEY = 'sender_update_s3_key'
+    RECEIVER_MSG_S3_KEY = 'receiver_msg_s3_key'
+
 
 # TODO oleksandr: get rid of put_ddb_item and delete_ddb_item functions - I don't think you need them
 

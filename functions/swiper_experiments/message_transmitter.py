@@ -1,5 +1,4 @@
 import os
-import uuid
 from distutils.util import strtobool
 
 from boto3.dynamodb.conditions import Key, Attr
@@ -7,39 +6,23 @@ from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ForceReply
 from telegram.error import BadRequest
 
 from functions.common import logging  # force log config of functions/common/__init__.py
-from functions.common.dynamodb import put_ddb_item, delete_ddb_item, msg_transmission_table
+from functions.common.dynamodb import put_ddb_item, delete_ddb_item, msg_transmission_table, MsgTransFields, ID_FIELD
 from functions.common.s3 import put_s3_object, main_bucket
-from functions.common.utils import fail_safely
-from functions.swiper_experiments.constants import CallbackData, Text
+from functions.common.utils import fail_safely, generate_uuid
+from functions.swiper_experiments.constants import CallbackData, Texts
 
 logger = logging.getLogger(__name__)
 
 BLACK_HEARTS_ARE_SILENT = bool(strtobool(os.environ['BLACK_HEARTS_ARE_SILENT']))
 
-MSG_TRANS_ID_KEY = 'id'
-ORIGINAL_MSG_TRANS_ID_KEY = 'original_msg_trans_id'
-
-SENDER_MSG_ID_KEY = 'sender_msg_id'
-SENDER_CHAT_ID_KEY = 'sender_chat_id'
-SENDER_BOT_ID_KEY = 'sender_bot_id'
-
-RECEIVER_MSG_ID_KEY = 'receiver_msg_id'
-RECEIVER_CHAT_ID_KEY = 'receiver_chat_id'
-RECEIVER_BOT_ID_KEY = 'receiver_bot_id'
-
-RED_HEART_KEY = 'red_heart'
-
-SENDER_UPDATE_S3_KEY_KEY = 'sender_update_s3_key'
-RECEIVER_MSG_S3_KEY_KEY = 'receiver_msg_s3_key'
-
 
 def reply_stop_kbd_markup(red_heart):
     if red_heart:
-        heart = Text.READ_HEART
+        heart = Texts.READ_HEART
     else:
-        heart = Text.BLACK_HEART
+        heart = Texts.BLACK_HEART
 
-    kbd_row = [InlineKeyboardButton(f"{heart}{Text.REPLY}", callback_data=CallbackData.REPLY)]
+    kbd_row = [InlineKeyboardButton(f"{heart}{Texts.REPLY}", callback_data=CallbackData.REPLY)]
     kbd_markup = InlineKeyboardMarkup(inline_keyboard=[kbd_row])
     return kbd_markup
 
@@ -57,9 +40,10 @@ def find_original_transmission(
     scan_result = msg_transmission_table.query(
         IndexName='byReceiverMsgId',
         KeyConditionExpression=(
-                Key(RECEIVER_MSG_ID_KEY).eq(receiver_msg_id) & Key(RECEIVER_CHAT_ID_KEY).eq(receiver_chat_id)
+                Key(MsgTransFields.RECEIVER_MSG_ID).eq(receiver_msg_id) &
+                Key(MsgTransFields.RECEIVER_CHAT_ID).eq(receiver_chat_id)
         ),
-        FilterExpression=Attr(RECEIVER_BOT_ID_KEY).eq(receiver_bot_id),
+        FilterExpression=Attr(MsgTransFields.RECEIVER_BOT_ID).eq(receiver_bot_id),
     )
     if logger.isEnabledFor(logging.INFO):
         logger.info('FIND ORIGINAL TRANSMISSION (DDB QUERY RESPONSE):\n%s', scan_result)
@@ -96,9 +80,10 @@ def find_transmissions_by_sender_msg(
     scan_result = msg_transmission_table.query(
         IndexName='bySenderMsgId',
         KeyConditionExpression=(
-                Key(SENDER_MSG_ID_KEY).eq(sender_msg_id) & Key(SENDER_CHAT_ID_KEY).eq(sender_chat_id)
+                Key(MsgTransFields.SENDER_MSG_ID).eq(sender_msg_id) &
+                Key(MsgTransFields.SENDER_CHAT_ID).eq(sender_chat_id)
         ),
-        FilterExpression=Attr(SENDER_BOT_ID_KEY).eq(sender_bot_id),
+        FilterExpression=Attr(MsgTransFields.SENDER_BOT_ID).eq(sender_bot_id),
     )
     if logger.isEnabledFor(logging.INFO):
         logger.info('FIND TRANSMISSION (DDB QUERY RESPONSE):\n%s', scan_result)
@@ -154,7 +139,7 @@ def transmit_message(
 
     receiver_msg_id = int(transmitted_msg.message_id)
 
-    msg_transmission_id = str(uuid.uuid4())
+    msg_transmission_id = generate_uuid()
 
     receiver_msg_s3_key = f"{swiper_update.update_s3_key_prefix}.transmission.{msg_transmission_id}.json"
     put_s3_object(
@@ -164,20 +149,20 @@ def transmit_message(
     )
 
     msg_transmission = {
-        MSG_TRANS_ID_KEY: msg_transmission_id,
+        ID_FIELD: msg_transmission_id,
 
-        SENDER_MSG_ID_KEY: sender_msg_id,
-        SENDER_CHAT_ID_KEY: sender_chat_id,
-        SENDER_BOT_ID_KEY: sender_bot_id,
+        MsgTransFields.SENDER_MSG_ID: sender_msg_id,
+        MsgTransFields.SENDER_CHAT_ID: sender_chat_id,
+        MsgTransFields.SENDER_BOT_ID: sender_bot_id,
 
-        RECEIVER_MSG_ID_KEY: receiver_msg_id,
-        RECEIVER_CHAT_ID_KEY: receiver_chat_id,
-        RECEIVER_BOT_ID_KEY: receiver_bot_id,
+        MsgTransFields.RECEIVER_MSG_ID: receiver_msg_id,
+        MsgTransFields.RECEIVER_CHAT_ID: receiver_chat_id,
+        MsgTransFields.RECEIVER_BOT_ID: receiver_bot_id,
 
-        RED_HEART_KEY: red_heart,
+        MsgTransFields.RED_HEART: red_heart,
 
-        SENDER_UPDATE_S3_KEY_KEY: swiper_update.telegram_update_s3_key,
-        RECEIVER_MSG_S3_KEY_KEY: receiver_msg_s3_key,
+        MsgTransFields.SENDER_UPDATE_S3_KEY: swiper_update.telegram_update_s3_key,
+        MsgTransFields.RECEIVER_MSG_S3_KEY: receiver_msg_s3_key,
     }
     put_ddb_item(
         ddb_table=msg_transmission_table,
@@ -216,12 +201,12 @@ def force_reply(original_msg, original_msg_transmission):
     )
 
     msg_trans_copy = original_msg_transmission.copy()
-    msg_trans_copy[ORIGINAL_MSG_TRANS_ID_KEY] = original_msg_transmission[MSG_TRANS_ID_KEY]
-    msg_trans_copy[MSG_TRANS_ID_KEY] = str(uuid.uuid4())
+    msg_trans_copy[MsgTransFields.ORIGINAL_MSG_TRANS_ID] = original_msg_transmission[ID_FIELD]
+    msg_trans_copy[ID_FIELD] = generate_uuid()
 
-    msg_trans_copy[RECEIVER_MSG_ID_KEY] = int(force_reply_msg.message_id)
-    msg_trans_copy[RECEIVER_CHAT_ID_KEY] = int(force_reply_msg.chat.id)
-    msg_trans_copy[RECEIVER_BOT_ID_KEY] = int(force_reply_msg.bot.id)
+    msg_trans_copy[MsgTransFields.RECEIVER_MSG_ID] = int(force_reply_msg.message_id)
+    msg_trans_copy[MsgTransFields.RECEIVER_CHAT_ID] = int(force_reply_msg.chat.id)
+    msg_trans_copy[MsgTransFields.RECEIVER_BOT_ID] = int(force_reply_msg.bot.id)
 
     put_ddb_item(
         ddb_table=msg_transmission_table,
@@ -232,7 +217,7 @@ def force_reply(original_msg, original_msg_transmission):
     delete_ddb_item(
         ddb_table=msg_transmission_table,
         key={
-            MSG_TRANS_ID_KEY: original_msg_transmission[MSG_TRANS_ID_KEY],
+            ID_FIELD: original_msg_transmission[ID_FIELD],
         },
     )
 

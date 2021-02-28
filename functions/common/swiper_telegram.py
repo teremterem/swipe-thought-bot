@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import uuid
 from collections import defaultdict
 from typing import Dict, Any, DefaultDict, Tuple, Optional
 
@@ -9,9 +8,10 @@ from telegram import Bot, Update
 from telegram.ext import Dispatcher, BasePersistence
 from telegram.utils.types import ConversationDict
 
+from functions.common.dynamodb import SwiperChatDataFields
 from functions.common.s3 import main_bucket
-from functions.common.swiper_chat_data import read_swiper_chat_data, write_swiper_chat_data, CHAT_ID_KEY, \
-    PTB_CONVERSATIONS_KEY, PTB_CHAT_DATA_KEY
+from functions.common.swiper_chat_data import read_swiper_chat_data, write_swiper_chat_data
+from functions.common.utils import generate_uuid
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +58,7 @@ class SwiperUpdate:
         self.swiper_conversation = swiper_conversation
 
         self.ptb_update = Update.de_json(update_json, self.swiper_conversation.dispatcher.bot)
-        self.update_s3_key_prefix = f"audit/upd{self.ptb_update.update_id}_{uuid.uuid4()}"
+        self.update_s3_key_prefix = f"audit/upd{self.ptb_update.update_id}_{generate_uuid()}"
         self.telegram_update_s3_key = f"{self.update_s3_key_prefix}.update.json"
 
         main_bucket.put_object(
@@ -198,12 +198,12 @@ class SwiperPersistence(BasePersistence):
         SwiperPersistence expects single-threaded environment with sequential (non-async) update processing.
         """
         self._swiper_data = swiper_data
-        chat_id = swiper_data[CHAT_ID_KEY]
+        chat_id = swiper_data[SwiperChatDataFields.CHAT_ID]
 
         for ptb_conv_states in self._ptb_conversations.values():
             ptb_conv_states.clear()
 
-        for conv_name, swiper_conv_states in swiper_data.setdefault(PTB_CONVERSATIONS_KEY, {}).items():
+        for conv_name, swiper_conv_states in swiper_data.setdefault(SwiperChatDataFields.PTB_CONVERSATIONS, {}).items():
             ptb_conv_states = self._ptb_conversations.setdefault(conv_name, {})
 
             for conv_state_key, swiper_conv_state in swiper_conv_states.items():
@@ -211,7 +211,7 @@ class SwiperPersistence(BasePersistence):
                 ptb_conv_states[conv_state_key] = swiper_conv_state
 
         self._ptb_chat_data.clear()
-        self._ptb_chat_data[chat_id] = swiper_data.setdefault(PTB_CHAT_DATA_KEY, {})
+        self._ptb_chat_data[chat_id] = swiper_data.setdefault(SwiperChatDataFields.PTB_CHAT_DATA, {})
 
     def get_conversations(self, name: str) -> ConversationDict:
         return self._ptb_conversations.setdefault(name, {})
@@ -219,9 +219,10 @@ class SwiperPersistence(BasePersistence):
     def update_conversation(self, name: str, key: Tuple[int, ...], new_state: Optional[object]) -> None:
         key = repr(key)  # from tuple to str
         if new_state is None:
-            self._swiper_data.get(PTB_CONVERSATIONS_KEY, {}).get(name, {}).pop(key, None)
+            self._swiper_data.get(SwiperChatDataFields.PTB_CONVERSATIONS, {}).get(name, {}).pop(key, None)
         else:
-            self._swiper_data.setdefault(PTB_CONVERSATIONS_KEY, {}).setdefault(name, {})[key] = new_state
+            self._swiper_data.setdefault(SwiperChatDataFields.PTB_CONVERSATIONS, {}).setdefault(name, {})[key] = \
+                new_state
 
     def get_chat_data(self) -> DefaultDict[int, Dict[Any, Any]]:
         return self._ptb_chat_data

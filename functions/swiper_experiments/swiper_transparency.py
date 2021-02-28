@@ -5,13 +5,13 @@ from telegram.error import BadRequest
 from telegram.ext import CommandHandler, DispatcherHandlerStop, Filters, MessageHandler, CallbackQueryHandler
 
 from functions.common import logging  # force log config of functions/common/__init__.py
-from functions.common.swiper_chat_data import IS_SWIPER_AUTHORIZED_KEY, find_all_active_swiper_chat_ids
+from functions.common.dynamodb import MsgTransFields, SwiperChatDataFields
+from functions.common.swiper_chat_data import find_all_active_swiper_chat_ids
 from functions.common.swiper_telegram import BaseSwiperConversation
 from functions.common.utils import send_partitioned_text
-from functions.swiper_experiments.constants import CallbackData, Text, Commands
+from functions.swiper_experiments.constants import CallbackData, Texts, Commands
 from functions.swiper_experiments.message_transmitter import transmit_message, find_original_transmission, \
-    SENDER_CHAT_ID_KEY, SENDER_MSG_ID_KEY, force_reply, find_transmissions_by_sender_msg, RECEIVER_CHAT_ID_KEY, \
-    RECEIVER_MSG_ID_KEY, edit_transmission, RED_HEART_KEY, prepare_msg_for_transmission
+    force_reply, find_transmissions_by_sender_msg, edit_transmission, prepare_msg_for_transmission
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class SwiperTransparency(BaseSwiperConversation):
     def assert_swiper_authorized(self, update, context):
         # single-threaded environment with non-async update processing
-        if not self.swiper_update.current_swiper.swiper_data.get(IS_SWIPER_AUTHORIZED_KEY):
+        if not self.swiper_update.current_swiper.swiper_data.get(SwiperChatDataFields.IS_SWIPER_AUTHORIZED):
             # https://github.com/python-telegram-bot/python-telegram-bot/issues/849#issuecomment-332682845
             raise DispatcherHandlerStop()
 
@@ -41,14 +41,14 @@ class SwiperTransparency(BaseSwiperConversation):
 
     def help(self, update, context):
         update.effective_chat.send_message(
-            text=Text.HELP,
+            text=Texts.HELP,
             parse_mode=ParseMode.HTML,
             disable_notification=True,
         )
 
     def about(self, update, context):
         update.effective_chat.send_message(
-            text=Text.READ_MORE,
+            text=Texts.READ_MORE,
             parse_mode=ParseMode.HTML,
             disable_notification=True,
         )
@@ -71,7 +71,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
         if transmitted:
             update.effective_chat.send_message(
-                text=Text.NEW_TOPIC_STARTED,
+                text=Texts.NEW_TOPIC_STARTED,
                 parse_mode=ParseMode.HTML,
                 # reply_to_message_id=msg.message_id,  # TODO oleksandr: are you 100% sure we don't need it ?
                 disable_notification=True,
@@ -89,7 +89,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
         if not transmissions_by_sender_msg:
             update.effective_chat.send_message(
-                text=Text.TALK_NOT_FOUND,
+                text=Texts.TALK_NOT_FOUND,
                 parse_mode=ParseMode.HTML,
                 reply_to_message_id=msg.message_id,
                 # disable_notification=True,
@@ -105,15 +105,15 @@ class SwiperTransparency(BaseSwiperConversation):
             # TODO oleksandr: use thread-workers to broadcast in parallel ? (remember about Telegram limits too)
             edited_at_receiver = edit_transmission(
                 msg=msg,
-                receiver_msg_id=msg_transmission[RECEIVER_MSG_ID_KEY],
-                receiver_chat_id=msg_transmission[RECEIVER_CHAT_ID_KEY],
+                receiver_msg_id=msg_transmission[MsgTransFields.RECEIVER_MSG_ID],
+                receiver_chat_id=msg_transmission[MsgTransFields.RECEIVER_CHAT_ID],
                 receiver_bot=context.bot,  # msg_transmission[RECEIVER_BOT_ID_KEY] is of no use here
-                red_heart=msg_transmission.get(RED_HEART_KEY, red_heart_default),
+                red_heart=msg_transmission.get(MsgTransFields.RED_HEART, red_heart_default),
             ) and edited_at_receiver
 
         if not edited_at_receiver:
             update.effective_chat.send_message(
-                text=Text.FAILED_TO_EDIT_AT_RECEIVER,
+                text=Texts.FAILED_TO_EDIT_AT_RECEIVER,
                 parse_mode=ParseMode.HTML,
                 reply_to_message_id=msg.message_id,
                 # disable_notification=True,
@@ -125,7 +125,7 @@ class SwiperTransparency(BaseSwiperConversation):
         msg_transmission = find_original_transmission_by_msg(update.effective_message)
         if not msg_transmission:
             update.effective_chat.send_message(
-                text=Text.TALK_NOT_FOUND,
+                text=Texts.TALK_NOT_FOUND,
                 parse_mode=ParseMode.HTML,
                 reply_to_message_id=update.effective_message.message_id,
                 # disable_notification=True,
@@ -154,9 +154,9 @@ class SwiperTransparency(BaseSwiperConversation):
                     swiper_update=self.swiper_update,  # non-async single-threaded environment
                     msg=msg,
                     sender_bot_id=context.bot.id,
-                    receiver_chat_id=msg_transmission[SENDER_CHAT_ID_KEY],
+                    receiver_chat_id=msg_transmission[MsgTransFields.SENDER_CHAT_ID],
                     receiver_bot=context.bot,  # msg_transmission[SENDER_BOT_ID_KEY] is of no use here
-                    reply_to_msg_id=msg_transmission[SENDER_MSG_ID_KEY],
+                    reply_to_msg_id=msg_transmission[MsgTransFields.SENDER_MSG_ID],
                     red_heart=True,
             ):
                 report_msg_not_transmitted(update)
@@ -170,7 +170,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
         if not transmissions_by_sender_msg:
             update.effective_chat.send_message(
-                text=Text.TALK_NOT_FOUND,
+                text=Texts.TALK_NOT_FOUND,
                 parse_mode=ParseMode.HTML,
                 reply_to_message_id=update.effective_message.reply_to_message.message_id,
                 # disable_notification=True,
@@ -190,9 +190,9 @@ class SwiperTransparency(BaseSwiperConversation):
                 swiper_update=self.swiper_update,  # non-async single-threaded environment
                 msg=msg,
                 sender_bot_id=context.bot.id,
-                receiver_chat_id=msg_transmission[RECEIVER_CHAT_ID_KEY],
+                receiver_chat_id=msg_transmission[MsgTransFields.RECEIVER_CHAT_ID],
                 receiver_bot=context.bot,  # msg_transmission[RECEIVER_BOT_ID_KEY] is of no use here
-                reply_to_msg_id=msg_transmission[RECEIVER_MSG_ID_KEY],
+                reply_to_msg_id=msg_transmission[MsgTransFields.RECEIVER_MSG_ID],
                 red_heart=red_heart,
             ) or transmitted  # TODO oleksandr: replace with "and" as in self.edit_message() handler ?
 
@@ -208,7 +208,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
 def report_msg_not_transmitted(update):
     report_msg = update.effective_chat.send_message(
-        text=Text.MESSAGE_NOT_TRANSMITTED,
+        text=Texts.MESSAGE_NOT_TRANSMITTED,
         parse_mode=ParseMode.HTML,
         reply_to_message_id=update.effective_message.message_id,
         # disable_notification=True,
