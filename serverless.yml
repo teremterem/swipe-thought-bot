@@ -38,6 +38,8 @@ provider:
 
     SWIPER_CHAT_DATA_DDB_TABLE_NAME: ${self:resources.Resources.swiperChatDataTable.Properties.TableName}
     MESSAGE_TRANSMISSION_DDB_TABLE_NAME: ${self:resources.Resources.messageTransmissionTable.Properties.TableName}
+    TOPIC_DDB_TABLE_NAME: ${self:resources.Resources.topicTable.Properties.TableName}
+    ALLOGROOMING_DDB_TABLE_NAME: ${self:resources.Resources.allogroomingTable.Properties.TableName}
 
     MAIN_S3_BUCKET_NAME: ${self:resources.Resources.mainBucket.Properties.BucketName}
 
