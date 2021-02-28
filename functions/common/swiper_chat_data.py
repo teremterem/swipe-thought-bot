@@ -5,11 +5,10 @@ from pprint import pformat
 
 from boto3.dynamodb.conditions import Attr
 
-from .dynamodb import dynamodb
+from .dynamodb import swiper_chat_data_table
 
 logger = logging.getLogger(__name__)
 
-SWIPER_CHAT_DATA_DDB_TABLE_NAME = os.environ['SWIPER_CHAT_DATA_DDB_TABLE_NAME']
 AUTHORIZE_STRANGERS_BY_DEFAULT = bool(strtobool(os.environ['AUTHORIZE_STRANGERS_BY_DEFAULT']))
 
 CHAT_ID_KEY = 'chat_id'
@@ -17,8 +16,6 @@ BOT_ID_KEY = 'bot_id'
 PTB_CONVERSATIONS_KEY = 'ptb_conversations'
 PTB_CHAT_DATA_KEY = 'ptb_chat_data'
 IS_SWIPER_AUTHORIZED_KEY = 'is_swiper_authorized'
-
-swiper_chat_data_table = dynamodb.Table(SWIPER_CHAT_DATA_DDB_TABLE_NAME)
 
 
 def read_swiper_chat_data(chat_id, bot_id):

@@ -7,14 +7,13 @@ from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ForceReply
 from telegram.error import BadRequest
 
 from functions.common import logging  # force log config of functions/common/__init__.py
-from functions.common.dynamodb import dynamodb, put_ddb_item, delete_ddb_item
+from functions.common.dynamodb import put_ddb_item, delete_ddb_item, msg_transmission_table
 from functions.common.s3 import put_s3_object, main_bucket
 from functions.common.utils import fail_safely
 from functions.swiper_experiments.constants import CallbackData, Text
 
 logger = logging.getLogger(__name__)
 
-MESSAGE_TRANSMISSION_DDB_TABLE_NAME = os.environ['MESSAGE_TRANSMISSION_DDB_TABLE_NAME']
 BLACK_HEARTS_ARE_SILENT = bool(strtobool(os.environ['BLACK_HEARTS_ARE_SILENT']))
 
 MSG_TRANS_ID_KEY = 'id'
@@ -32,8 +31,6 @@ RED_HEART_KEY = 'red_heart'
 
 SENDER_UPDATE_S3_KEY_KEY = 'sender_update_s3_key'
 RECEIVER_MSG_S3_KEY_KEY = 'receiver_msg_s3_key'
-
-msg_transmission_table = dynamodb.Table(MESSAGE_TRANSMISSION_DDB_TABLE_NAME)
 
 
 def reply_stop_kbd_markup(red_heart):
