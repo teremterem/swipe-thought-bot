@@ -5,13 +5,13 @@ from telegram.error import BadRequest
 from telegram.ext import CommandHandler, DispatcherHandlerStop, Filters, MessageHandler, CallbackQueryHandler
 
 from functions.common import logging  # force log config of functions/common/__init__.py
-from functions.common.dynamodb import MsgTransFields, SwiperChatDataFields
+from functions.common.dynamodb import DdbFields
 from functions.common.swiper_chat_data import find_all_active_swiper_chat_ids
 from functions.common.swiper_telegram import BaseSwiperConversation
 from functions.common.utils import send_partitioned_text
 from functions.swiper_experiments.constants import CallbackData, Texts, Commands
 from functions.swiper_experiments.message_transmitter import transmit_message, find_original_transmission, \
-    force_reply, find_transmissions_by_sender_msg, edit_transmission, prepare_msg_for_transmission
+    force_reply, find_transmissions_by_sender_msg, edit_transmission, prepare_msg_for_transmission, create_topic
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class SwiperTransparency(BaseSwiperConversation):
     def assert_swiper_authorized(self, update, context):
         # single-threaded environment with non-async update processing
-        if not self.swiper_update.current_swiper.swiper_data.get(SwiperChatDataFields.IS_SWIPER_AUTHORIZED):
+        if not self.swiper_update.current_swiper.swiper_data.get(DdbFields.IS_SWIPER_AUTHORIZED):
             # https://github.com/python-telegram-bot/python-telegram-bot/issues/849#issuecomment-332682845
             raise DispatcherHandlerStop()
 
@@ -55,6 +55,12 @@ class SwiperTransparency(BaseSwiperConversation):
 
     def start_topic(self, update, context):
         msg = prepare_msg_for_transmission(update.effective_message, context.bot)
+
+        topic_id = create_topic(
+            swiper_update=self.swiper_update,  # non-async single-threaded environment
+            msg=msg,
+            sender_bot_id=context.bot.id,
+        )
 
         transmitted = False
         for swiper_chat_id in find_all_active_swiper_chat_ids(context.bot.id):
@@ -105,10 +111,10 @@ class SwiperTransparency(BaseSwiperConversation):
             # TODO oleksandr: use thread-workers to broadcast in parallel ? (remember about Telegram limits too)
             edited_at_receiver = edit_transmission(
                 msg=msg,
-                receiver_msg_id=msg_transmission[MsgTransFields.RECEIVER_MSG_ID],
-                receiver_chat_id=msg_transmission[MsgTransFields.RECEIVER_CHAT_ID],
-                receiver_bot=context.bot,  # msg_transmission[RECEIVER_BOT_ID_KEY] is of no use here
-                red_heart=msg_transmission.get(MsgTransFields.RED_HEART, red_heart_default),
+                receiver_msg_id=msg_transmission[DdbFields.RECEIVER_MSG_ID],
+                receiver_chat_id=msg_transmission[DdbFields.RECEIVER_CHAT_ID],
+                receiver_bot=context.bot,  # msg_transmission[DdbFields.RECEIVER_BOT_ID] is of no use here
+                red_heart=msg_transmission.get(DdbFields.RED_HEART, red_heart_default),
             ) and edited_at_receiver
 
         if not edited_at_receiver:
@@ -154,9 +160,9 @@ class SwiperTransparency(BaseSwiperConversation):
                     swiper_update=self.swiper_update,  # non-async single-threaded environment
                     msg=msg,
                     sender_bot_id=context.bot.id,
-                    receiver_chat_id=msg_transmission[MsgTransFields.SENDER_CHAT_ID],
-                    receiver_bot=context.bot,  # msg_transmission[SENDER_BOT_ID_KEY] is of no use here
-                    reply_to_msg_id=msg_transmission[MsgTransFields.SENDER_MSG_ID],
+                    receiver_chat_id=msg_transmission[DdbFields.SENDER_CHAT_ID],
+                    receiver_bot=context.bot,  # msg_transmission[DdbFields.SENDER_BOT_ID] is of no use here
+                    reply_to_msg_id=msg_transmission[DdbFields.SENDER_MSG_ID],
                     red_heart=True,
             ):
                 report_msg_not_transmitted(update)
@@ -190,9 +196,9 @@ class SwiperTransparency(BaseSwiperConversation):
                 swiper_update=self.swiper_update,  # non-async single-threaded environment
                 msg=msg,
                 sender_bot_id=context.bot.id,
-                receiver_chat_id=msg_transmission[MsgTransFields.RECEIVER_CHAT_ID],
-                receiver_bot=context.bot,  # msg_transmission[RECEIVER_BOT_ID_KEY] is of no use here
-                reply_to_msg_id=msg_transmission[MsgTransFields.RECEIVER_MSG_ID],
+                receiver_chat_id=msg_transmission[DdbFields.RECEIVER_CHAT_ID],
+                receiver_bot=context.bot,  # msg_transmission[DdbFields.RECEIVER_BOT_ID] is of no use here
+                reply_to_msg_id=msg_transmission[DdbFields.RECEIVER_MSG_ID],
                 red_heart=red_heart,
             ) or transmitted  # TODO oleksandr: replace with "and" as in self.edit_message() handler ?
 

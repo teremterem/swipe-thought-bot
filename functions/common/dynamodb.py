@@ -20,18 +20,20 @@ msg_transmission_table = dynamodb.Table(MESSAGE_TRANSMISSION_DDB_TABLE_NAME)
 topic_table = dynamodb.Table(MESSAGE_TRANSMISSION_DDB_TABLE_NAME)
 allogrooming_table = dynamodb.Table(ALLOGROOMING_DDB_TABLE_NAME)
 
-ID_FIELD = 'id'
 
+class DdbFields:
+    ID = 'id'
 
-class SwiperChatDataFields:
     CHAT_ID = 'chat_id'
     BOT_ID = 'bot_id'
-    PTB_CONVERSATIONS = 'ptb_conversations'
-    PTB_CHAT_DATA = 'ptb_chat_data'
+
+    CHAT = 'chat'
     IS_SWIPER_AUTHORIZED = 'is_swiper_authorized'
 
+    SWIPER_STATE = 'swiper_state'  # TODO oleksandr: get rid of this
+    PTB_CONVERSATIONS = 'ptb_conversations'  # TODO oleksandr: get rid of this
+    PTB_CHAT_DATA = 'ptb_chat_data'  # TODO oleksandr: get rid of this
 
-class MsgTransFields:
     ORIGINAL_MSG_TRANS_ID = 'original_msg_trans_id'
 
     SENDER_MSG_ID = 'sender_msg_id'
