@@ -160,7 +160,7 @@ def create_allogrooming(
         ddb_table=allogrooming_table,
         item=allogrooming,
     )
-    return topic_id
+    return allogrooming_id
 
 
 @fail_safely()
