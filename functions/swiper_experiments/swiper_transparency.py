@@ -169,9 +169,11 @@ class SwiperTransparency(BaseSwiperConversation):
             topic_id = msg_transmission.get(DdbFields.TOPIC_ID)
             if topic_id:
                 allogrooming = find_allogrooming_by_topic_and_sender(
-                    topic_id=topic_id,
                     sender_chat_id=msg.chat_id,
                     sender_bot_id=context.bot.id,
+                    receiver_chat_id=msg_transmission[DdbFields.SENDER_CHAT_ID],
+                    receiver_bot_id=msg_transmission[DdbFields.SENDER_BOT_ID],
+                    topic_id=topic_id,
                 )
                 if allogrooming:
                     allogrooming_id = allogrooming[DdbFields.ID]

@@ -123,9 +123,11 @@ def create_topic(
 
 
 def find_allogrooming_by_topic_and_sender(
-        topic_id,
         sender_chat_id,
         sender_bot_id,
+        receiver_chat_id,
+        receiver_bot_id,
+        topic_id,
 ):
     sender_chat_id = int(sender_chat_id)
     sender_bot_id = int(sender_bot_id)
@@ -136,7 +138,11 @@ def find_allogrooming_by_topic_and_sender(
                 Key(DdbFields.TOPIC_ID).eq(topic_id) &
                 Key(DdbFields.SENDER_CHAT_ID).eq(sender_chat_id)
         ),
-        FilterExpression=Attr(DdbFields.SENDER_BOT_ID).eq(sender_bot_id),
+        FilterExpression=(
+                Attr(DdbFields.SENDER_BOT_ID).eq(sender_bot_id) &
+                Attr(DdbFields.RECEIVER_CHAT_ID).eq(receiver_chat_id) &
+                Attr(DdbFields.RECEIVER_BOT_ID).eq(receiver_bot_id)
+        ),
     )
     if logger.isEnabledFor(logging.INFO):  # TODO oleksandr: this logging is redundant - get rid of it
         logger.info('FIND ALLOGROOMING (DDB QUERY RESPONSE):\n%s', scan_result)
@@ -146,10 +152,12 @@ def find_allogrooming_by_topic_and_sender(
         if len(items) > 1:
             logger.warning(
                 'FOUND MORE THAN ONE ALLOGROOMING BY TOPIC AND SENDER: '
-                'topic_id=%s ; sender_chat_id=%s ; sender_bot_id=%s',
+                'topic_id=%s ; sender_chat_id=%s ; sender_bot_id=%s ; receiver_chat_id=%s ; receiver_bot_id=%s',
                 topic_id,
                 sender_chat_id,
                 sender_bot_id,
+                receiver_chat_id,
+                receiver_bot_id,
             )
         return items[0]
     return None
