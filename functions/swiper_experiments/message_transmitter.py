@@ -134,6 +134,7 @@ def transmit_message(
         receiver_chat_id,
         receiver_bot,
         red_heart,
+        topic_id,
         reply_to_msg_id=None,
 ):
     sender_msg_id = int(msg.message_id)
@@ -176,6 +177,7 @@ def transmit_message(
 
     msg_transmission = {
         DdbFields.ID: msg_transmission_id,
+        DdbFields.TOPIC_ID: topic_id,
 
         DdbFields.SENDER_MSG_ID: sender_msg_id,
         DdbFields.SENDER_CHAT_ID: sender_chat_id,

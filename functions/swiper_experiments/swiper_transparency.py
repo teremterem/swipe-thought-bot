@@ -73,6 +73,7 @@ class SwiperTransparency(BaseSwiperConversation):
                     receiver_chat_id=swiper_chat_id,
                     receiver_bot=context.bot,
                     red_heart=False,
+                    topic_id=topic_id,
                 ) or transmitted
 
         if transmitted:
@@ -162,8 +163,9 @@ class SwiperTransparency(BaseSwiperConversation):
                     sender_bot_id=context.bot.id,
                     receiver_chat_id=msg_transmission[DdbFields.SENDER_CHAT_ID],
                     receiver_bot=context.bot,  # msg_transmission[DdbFields.SENDER_BOT_ID] is of no use here
-                    reply_to_msg_id=msg_transmission[DdbFields.SENDER_MSG_ID],
                     red_heart=True,
+                    topic_id=msg_transmission.get(DdbFields.TOPIC_ID),
+                    reply_to_msg_id=msg_transmission[DdbFields.SENDER_MSG_ID],
             ):
                 report_msg_not_transmitted(update)
             return
@@ -198,8 +200,9 @@ class SwiperTransparency(BaseSwiperConversation):
                 sender_bot_id=context.bot.id,
                 receiver_chat_id=msg_transmission[DdbFields.RECEIVER_CHAT_ID],
                 receiver_bot=context.bot,  # msg_transmission[DdbFields.RECEIVER_BOT_ID] is of no use here
-                reply_to_msg_id=msg_transmission[DdbFields.RECEIVER_MSG_ID],
                 red_heart=red_heart,
+                topic_id=msg_transmission.get(DdbFields.TOPIC_ID),
+                reply_to_msg_id=msg_transmission[DdbFields.RECEIVER_MSG_ID],
             ) or transmitted  # TODO oleksandr: replace with "and" as in self.edit_message() handler ?
 
         if not transmitted:
