@@ -1,48 +1,24 @@
-import os
-import uuid
-from distutils.util import strtobool
-
 from boto3.dynamodb.conditions import Key, Attr
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ForceReply
 from telegram.error import BadRequest
 
 from functions.common import logging  # force log config of functions/common/__init__.py
-from functions.common.dynamodb import dynamodb, put_ddb_item, delete_ddb_item
+from functions.common.dynamodb import put_ddb_item, delete_ddb_item, msg_transmission_table, DdbFields, topic_table, \
+    allogrooming_table
 from functions.common.s3 import put_s3_object, main_bucket
-from functions.common.utils import fail_safely
-from functions.swiper_experiments.constants import CallbackData, Text
+from functions.common.utils import fail_safely, generate_uuid
+from functions.swiper_experiments.constants import CallbackData, Texts, BLACK_HEARTS_ARE_SILENT
 
 logger = logging.getLogger(__name__)
-
-MESSAGE_TRANSMISSION_DDB_TABLE_NAME = os.environ['MESSAGE_TRANSMISSION_DDB_TABLE_NAME']
-BLACK_HEARTS_ARE_SILENT = bool(strtobool(os.environ['BLACK_HEARTS_ARE_SILENT']))
-
-MSG_TRANS_ID_KEY = 'id'
-ORIGINAL_MSG_TRANS_ID_KEY = 'original_msg_trans_id'
-
-SENDER_MSG_ID_KEY = 'sender_msg_id'
-SENDER_CHAT_ID_KEY = 'sender_chat_id'
-SENDER_BOT_ID_KEY = 'sender_bot_id'
-
-RECEIVER_MSG_ID_KEY = 'receiver_msg_id'
-RECEIVER_CHAT_ID_KEY = 'receiver_chat_id'
-RECEIVER_BOT_ID_KEY = 'receiver_bot_id'
-
-RED_HEART_KEY = 'red_heart'
-
-SENDER_UPDATE_S3_KEY_KEY = 'sender_update_s3_key'
-RECEIVER_MSG_S3_KEY_KEY = 'receiver_msg_s3_key'
-
-msg_transmission_table = dynamodb.Table(MESSAGE_TRANSMISSION_DDB_TABLE_NAME)
 
 
 def reply_stop_kbd_markup(red_heart):
     if red_heart:
-        heart = Text.READ_HEART
+        heart = Texts.READ_HEART
     else:
-        heart = Text.BLACK_HEART
+        heart = Texts.BLACK_HEART
 
-    kbd_row = [InlineKeyboardButton(f"{heart}{Text.REPLY}", callback_data=CallbackData.REPLY)]
+    kbd_row = [InlineKeyboardButton(f"{heart}{Texts.REPLY}", callback_data=CallbackData.REPLY)]
     kbd_markup = InlineKeyboardMarkup(inline_keyboard=[kbd_row])
     return kbd_markup
 
@@ -60,9 +36,10 @@ def find_original_transmission(
     scan_result = msg_transmission_table.query(
         IndexName='byReceiverMsgId',
         KeyConditionExpression=(
-                Key(RECEIVER_MSG_ID_KEY).eq(receiver_msg_id) & Key(RECEIVER_CHAT_ID_KEY).eq(receiver_chat_id)
+                Key(DdbFields.RECEIVER_MSG_ID).eq(receiver_msg_id) &
+                Key(DdbFields.RECEIVER_CHAT_ID).eq(receiver_chat_id)
         ),
-        FilterExpression=Attr(RECEIVER_BOT_ID_KEY).eq(receiver_bot_id),
+        FilterExpression=Attr(DdbFields.RECEIVER_BOT_ID).eq(receiver_bot_id),
     )
     if logger.isEnabledFor(logging.INFO):
         logger.info('FIND ORIGINAL TRANSMISSION (DDB QUERY RESPONSE):\n%s', scan_result)
@@ -99,16 +76,17 @@ def find_transmissions_by_sender_msg(
     scan_result = msg_transmission_table.query(
         IndexName='bySenderMsgId',
         KeyConditionExpression=(
-                Key(SENDER_MSG_ID_KEY).eq(sender_msg_id) & Key(SENDER_CHAT_ID_KEY).eq(sender_chat_id)
+                Key(DdbFields.SENDER_MSG_ID).eq(sender_msg_id) &
+                Key(DdbFields.SENDER_CHAT_ID).eq(sender_chat_id)
         ),
-        FilterExpression=Attr(SENDER_BOT_ID_KEY).eq(sender_bot_id),
+        FilterExpression=Attr(DdbFields.SENDER_BOT_ID).eq(sender_bot_id),
     )
-    if logger.isEnabledFor(logging.INFO):
+    if logger.isEnabledFor(logging.INFO):  # TODO oleksandr: this logging is redundant - get rid of it
         logger.info('FIND TRANSMISSION (DDB QUERY RESPONSE):\n%s', scan_result)
 
     items = scan_result['Items']
     if not items:
-        logger.info(
+        logger.info(  # TODO oleksandr: this logging is redundant - get rid of it
             'FIND TRANSMISSIONS BY SENDER MSG: no DDB results were found for '
             'sender_msg_id=%s ; sender_chat_id=%s ; sender_bot_id=%s',
             sender_msg_id,
@@ -116,6 +94,109 @@ def find_transmissions_by_sender_msg(
             sender_bot_id,
         )
     return items
+
+
+def create_topic(
+        swiper_update,
+        msg,
+        sender_bot_id,
+):
+    sender_msg_id = int(msg.message_id)
+    sender_chat_id = int(msg.chat_id)
+    sender_bot_id = int(sender_bot_id)
+
+    topic_id = generate_uuid()
+    topic = {
+        DdbFields.ID: topic_id,
+
+        DdbFields.SENDER_MSG_ID: sender_msg_id,
+        DdbFields.SENDER_CHAT_ID: sender_chat_id,
+        DdbFields.SENDER_BOT_ID: sender_bot_id,
+
+        DdbFields.SENDER_UPDATE_S3_KEY: swiper_update.telegram_update_s3_key,
+    }
+    put_ddb_item(
+        ddb_table=topic_table,
+        item=topic,
+    )
+    return topic_id
+
+
+def find_allogrooming_by_topic_and_sender(
+        sender_chat_id,
+        sender_bot_id,
+        receiver_chat_id,
+        receiver_bot_id,
+        topic_id,
+):
+    sender_chat_id = int(sender_chat_id)
+    sender_bot_id = int(sender_bot_id)
+
+    scan_result = allogrooming_table.query(
+        IndexName='byTopicAndSender',
+        KeyConditionExpression=(
+                Key(DdbFields.TOPIC_ID).eq(topic_id) &
+                Key(DdbFields.SENDER_CHAT_ID).eq(sender_chat_id)
+        ),
+        FilterExpression=(
+                Attr(DdbFields.SENDER_BOT_ID).eq(sender_bot_id) &
+                Attr(DdbFields.RECEIVER_CHAT_ID).eq(receiver_chat_id) &
+                Attr(DdbFields.RECEIVER_BOT_ID).eq(receiver_bot_id)
+        ),
+    )
+    if logger.isEnabledFor(logging.INFO):  # TODO oleksandr: this logging is redundant - get rid of it
+        logger.info('FIND ALLOGROOMING (DDB QUERY RESPONSE):\n%s', scan_result)
+
+    items = scan_result['Items']
+    if items:
+        if len(items) > 1:
+            logger.warning(
+                'FOUND MORE THAN ONE ALLOGROOMING BY TOPIC AND SENDER: '
+                'topic_id=%s ; sender_chat_id=%s ; sender_bot_id=%s ; receiver_chat_id=%s ; receiver_bot_id=%s',
+                topic_id,
+                sender_chat_id,
+                sender_bot_id,
+                receiver_chat_id,
+                receiver_bot_id,
+            )
+        return items[0]
+    return None
+
+
+def create_allogrooming(
+        swiper_update,
+        msg,
+        sender_bot_id,
+        receiver_chat_id,
+        receiver_bot_id,
+        topic_id,
+):
+    sender_msg_id = int(msg.message_id)
+    sender_chat_id = int(msg.chat_id)
+    sender_bot_id = int(sender_bot_id)
+
+    receiver_chat_id = int(receiver_chat_id)
+    receiver_bot_id = int(receiver_bot_id)
+
+    allogrooming_id = generate_uuid()
+    allogrooming = {
+        DdbFields.ID: allogrooming_id,
+        DdbFields.TOPIC_ID: topic_id,
+
+        DdbFields.SENDER_MSG_ID: sender_msg_id,
+        DdbFields.SENDER_CHAT_ID: sender_chat_id,
+        DdbFields.SENDER_BOT_ID: sender_bot_id,
+
+        DdbFields.RECEIVER_CHAT_ID: receiver_chat_id,
+        DdbFields.RECEIVER_BOT_ID: receiver_bot_id,
+
+        DdbFields.SENDER_UPDATE_S3_KEY: swiper_update.telegram_update_s3_key,
+    }
+    put_ddb_item(
+        ddb_table=allogrooming_table,
+        item=allogrooming,
+    )
+    return allogrooming_id
 
 
 @fail_safely()
@@ -126,6 +207,9 @@ def transmit_message(
         receiver_chat_id,
         receiver_bot,
         red_heart,
+        topic_id,
+        disable_notification,
+        allogrooming_id=None,
         reply_to_msg_id=None,
 ):
     sender_msg_id = int(msg.message_id)
@@ -149,7 +233,7 @@ def transmit_message(
         reply_markup=reply_stop_kbd_markup(
             red_heart=red_heart,
         ),
-        disable_notification=BLACK_HEARTS_ARE_SILENT and not red_heart,
+        disable_notification=disable_notification,
     )
     if not transmitted_msg:
         # message was not transmitted
@@ -157,7 +241,7 @@ def transmit_message(
 
     receiver_msg_id = int(transmitted_msg.message_id)
 
-    msg_transmission_id = str(uuid.uuid4())
+    msg_transmission_id = generate_uuid()
 
     receiver_msg_s3_key = f"{swiper_update.update_s3_key_prefix}.transmission.{msg_transmission_id}.json"
     put_s3_object(
@@ -167,20 +251,22 @@ def transmit_message(
     )
 
     msg_transmission = {
-        MSG_TRANS_ID_KEY: msg_transmission_id,
+        DdbFields.ID: msg_transmission_id,
+        DdbFields.TOPIC_ID: topic_id,
+        DdbFields.ALLOGROOMING_ID: allogrooming_id,
 
-        SENDER_MSG_ID_KEY: sender_msg_id,
-        SENDER_CHAT_ID_KEY: sender_chat_id,
-        SENDER_BOT_ID_KEY: sender_bot_id,
+        DdbFields.SENDER_MSG_ID: sender_msg_id,
+        DdbFields.SENDER_CHAT_ID: sender_chat_id,
+        DdbFields.SENDER_BOT_ID: sender_bot_id,
 
-        RECEIVER_MSG_ID_KEY: receiver_msg_id,
-        RECEIVER_CHAT_ID_KEY: receiver_chat_id,
-        RECEIVER_BOT_ID_KEY: receiver_bot_id,
+        DdbFields.RECEIVER_MSG_ID: receiver_msg_id,
+        DdbFields.RECEIVER_CHAT_ID: receiver_chat_id,
+        DdbFields.RECEIVER_BOT_ID: receiver_bot_id,
 
-        RED_HEART_KEY: red_heart,
+        DdbFields.RED_HEART: red_heart,
 
-        SENDER_UPDATE_S3_KEY_KEY: swiper_update.telegram_update_s3_key,
-        RECEIVER_MSG_S3_KEY_KEY: receiver_msg_s3_key,
+        DdbFields.SENDER_UPDATE_S3_KEY: swiper_update.telegram_update_s3_key,
+        DdbFields.RECEIVER_MSG_S3_KEY: receiver_msg_s3_key,
     }
     put_ddb_item(
         ddb_table=msg_transmission_table,
@@ -219,12 +305,12 @@ def force_reply(original_msg, original_msg_transmission):
     )
 
     msg_trans_copy = original_msg_transmission.copy()
-    msg_trans_copy[ORIGINAL_MSG_TRANS_ID_KEY] = original_msg_transmission[MSG_TRANS_ID_KEY]
-    msg_trans_copy[MSG_TRANS_ID_KEY] = str(uuid.uuid4())
+    msg_trans_copy[DdbFields.ORIGINAL_MSG_TRANS_ID] = original_msg_transmission[DdbFields.ID]
+    msg_trans_copy[DdbFields.ID] = generate_uuid()
 
-    msg_trans_copy[RECEIVER_MSG_ID_KEY] = int(force_reply_msg.message_id)
-    msg_trans_copy[RECEIVER_CHAT_ID_KEY] = int(force_reply_msg.chat.id)
-    msg_trans_copy[RECEIVER_BOT_ID_KEY] = int(force_reply_msg.bot.id)
+    msg_trans_copy[DdbFields.RECEIVER_MSG_ID] = int(force_reply_msg.message_id)
+    msg_trans_copy[DdbFields.RECEIVER_CHAT_ID] = int(force_reply_msg.chat.id)
+    msg_trans_copy[DdbFields.RECEIVER_BOT_ID] = int(force_reply_msg.bot.id)
 
     put_ddb_item(
         ddb_table=msg_transmission_table,
@@ -235,7 +321,7 @@ def force_reply(original_msg, original_msg_transmission):
     delete_ddb_item(
         ddb_table=msg_transmission_table,
         key={
-            MSG_TRANS_ID_KEY: original_msg_transmission[MSG_TRANS_ID_KEY],
+            DdbFields.ID: original_msg_transmission[DdbFields.ID],
         },
     )
 

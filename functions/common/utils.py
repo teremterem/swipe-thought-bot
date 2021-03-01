@@ -1,9 +1,14 @@
 import logging
 import time
+import uuid
 from functools import wraps
 from pprint import pformat
 
 logger = logging.getLogger(__name__)
+
+
+def generate_uuid():
+    return str(uuid.uuid4())
 
 
 def safe_int(value):

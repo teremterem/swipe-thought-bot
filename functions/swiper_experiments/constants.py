@@ -1,3 +1,10 @@
+import os
+from distutils.util import strtobool
+
+# TODO oleksandr: rename to NEW_TOPICS_ARE_SILENT ?
+BLACK_HEARTS_ARE_SILENT = bool(strtobool(os.environ['BLACK_HEARTS_ARE_SILENT']))
+
+
 class CallbackData:
     REPLY = 'reply'
 
@@ -8,7 +15,7 @@ class Commands:
     ABOUT = 'about'
 
 
-class Text:
+class Texts:
     HELP = (
         "👋 Вітаю! Мене звати Свайпі🙃\n"
         "\n"
