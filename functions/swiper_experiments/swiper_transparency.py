@@ -11,7 +11,8 @@ from functions.common.swiper_telegram import BaseSwiperConversation
 from functions.common.utils import send_partitioned_text
 from functions.swiper_experiments.constants import CallbackData, Texts, Commands
 from functions.swiper_experiments.message_transmitter import transmit_message, find_original_transmission, \
-    force_reply, find_transmissions_by_sender_msg, edit_transmission, prepare_msg_for_transmission, create_topic
+    force_reply, find_transmissions_by_sender_msg, edit_transmission, prepare_msg_for_transmission, create_topic, \
+    create_allogrooming
 
 logger = logging.getLogger(__name__)
 
@@ -157,16 +158,30 @@ class SwiperTransparency(BaseSwiperConversation):
 
         msg_transmission = find_original_transmission_by_msg(reply_to_msg)
         if msg_transmission:
-            if not transmit_message(
-                    swiper_update=self.swiper_update,  # non-async single-threaded environment
-                    msg=msg,
-                    sender_bot_id=context.bot.id,
-                    receiver_chat_id=msg_transmission[DdbFields.SENDER_CHAT_ID],
-                    receiver_bot=context.bot,  # msg_transmission[DdbFields.SENDER_BOT_ID] is of no use here
-                    red_heart=True,
-                    topic_id=msg_transmission.get(DdbFields.TOPIC_ID),
-                    reply_to_msg_id=msg_transmission[DdbFields.SENDER_MSG_ID],
-            ):
+
+            # TODO oleksandr: find allogrooming
+            allogrooming_id = create_allogrooming(
+                swiper_update=self.swiper_update,  # non-async single-threaded environment
+                msg=msg,
+                sender_bot_id=context.bot.id,
+                receiver_chat_id=msg_transmission[DdbFields.SENDER_CHAT_ID],
+                receiver_bot_id=msg_transmission[DdbFields.SENDER_BOT_ID],
+                topic_id=msg_transmission.get(DdbFields.TOPIC_ID),
+            )
+            # TODO oleksandr: notify if new allogrooming
+
+            transmitted = transmit_message(
+                swiper_update=self.swiper_update,  # non-async single-threaded environment
+                msg=msg,
+                sender_bot_id=context.bot.id,
+                receiver_chat_id=msg_transmission[DdbFields.SENDER_CHAT_ID],
+                receiver_bot=context.bot,  # msg_transmission[DdbFields.SENDER_BOT_ID] is of no use here
+                red_heart=True,
+                topic_id=msg_transmission.get(DdbFields.TOPIC_ID),
+                allogrooming_id=allogrooming_id,
+                reply_to_msg_id=msg_transmission[DdbFields.SENDER_MSG_ID],
+            )
+            if not transmitted:
                 report_msg_not_transmitted(update)
             return
 
@@ -202,6 +217,7 @@ class SwiperTransparency(BaseSwiperConversation):
                 receiver_bot=context.bot,  # msg_transmission[DdbFields.RECEIVER_BOT_ID] is of no use here
                 red_heart=red_heart,
                 topic_id=msg_transmission.get(DdbFields.TOPIC_ID),
+                allogrooming_id=msg_transmission.get(DdbFields.ALLOGROOMING_ID),
                 reply_to_msg_id=msg_transmission[DdbFields.RECEIVER_MSG_ID],
             ) or transmitted  # TODO oleksandr: replace with "and" as in self.edit_message() handler ?
 

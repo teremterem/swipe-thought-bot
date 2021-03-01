@@ -35,6 +35,7 @@ class DdbFields:
     PTB_CHAT_DATA = 'ptb_chat_data'  # TODO oleksandr: get rid of this
 
     TOPIC_ID = 'topic_id'
+    ALLOGROOMING_ID = 'allogrooming_id'
     ORIGINAL_MSG_TRANS_ID = 'original_msg_trans_id'
 
     SENDER_MSG_ID = 'sender_msg_id'

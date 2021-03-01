@@ -6,7 +6,8 @@ from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ForceReply
 from telegram.error import BadRequest
 
 from functions.common import logging  # force log config of functions/common/__init__.py
-from functions.common.dynamodb import put_ddb_item, delete_ddb_item, msg_transmission_table, DdbFields, topic_table
+from functions.common.dynamodb import put_ddb_item, delete_ddb_item, msg_transmission_table, DdbFields, topic_table, \
+    allogrooming_table
 from functions.common.s3 import put_s3_object, main_bucket
 from functions.common.utils import fail_safely, generate_uuid
 from functions.swiper_experiments.constants import CallbackData, Texts
@@ -126,6 +127,42 @@ def create_topic(
     return topic_id
 
 
+def create_allogrooming(
+        swiper_update,
+        msg,
+        sender_bot_id,
+        receiver_chat_id,
+        receiver_bot_id,
+        topic_id,
+):
+    sender_msg_id = int(msg.message_id)
+    sender_chat_id = int(msg.chat_id)
+    sender_bot_id = int(sender_bot_id)
+
+    receiver_chat_id = int(receiver_chat_id)
+    receiver_bot_id = int(receiver_bot_id)
+
+    allogrooming_id = generate_uuid()
+    allogrooming = {
+        DdbFields.ID: allogrooming_id,
+        DdbFields.TOPIC_ID: topic_id,
+
+        DdbFields.SENDER_MSG_ID: sender_msg_id,
+        DdbFields.SENDER_CHAT_ID: sender_chat_id,
+        DdbFields.SENDER_BOT_ID: sender_bot_id,
+
+        DdbFields.RECEIVER_CHAT_ID: receiver_chat_id,
+        DdbFields.RECEIVER_BOT_ID: receiver_bot_id,
+
+        DdbFields.SENDER_UPDATE_S3_KEY: swiper_update.telegram_update_s3_key,
+    }
+    put_ddb_item(
+        ddb_table=allogrooming_table,
+        item=allogrooming,
+    )
+    return topic_id
+
+
 @fail_safely()
 def transmit_message(
         swiper_update,
@@ -135,6 +172,7 @@ def transmit_message(
         receiver_bot,
         red_heart,
         topic_id,
+        allogrooming_id=None,
         reply_to_msg_id=None,
 ):
     sender_msg_id = int(msg.message_id)
@@ -178,6 +216,7 @@ def transmit_message(
     msg_transmission = {
         DdbFields.ID: msg_transmission_id,
         DdbFields.TOPIC_ID: topic_id,
+        DdbFields.ALLOGROOMING_ID: allogrooming_id,
 
         DdbFields.SENDER_MSG_ID: sender_msg_id,
         DdbFields.SENDER_CHAT_ID: sender_chat_id,
