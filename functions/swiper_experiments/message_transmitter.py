@@ -6,7 +6,7 @@ from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ForceReply
 from telegram.error import BadRequest
 
 from functions.common import logging  # force log config of functions/common/__init__.py
-from functions.common.dynamodb import put_ddb_item, delete_ddb_item, msg_transmission_table, DdbFields
+from functions.common.dynamodb import put_ddb_item, delete_ddb_item, msg_transmission_table, DdbFields, topic_table
 from functions.common.s3 import put_s3_object, main_bucket
 from functions.common.utils import fail_safely, generate_uuid
 from functions.swiper_experiments.constants import CallbackData, Texts
@@ -109,7 +109,21 @@ def create_topic(
     sender_chat_id = int(msg.chat_id)
     sender_bot_id = int(sender_bot_id)
 
-    # TODO oleksandr: finish him!
+    topic_id = generate_uuid()
+    topic = {
+        DdbFields.ID: topic_id,
+
+        DdbFields.SENDER_MSG_ID: sender_msg_id,
+        DdbFields.SENDER_CHAT_ID: sender_chat_id,
+        DdbFields.SENDER_BOT_ID: sender_bot_id,
+
+        DdbFields.SENDER_UPDATE_S3_KEY: swiper_update.telegram_update_s3_key,
+    }
+    put_ddb_item(
+        ddb_table=topic_table,
+        item=topic,
+    )
+    return topic_id
 
 
 @fail_safely()
