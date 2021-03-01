@@ -1,3 +1,5 @@
+import os
+from distutils.util import strtobool
 from traceback import format_exception
 
 from telegram import InlineKeyboardMarkup, ParseMode
@@ -15,6 +17,9 @@ from functions.swiper_experiments.message_transmitter import transmit_message, f
     create_allogrooming, find_allogrooming_by_topic_and_sender
 
 logger = logging.getLogger(__name__)
+
+# TODO oleksandr: rename to NEW_TOPICS_ARE_SILENT ?
+BLACK_HEARTS_ARE_SILENT = bool(strtobool(os.environ['BLACK_HEARTS_ARE_SILENT']))
 
 
 class SwiperTransparency(BaseSwiperConversation):
@@ -75,6 +80,7 @@ class SwiperTransparency(BaseSwiperConversation):
                     receiver_bot=context.bot,
                     red_heart=False,
                     topic_id=topic_id,
+                    disable_notification=BLACK_HEARTS_ARE_SILENT,
                 ) or transmitted
 
         if transmitted:
@@ -158,6 +164,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
         msg_transmission = find_original_transmission_by_msg(reply_to_msg)
         if msg_transmission:
+            disable_notification = True
             allogrooming_id = None
             topic_id = msg_transmission.get(DdbFields.TOPIC_ID)
             if topic_id:
@@ -168,7 +175,6 @@ class SwiperTransparency(BaseSwiperConversation):
                 )
                 if allogrooming:
                     allogrooming_id = allogrooming[DdbFields.ID]
-                    new_allogrooming = False
                 else:
                     allogrooming_id = create_allogrooming(
                         swiper_update=self.swiper_update,  # non-async single-threaded environment
@@ -178,7 +184,7 @@ class SwiperTransparency(BaseSwiperConversation):
                         receiver_bot_id=msg_transmission[DdbFields.SENDER_BOT_ID],
                         topic_id=topic_id,
                     )
-                    new_allogrooming = True
+                    disable_notification = False
                 # TODO oleksandr: notify if new allogrooming
 
             transmitted = transmit_message(
@@ -189,6 +195,7 @@ class SwiperTransparency(BaseSwiperConversation):
                 receiver_bot=context.bot,  # msg_transmission[DdbFields.SENDER_BOT_ID] is of no use here
                 red_heart=True,
                 topic_id=topic_id,
+                disable_notification=disable_notification,
                 allogrooming_id=allogrooming_id,
                 reply_to_msg_id=msg_transmission[DdbFields.SENDER_MSG_ID],
             )
@@ -228,6 +235,7 @@ class SwiperTransparency(BaseSwiperConversation):
                 receiver_bot=context.bot,  # msg_transmission[DdbFields.RECEIVER_BOT_ID] is of no use here
                 red_heart=red_heart,
                 topic_id=msg_transmission.get(DdbFields.TOPIC_ID),
+                disable_notification=True,
                 allogrooming_id=msg_transmission.get(DdbFields.ALLOGROOMING_ID),
                 reply_to_msg_id=msg_transmission[DdbFields.RECEIVER_MSG_ID],
             ) or transmitted  # TODO oleksandr: replace with "and" as in self.edit_message() handler ?

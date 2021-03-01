@@ -1,6 +1,3 @@
-import os
-from distutils.util import strtobool
-
 from boto3.dynamodb.conditions import Key, Attr
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ForceReply
 from telegram.error import BadRequest
@@ -13,8 +10,6 @@ from functions.common.utils import fail_safely, generate_uuid
 from functions.swiper_experiments.constants import CallbackData, Texts
 
 logger = logging.getLogger(__name__)
-
-BLACK_HEARTS_ARE_SILENT = bool(strtobool(os.environ['BLACK_HEARTS_ARE_SILENT']))
 
 
 def reply_stop_kbd_markup(red_heart):
@@ -205,6 +200,7 @@ def transmit_message(
         receiver_bot,
         red_heart,
         topic_id,
+        disable_notification,
         allogrooming_id=None,
         reply_to_msg_id=None,
 ):
@@ -229,7 +225,7 @@ def transmit_message(
         reply_markup=reply_stop_kbd_markup(
             red_heart=red_heart,
         ),
-        disable_notification=BLACK_HEARTS_ARE_SILENT and not red_heart,
+        disable_notification=disable_notification,
     )
     if not transmitted_msg:
         # message was not transmitted
