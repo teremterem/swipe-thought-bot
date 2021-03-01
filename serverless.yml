@@ -38,6 +38,8 @@ provider:
 
     SWIPER_CHAT_DATA_DDB_TABLE_NAME: ${self:resources.Resources.swiperChatDataTable.Properties.TableName}
     MESSAGE_TRANSMISSION_DDB_TABLE_NAME: ${self:resources.Resources.messageTransmissionTable.Properties.TableName}
+    TOPIC_DDB_TABLE_NAME: ${self:resources.Resources.topicTable.Properties.TableName}
+    ALLOGROOMING_DDB_TABLE_NAME: ${self:resources.Resources.allogroomingTable.Properties.TableName}
 
     MAIN_S3_BUCKET_NAME: ${self:resources.Resources.mainBucket.Properties.BucketName}
 
@@ -165,6 +167,77 @@ resources:
             KeySchema:
               # TODO oleksandr: combine message id and chat id into one string hash key ? bot id too ?
               - AttributeName: receiver_msg_id
+                KeyType: HASH
+              - AttributeName: receiver_chat_id
+                KeyType: RANGE
+              #- AttributeName: receiver_bot_id
+              #  KeyType: RANGE
+            Projection:
+              # https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html#GSI.Projections
+              ProjectionType: ALL
+        BillingMode: PAY_PER_REQUEST
+      DeletionPolicy: Retain
+
+    topicTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: Topic-${self:custom.constants.SERVICE_SHORT_NAME}-${self:provider.stage}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          #- AttributeName: sender_msg_id
+          #  AttributeType: N
+          #- AttributeName: sender_chat_id
+          #  AttributeType: N
+          #- AttributeName: sender_bot_id
+          #  AttributeType: N
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+      DeletionPolicy: Retain
+
+    allogroomingTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: Allogrooming-${self:custom.constants.SERVICE_SHORT_NAME}-${self:provider.stage}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: topic_id
+            AttributeType: S
+          #- AttributeName: sender_msg_id
+          #  AttributeType: N
+          - AttributeName: sender_chat_id
+            AttributeType: N
+          #- AttributeName: sender_bot_id
+          #  AttributeType: N
+          #- AttributeName: receiver_msg_id
+          #  AttributeType: N
+          - AttributeName: receiver_chat_id
+            AttributeType: N
+          #- AttributeName: receiver_bot_id
+          #  AttributeType: N
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: byTopicAndSender
+            KeySchema:
+              # TODO oleksandr: combine topic id and chat id into one string hash key ? bot id too ?
+              - AttributeName: topic_id
+                KeyType: HASH
+              - AttributeName: sender_chat_id
+                KeyType: RANGE
+              #- AttributeName: sender_bot_id
+              #  KeyType: RANGE
+            Projection:
+              # https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html#GSI.Projections
+              ProjectionType: ALL
+          - IndexName: byTopicAndReceiver
+            KeySchema:
+              # TODO oleksandr: combine topic id and chat id into one string hash key ? bot id too ?
+              - AttributeName: topic_id
                 KeyType: HASH
               - AttributeName: receiver_chat_id
                 KeyType: RANGE
