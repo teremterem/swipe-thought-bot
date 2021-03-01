@@ -12,7 +12,7 @@ from functions.common.utils import send_partitioned_text
 from functions.swiper_experiments.constants import CallbackData, Texts, Commands
 from functions.swiper_experiments.message_transmitter import transmit_message, find_original_transmission, \
     force_reply, find_transmissions_by_sender_msg, edit_transmission, prepare_msg_for_transmission, create_topic, \
-    create_allogrooming
+    create_allogrooming, find_allogrooming_by_topic_and_sender
 
 logger = logging.getLogger(__name__)
 
@@ -158,17 +158,28 @@ class SwiperTransparency(BaseSwiperConversation):
 
         msg_transmission = find_original_transmission_by_msg(reply_to_msg)
         if msg_transmission:
-
-            # TODO oleksandr: find allogrooming
-            allogrooming_id = create_allogrooming(
-                swiper_update=self.swiper_update,  # non-async single-threaded environment
-                msg=msg,
-                sender_bot_id=context.bot.id,
-                receiver_chat_id=msg_transmission[DdbFields.SENDER_CHAT_ID],
-                receiver_bot_id=msg_transmission[DdbFields.SENDER_BOT_ID],
-                topic_id=msg_transmission.get(DdbFields.TOPIC_ID),
-            )
-            # TODO oleksandr: notify if new allogrooming
+            allogrooming_id = None
+            topic_id = msg_transmission.get(DdbFields.TOPIC_ID)
+            if topic_id:
+                allogrooming = find_allogrooming_by_topic_and_sender(
+                    topic_id=topic_id,
+                    sender_chat_id=msg.chat_id,
+                    sender_bot_id=context.bot.id,
+                )
+                if allogrooming:
+                    allogrooming_id = allogrooming[DdbFields.ID]
+                    new_allogrooming = False
+                else:
+                    allogrooming_id = create_allogrooming(
+                        swiper_update=self.swiper_update,  # non-async single-threaded environment
+                        msg=msg,
+                        sender_bot_id=context.bot.id,
+                        receiver_chat_id=msg_transmission[DdbFields.SENDER_CHAT_ID],
+                        receiver_bot_id=msg_transmission[DdbFields.SENDER_BOT_ID],
+                        topic_id=topic_id,
+                    )
+                    new_allogrooming = True
+                # TODO oleksandr: notify if new allogrooming
 
             transmitted = transmit_message(
                 swiper_update=self.swiper_update,  # non-async single-threaded environment
@@ -177,7 +188,7 @@ class SwiperTransparency(BaseSwiperConversation):
                 receiver_chat_id=msg_transmission[DdbFields.SENDER_CHAT_ID],
                 receiver_bot=context.bot,  # msg_transmission[DdbFields.SENDER_BOT_ID] is of no use here
                 red_heart=True,
-                topic_id=msg_transmission.get(DdbFields.TOPIC_ID),
+                topic_id=topic_id,
                 allogrooming_id=allogrooming_id,
                 reply_to_msg_id=msg_transmission[DdbFields.SENDER_MSG_ID],
             )

@@ -86,12 +86,12 @@ def find_transmissions_by_sender_msg(
         ),
         FilterExpression=Attr(DdbFields.SENDER_BOT_ID).eq(sender_bot_id),
     )
-    if logger.isEnabledFor(logging.INFO):
+    if logger.isEnabledFor(logging.INFO):  # TODO oleksandr: this logging is redundant - get rid of it
         logger.info('FIND TRANSMISSION (DDB QUERY RESPONSE):\n%s', scan_result)
 
     items = scan_result['Items']
     if not items:
-        logger.info(
+        logger.info(  # TODO oleksandr: this logging is redundant - get rid of it
             'FIND TRANSMISSIONS BY SENDER MSG: no DDB results were found for '
             'sender_msg_id=%s ; sender_chat_id=%s ; sender_bot_id=%s',
             sender_msg_id,
@@ -125,6 +125,39 @@ def create_topic(
         item=topic,
     )
     return topic_id
+
+
+def find_allogrooming_by_topic_and_sender(
+        topic_id,
+        sender_chat_id,
+        sender_bot_id,
+):
+    sender_chat_id = int(sender_chat_id)
+    sender_bot_id = int(sender_bot_id)
+
+    scan_result = allogrooming_table.query(
+        IndexName='byTopicAndSender',
+        KeyConditionExpression=(
+                Key(DdbFields.TOPIC_ID).eq(topic_id) &
+                Key(DdbFields.SENDER_CHAT_ID).eq(sender_chat_id)
+        ),
+        FilterExpression=Attr(DdbFields.SENDER_BOT_ID).eq(sender_bot_id),
+    )
+    if logger.isEnabledFor(logging.INFO):  # TODO oleksandr: this logging is redundant - get rid of it
+        logger.info('FIND ALLOGROOMING (DDB QUERY RESPONSE):\n%s', scan_result)
+
+    items = scan_result['Items']
+    if items:
+        if len(items) > 1:
+            logger.warning(
+                'FOUND MORE THAN ONE ALLOGROOMING BY TOPIC AND SENDER: '
+                'topic_id=%s ; sender_chat_id=%s ; sender_bot_id=%s',
+                topic_id,
+                sender_chat_id,
+                sender_bot_id,
+            )
+        return items[0]
+    return None
 
 
 def create_allogrooming(
