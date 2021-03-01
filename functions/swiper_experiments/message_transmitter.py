@@ -7,7 +7,7 @@ from functions.common.dynamodb import put_ddb_item, delete_ddb_item, msg_transmi
     allogrooming_table
 from functions.common.s3 import put_s3_object, main_bucket
 from functions.common.utils import fail_safely, generate_uuid
-from functions.swiper_experiments.constants import CallbackData, Texts
+from functions.swiper_experiments.constants import CallbackData, Texts, BLACK_HEARTS_ARE_SILENT
 
 logger = logging.getLogger(__name__)
 

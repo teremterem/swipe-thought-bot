@@ -1,5 +1,3 @@
-import os
-from distutils.util import strtobool
 from traceback import format_exception
 
 from telegram import InlineKeyboardMarkup, ParseMode
@@ -11,15 +9,12 @@ from functions.common.dynamodb import DdbFields
 from functions.common.swiper_chat_data import find_all_active_swiper_chat_ids
 from functions.common.swiper_telegram import BaseSwiperConversation
 from functions.common.utils import send_partitioned_text
-from functions.swiper_experiments.constants import CallbackData, Texts, Commands
+from functions.swiper_experiments.constants import CallbackData, Texts, Commands, BLACK_HEARTS_ARE_SILENT
 from functions.swiper_experiments.message_transmitter import transmit_message, find_original_transmission, \
     force_reply, find_transmissions_by_sender_msg, edit_transmission, prepare_msg_for_transmission, create_topic, \
     create_allogrooming, find_allogrooming_by_topic_and_sender
 
 logger = logging.getLogger(__name__)
-
-# TODO oleksandr: rename to NEW_TOPICS_ARE_SILENT ?
-BLACK_HEARTS_ARE_SILENT = bool(strtobool(os.environ['BLACK_HEARTS_ARE_SILENT']))
 
 
 class SwiperTransparency(BaseSwiperConversation):
