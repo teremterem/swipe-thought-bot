@@ -198,6 +198,7 @@ class SwiperTransparency(BaseSwiperConversation):
             )
             if not transmitted:
                 report_msg_not_transmitted(update)
+                # TODO oleksandr: what to do with new allogrooming if message was not transmitted ?
             return
 
         transmissions_by_sender_msg = find_transmissions_by_sender_msg(
