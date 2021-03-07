@@ -160,8 +160,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
         update.effective_message.edit_reply_markup(
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
-                InlineKeyboardButton(f"{Texts.YELLOW_HEART}{Texts.REPLY}", callback_data=CallbackData.REPLY),
-                InlineKeyboardButton(Texts.SHARE, callback_data='share2'),
+                InlineKeyboardButton(f"{Texts.YELLOW_HEART}{Texts.REPLY}", callback_data='share2'),
             ]]),
         )
 
@@ -171,7 +170,8 @@ class SwiperTransparency(BaseSwiperConversation):
 
         update.effective_message.edit_reply_markup(
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
-                InlineKeyboardButton(f"{Texts.YELLOW_HEART}{Texts.REPLY}", callback_data='share3'),
+                InlineKeyboardButton(f"{Texts.YELLOW_HEART}{Texts.REPLY}", callback_data=CallbackData.REPLY),
+                InlineKeyboardButton(Texts.SHARE, callback_data='share3'),
             ]]),
         )
 
