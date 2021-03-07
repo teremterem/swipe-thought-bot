@@ -139,14 +139,10 @@ resources:
             AttributeType: N
           - AttributeName: sender_chat_id
             AttributeType: N
-          #- AttributeName: sender_bot_id
-          #  AttributeType: N
           - AttributeName: receiver_msg_id
             AttributeType: N
           - AttributeName: receiver_chat_id
             AttributeType: N
-          #- AttributeName: receiver_bot_id
-          #  AttributeType: N
         KeySchema:
           - AttributeName: id
             KeyType: HASH
@@ -158,8 +154,6 @@ resources:
                 KeyType: HASH
               - AttributeName: sender_chat_id
                 KeyType: RANGE
-              #- AttributeName: sender_bot_id
-              #  KeyType: RANGE
             Projection:
               # https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html#GSI.Projections
               ProjectionType: ALL
@@ -170,8 +164,6 @@ resources:
                 KeyType: HASH
               - AttributeName: receiver_chat_id
                 KeyType: RANGE
-              #- AttributeName: receiver_bot_id
-              #  KeyType: RANGE
             Projection:
               # https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html#GSI.Projections
               ProjectionType: ALL
@@ -185,12 +177,19 @@ resources:
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S
-          #- AttributeName: sender_msg_id
-          #  AttributeType: N
-          #- AttributeName: sender_chat_id
-          #  AttributeType: N
-          #- AttributeName: sender_bot_id
-          #  AttributeType: N
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+      DeletionPolicy: Retain
+
+    subtopicTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: Subtopic-${self:custom.constants.SERVICE_SHORT_NAME}-${self:provider.stage}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
         KeySchema:
           - AttributeName: id
             KeyType: HASH
@@ -206,18 +205,10 @@ resources:
             AttributeType: S
           - AttributeName: topic_id
             AttributeType: S
-          #- AttributeName: sender_msg_id
-          #  AttributeType: N
           - AttributeName: sender_chat_id
             AttributeType: N
-          #- AttributeName: sender_bot_id
-          #  AttributeType: N
-          #- AttributeName: receiver_msg_id
-          #  AttributeType: N
           - AttributeName: receiver_chat_id
             AttributeType: N
-          #- AttributeName: receiver_bot_id
-          #  AttributeType: N
         KeySchema:
           - AttributeName: id
             KeyType: HASH
@@ -229,8 +220,6 @@ resources:
                 KeyType: HASH
               - AttributeName: sender_chat_id
                 KeyType: RANGE
-              #- AttributeName: sender_bot_id
-              #  KeyType: RANGE
             Projection:
               # https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html#GSI.Projections
               ProjectionType: ALL
@@ -241,8 +230,6 @@ resources:
                 KeyType: HASH
               - AttributeName: receiver_chat_id
                 KeyType: RANGE
-              #- AttributeName: receiver_bot_id
-              #  KeyType: RANGE
             Projection:
               # https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html#GSI.Projections
               ProjectionType: ALL
