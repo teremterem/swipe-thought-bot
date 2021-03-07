@@ -14,13 +14,15 @@ from functions.swiper_experiments.swiper_usernames import append_swiper_username
 logger = logging.getLogger(__name__)
 
 
-def transmission_kbd_markup(red_heart):
+def transmission_kbd_markup(red_heart, show_share):
     if red_heart:
         heart = Texts.READ_HEART
     else:
         heart = Texts.BLACK_HEART
 
     kbd_row = [InlineKeyboardButton(f"{heart}{Texts.REPLY}", callback_data=CallbackData.REPLY)]
+    if show_share:
+        kbd_row.append(InlineKeyboardButton(f"{heart}{Texts.REPLY}", callback_data=CallbackData.REPLY))
     kbd_markup = InlineKeyboardMarkup(inline_keyboard=[kbd_row])
     return kbd_markup
 
@@ -233,6 +235,7 @@ def transmit_message(
         # TODO oleksandr: allow_sending_without_reply=True, ?
         reply_markup=transmission_kbd_markup(
             red_heart=red_heart,
+            show_share=red_heart,  # TODO oleksandr: make sure that the message is actually shareable
         ),
         disable_notification=disable_notification,
     )
@@ -488,6 +491,7 @@ def edit_transmission(swiper_update, msg, receiver_msg_id, receiver_chat_id, rec
             entities=entities,
             reply_markup=transmission_kbd_markup(
                 red_heart=red_heart,
+                show_share=red_heart,  # TODO oleksandr: make sure that the message is actually shareable
             ),
             **kwargs,
         )
@@ -501,6 +505,7 @@ def edit_transmission(swiper_update, msg, receiver_msg_id, receiver_chat_id, rec
             caption_entities=entities,
             reply_markup=transmission_kbd_markup(
                 red_heart=red_heart,
+                show_share=red_heart,  # TODO oleksandr: make sure that the message is actually shareable
             ),
             **kwargs,
         )
