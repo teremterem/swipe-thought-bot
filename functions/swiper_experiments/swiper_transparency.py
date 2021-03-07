@@ -36,10 +36,10 @@ class SwiperTransparency(BaseSwiperConversation):
         ))
         dispatcher.add_handler(MessageHandler(Filters.reply, self.transmit_reply))
         dispatcher.add_handler(MessageHandler(Filters.all, self.start_topic))
-        dispatcher.add_handler(CallbackQueryHandler(self.force_reply, pattern=CallbackData.REPLY))
-        dispatcher.add_handler(CallbackQueryHandler(self.share, pattern=CallbackData.SHARE))
-        dispatcher.add_handler(CallbackQueryHandler(self.share2, pattern='share2'))  # TODO oleksandr: get rid of this
-        dispatcher.add_handler(CallbackQueryHandler(self.share3, pattern='share3'))  # TODO oleksandr: get rid of this
+        dispatcher.add_handler(CallbackQueryHandler(self.force_reply, pattern=f"^{CallbackData.REPLY}$"))
+        dispatcher.add_handler(CallbackQueryHandler(self.share, pattern=f"^{CallbackData.SHARE}$"))
+        dispatcher.add_handler(CallbackQueryHandler(self.share2, pattern='^share2$'))  # TODO oleksandr: get rid of this
+        dispatcher.add_handler(CallbackQueryHandler(self.share3, pattern='^share3$'))  # TODO oleksandr: get rid of this
 
         dispatcher.add_error_handler(self.handle_error)
 
@@ -160,7 +160,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
         update.effective_message.edit_reply_markup(
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
-                InlineKeyboardButton(f"{Texts.YELLOW_HEART}{Texts.REPLY}", callback_data='share2'),
+                InlineKeyboardButton(f"{Texts.YELLOW_HEART}{Texts.REPLY}", callback_data=CallbackData.REPLY),
                 InlineKeyboardButton(Texts.SHARE, callback_data='share2'),
             ]]),
         )
