@@ -11,7 +11,7 @@ from functions.common.utils import send_partitioned_text
 from functions.swiper_experiments.constants import CallbackData, Texts, Commands, BLACK_HEARTS_ARE_SILENT
 from functions.swiper_experiments.message_transmitter import transmit_message, find_original_transmission, \
     force_reply, find_transmissions_by_sender_msg, edit_transmission, prepare_msg_for_transmission, create_topic, \
-    create_allogrooming, find_allogrooming
+    create_allogrooming, find_allogrooming, transmission_kbd_markup
 from functions.swiper_experiments.swiper_telegram import BaseSwiperConversation
 
 logger = logging.getLogger(__name__)
@@ -37,6 +37,7 @@ class SwiperTransparency(BaseSwiperConversation):
         dispatcher.add_handler(MessageHandler(Filters.reply, self.transmit_reply))
         dispatcher.add_handler(MessageHandler(Filters.all, self.start_topic))
         dispatcher.add_handler(CallbackQueryHandler(self.force_reply, pattern=CallbackData.REPLY))
+        dispatcher.add_handler(CallbackQueryHandler(self.share, pattern=CallbackData.SHARE))
 
         dispatcher.add_error_handler(self.handle_error)
 
@@ -150,6 +151,17 @@ class SwiperTransparency(BaseSwiperConversation):
             original_msg_transmission=msg_transmission,
         )
         update.effective_message.delete()  # TODO oleksandr: make it failsafe ?
+
+    def share(self, update, context):
+        # TODO oleksandr: implement it properly
+        update.callback_query.answer()  # TODO oleksandr: make it failsafe
+
+        update.effective_message.edit_reply_markup(
+            reply_markup=transmission_kbd_markup(
+                red_heart=True,
+                show_share=True,
+            )
+        )
 
     def transmit_reply(self, update, context):
         reply_to_msg = update.effective_message.reply_to_message
