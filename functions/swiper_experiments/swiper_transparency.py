@@ -1,6 +1,6 @@
 from traceback import format_exception
 
-from telegram import InlineKeyboardMarkup, ParseMode
+from telegram import InlineKeyboardMarkup, ParseMode, InlineKeyboardButton
 from telegram.error import BadRequest
 from telegram.ext import CommandHandler, DispatcherHandlerStop, Filters, MessageHandler, CallbackQueryHandler
 
@@ -38,6 +38,8 @@ class SwiperTransparency(BaseSwiperConversation):
         dispatcher.add_handler(MessageHandler(Filters.all, self.start_topic))
         dispatcher.add_handler(CallbackQueryHandler(self.force_reply, pattern=CallbackData.REPLY))
         dispatcher.add_handler(CallbackQueryHandler(self.share, pattern=CallbackData.SHARE))
+        dispatcher.add_handler(CallbackQueryHandler(self.share2, pattern='share2'))  # TODO oleksandr: get rid of this
+        dispatcher.add_handler(CallbackQueryHandler(self.share3, pattern='share3'))  # TODO oleksandr: get rid of this
 
         dispatcher.add_error_handler(self.handle_error)
 
@@ -155,6 +157,27 @@ class SwiperTransparency(BaseSwiperConversation):
     def share(self, update, context):
         # TODO oleksandr: implement it properly
         update.callback_query.answer()  # TODO oleksandr: make it failsafe
+
+        update.effective_message.edit_reply_markup(
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
+                InlineKeyboardButton(f"{Texts.YELLOW_HEART}{Texts.REPLY}", callback_data='share2'),
+                InlineKeyboardButton(Texts.SHARE, callback_data='share2'),
+            ]]),
+        )
+
+    def share2(self, update, context):
+        # TODO oleksandr: get rid of this method
+        update.callback_query.answer()
+
+        update.effective_message.edit_reply_markup(
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
+                InlineKeyboardButton(f"{Texts.YELLOW_HEART}{Texts.REPLY}", callback_data='share3'),
+            ]]),
+        )
+
+    def share3(self, update, context):
+        # TODO oleksandr: get rid of this method
+        update.callback_query.answer()
 
         update.effective_message.edit_reply_markup(
             reply_markup=transmission_kbd_markup(
