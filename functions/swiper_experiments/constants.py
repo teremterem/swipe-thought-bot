@@ -7,6 +7,7 @@ BLACK_HEARTS_ARE_SILENT = bool(strtobool(os.environ['BLACK_HEARTS_ARE_SILENT']))
 
 class CallbackData:
     REPLY = 'reply'
+    SHARE = 'share'
 
 
 class Commands:

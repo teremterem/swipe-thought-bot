@@ -22,7 +22,7 @@ def transmission_kbd_markup(red_heart, show_share):
 
     kbd_row = [InlineKeyboardButton(f"{heart}{Texts.REPLY}", callback_data=CallbackData.REPLY)]
     if show_share:
-        kbd_row.append(InlineKeyboardButton(f"{heart}{Texts.REPLY}", callback_data=CallbackData.REPLY))
+        kbd_row.append(InlineKeyboardButton(Texts.SHARE, callback_data=CallbackData.SHARE))
     kbd_markup = InlineKeyboardMarkup(inline_keyboard=[kbd_row])
     return kbd_markup
 
