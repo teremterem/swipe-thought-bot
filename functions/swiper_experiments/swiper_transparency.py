@@ -220,7 +220,6 @@ class SwiperTransparency(BaseSwiperConversation):
                         topic_id=topic_id,
                     )
                     disable_notification = False
-                # TODO oleksandr: notify if new allogrooming
 
             transmitted = transmit_message(
                 swiper_update=self.swiper_update,  # non-async single-threaded environment
