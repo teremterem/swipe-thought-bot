@@ -5,9 +5,10 @@ name = "pypi"
 
 [packages]
 python-telegram-bot = "==13.1" # better to lock ptb version - we are being "tricky" about making it work in lambda
-elasticsearch = ">=7.0.0,<8.0.0" # https://elasticsearch-py.readthedocs.io/en/latest/#compatibility
-requests-aws4auth = "*"
+#elasticsearch = ">=7.0.0,<8.0.0" # https://elasticsearch-py.readthedocs.io/en/latest/#compatibility
+#requests-aws4auth = "*"
 simplejson = "*"
+#pytz = "*"
 
 [dev-packages]
 jupyterlab = "*"
