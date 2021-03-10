@@ -18,6 +18,7 @@ jedi = "<0.18.0" # TODO oleksandr: replace this with !=0.18.0 ? (0.18.0 breaks c
 flask = "*"
 ipdb = "*"
 jupyterlab-kite = ">=2.0.2"
+ipython = "*"
 
 [requires]
 python_version = "3.8"
