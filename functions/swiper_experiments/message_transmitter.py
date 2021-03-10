@@ -12,7 +12,7 @@ from functions.swiper_experiments.constants import CallbackData, Texts, BLACK_HE
 logger = logging.getLogger(__name__)
 
 
-def reply_stop_kbd_markup(red_heart):
+def transmission_kbd_markup(red_heart):
     if red_heart:
         heart = Texts.READ_HEART
     else:
@@ -122,7 +122,7 @@ def create_topic(
     return topic_id
 
 
-def find_allogrooming_by_topic_and_sender(  # TODO oleksandr: rename to simply find_allogrooming
+def find_allogrooming(
         sender_chat_id,
         sender_bot_id,
         receiver_chat_id,
@@ -230,7 +230,7 @@ def transmit_message(
 
         reply_to_message_id=reply_to_msg_id,
         # TODO oleksandr: allow_sending_without_reply=True, ?
-        reply_markup=reply_stop_kbd_markup(
+        reply_markup=transmission_kbd_markup(
             red_heart=red_heart,
         ),
         disable_notification=disable_notification,
@@ -472,7 +472,7 @@ def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_
             message_id=receiver_msg_id,
             text=msg.text,
             entities=msg.entities,
-            reply_markup=reply_stop_kbd_markup(
+            reply_markup=transmission_kbd_markup(
                 red_heart=red_heart,
             ),
             **kwargs,
@@ -484,7 +484,7 @@ def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_
             message_id=receiver_msg_id,
             caption=msg.caption,
             caption_entities=msg.caption_entities,
-            reply_markup=reply_stop_kbd_markup(
+            reply_markup=transmission_kbd_markup(
                 red_heart=red_heart,
             ),
             **kwargs,
