@@ -122,7 +122,7 @@ def create_topic(
     return topic_id
 
 
-def find_allogrooming_by_topic_and_sender(  # TODO oleksandr: rename to simply find_allogrooming
+def find_allogrooming(
         sender_chat_id,
         sender_bot_id,
         receiver_chat_id,
