@@ -476,11 +476,12 @@ def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_
     edited_msg = None
 
     if msg.text:
+        text, entities = append_username(msg.text, msg.entities)
         edited_msg = receiver_bot.edit_message_text(
             chat_id=receiver_chat_id,
             message_id=receiver_msg_id,
-            text=msg.text,
-            entities=msg.entities,
+            text=text,
+            entities=entities,
             reply_markup=transmission_kbd_markup(
                 red_heart=red_heart,
             ),
@@ -488,11 +489,12 @@ def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_
         )
 
     elif msg.caption:
+        text, entities = append_username(msg.caption, msg.caption_entities)
         edited_msg = receiver_bot.edit_message_caption(
             chat_id=receiver_chat_id,
             message_id=receiver_msg_id,
-            caption=msg.caption,
-            caption_entities=msg.caption_entities,
+            text=text,
+            entities=entities,
             reply_markup=transmission_kbd_markup(
                 red_heart=red_heart,
             ),
