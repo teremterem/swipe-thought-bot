@@ -493,8 +493,8 @@ def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_
         edited_msg = receiver_bot.edit_message_caption(
             chat_id=receiver_chat_id,
             message_id=receiver_msg_id,
-            text=text,
-            entities=entities,
+            caption=text,
+            caption_entities=entities,
             reply_markup=transmission_kbd_markup(
                 red_heart=red_heart,
             ),
