@@ -34,6 +34,8 @@ INFO:functions.common.utils:LAMBDA EVENT:
 """
 import random
 
+from telegram import MessageEntity
+
 
 def kind_of_random_username():
     kind_of_random_set = [
@@ -44,3 +46,20 @@ def kind_of_random_username():
         'Kashiwagi-Sosa-3923',
     ]
     return random.choice(kind_of_random_set)
+
+
+def append_username(text, entities):
+    text = text or ''
+    entities = entities or []
+
+    username = kind_of_random_username()
+    # TODO oleksandr: use rstrip on text ? would existing entities need to be adjusted to that ?
+    resulting_text = f"{text}\n\n{username}"
+
+    entities += [MessageEntity(
+        length=len(username),
+        offset=len(text) + 2,
+        type='italic',
+    )]
+
+    return resulting_text, entities

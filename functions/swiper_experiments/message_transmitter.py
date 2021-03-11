@@ -8,6 +8,7 @@ from functions.common.dynamodb import put_ddb_item, delete_ddb_item, msg_transmi
 from functions.common.s3 import put_s3_object, main_bucket
 from functions.common.utils import fail_safely, generate_uuid
 from functions.swiper_experiments.constants import CallbackData, Texts, BLACK_HEARTS_ARE_SILENT
+from functions.swiper_experiments.swiper_username import append_username
 
 logger = logging.getLogger(__name__)
 
@@ -356,10 +357,11 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
     transmitted_msg = None
 
     if msg.text:
+        text, entities = append_username(msg.text, msg.entities)
         transmitted_msg = receiver_bot.send_message(
             chat_id=receiver_chat_id,
-            text=msg.text,
-            entities=msg.entities,
+            text=text,
+            entities=entities,
             **kwargs,
         )
 
@@ -374,38 +376,43 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
         biggest_photo = max(msg.photo, key=lambda p: p['file_size'])
         if logger.isEnabledFor(logging.INFO):
             logger.info('BIGGEST PHOTO SIZE:\n%s', biggest_photo.to_dict())
+
+        text, entities = append_username(msg.caption, msg.caption_entities)
         transmitted_msg = receiver_bot.send_photo(
             chat_id=receiver_chat_id,
             photo=biggest_photo,
-            caption=msg.caption,
-            caption_entities=msg.caption_entities,
+            caption=text,
+            caption_entities=entities,
             **kwargs,
         )
 
     elif msg.animation:
+        text, entities = append_username(msg.caption, msg.caption_entities)
         transmitted_msg = receiver_bot.send_animation(
             chat_id=receiver_chat_id,
             animation=msg.animation,
-            caption=msg.caption,
-            caption_entities=msg.caption_entities,
+            caption=text,
+            caption_entities=entities,
             **kwargs,
         )
 
     elif msg.video:
+        text, entities = append_username(msg.caption, msg.caption_entities)
         transmitted_msg = receiver_bot.send_video(
             chat_id=receiver_chat_id,
             video=msg.video,
-            caption=msg.caption,
-            caption_entities=msg.caption_entities,
+            caption=text,
+            caption_entities=entities,
             **kwargs,
         )
 
     elif msg.audio:
+        text, entities = append_username(msg.caption, msg.caption_entities)
         transmitted_msg = receiver_bot.send_audio(
             chat_id=receiver_chat_id,
             audio=msg.audio,
-            caption=msg.caption,
-            caption_entities=msg.caption_entities,
+            caption=text,
+            caption_entities=entities,
             **kwargs,
         )
 
@@ -417,11 +424,12 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
         )
 
     elif msg.voice:
+        text, entities = append_username(msg.caption, msg.caption_entities)
         transmitted_msg = receiver_bot.send_voice(
             chat_id=receiver_chat_id,
             voice=msg.voice,
-            caption=msg.caption,
-            caption_entities=msg.caption_entities,
+            caption=text,
+            caption_entities=entities,
             **kwargs,
         )
 
@@ -440,11 +448,12 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
         )
 
     elif msg.document:
+        text, entities = append_username(msg.caption, msg.caption_entities)
         transmitted_msg = receiver_bot.send_document(
             chat_id=receiver_chat_id,
             document=msg.document,
-            caption=msg.caption,
-            caption_entities=msg.caption_entities,
+            caption=text,
+            caption_entities=entities,
             **kwargs,
         )
 
