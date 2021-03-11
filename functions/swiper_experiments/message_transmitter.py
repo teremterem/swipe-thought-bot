@@ -1,3 +1,5 @@
+from pprint import pformat
+
 from boto3.dynamodb.conditions import Key, Attr
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ForceReply
 from telegram.error import BadRequest
@@ -83,7 +85,7 @@ def find_transmissions_by_sender_msg(
         FilterExpression=Attr(DdbFields.SENDER_BOT_ID).eq(sender_bot_id),
     )
     if logger.isEnabledFor(logging.INFO):  # TODO oleksandr: this logging is redundant - get rid of it
-        logger.info('FIND TRANSMISSION (DDB QUERY RESPONSE):\n%s', scan_result)
+        logger.info('FIND TRANSMISSION (DDB QUERY RESPONSE):\n%s', pformat(scan_result))
 
     items = scan_result['Items']
     if not items:

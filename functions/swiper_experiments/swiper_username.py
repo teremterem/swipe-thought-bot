@@ -54,11 +54,14 @@ def append_username(text, entities):
 
     username = kind_of_random_username()
     # TODO oleksandr: use rstrip on text ? would existing entities need to be adjusted to that ?
-    resulting_text = f"{text}\n\n{username}"
+    delimiter = '\n\n👤 '
+    resulting_text = ''.join([text, delimiter, username])
 
+    # TODO oleksandr: FIX OFFSET/LENGTH CALCULATION (utf-16 code units)
+    #  https://github.com/python-telegram-bot/python-telegram-bot/issues/400
     entities += [MessageEntity(
         length=len(username),
-        offset=len(text) + 2,
+        offset=len(text) + len(delimiter) + 1,
         type='italic',
     )]
 
