@@ -48,20 +48,25 @@ def kind_of_random_username():
     return random.choice(kind_of_random_set)
 
 
+def utf16_cp_len(text):
+    """
+    https://stackoverflow.com/a/39280419/2040370
+    https://github.com/python-telegram-bot/python-telegram-bot/issues/400
+    """
+    return len(text.encode('utf-16-le')) // 2
+
+
 def append_username(text, entities):
     text = text or ''
     entities = entities or []
 
     username = kind_of_random_username()
-    # TODO oleksandr: use rstrip on text ? would existing entities need to be adjusted to that ?
     delimiter = '\n\n👤 '
     resulting_text = ''.join([text, delimiter, username])
 
-    # TODO oleksandr: FIX OFFSET/LENGTH CALCULATION (utf-16 code units)
-    #  https://github.com/python-telegram-bot/python-telegram-bot/issues/400
     entities += [MessageEntity(
-        length=len(username),
-        offset=len(text) + len(delimiter) + 1,
+        length=utf16_cp_len(username),
+        offset=utf16_cp_len(text) + utf16_cp_len(delimiter),
         type='italic',
     )]
 
