@@ -64,7 +64,7 @@ def append_username(text, entities):
     delimiter = '\n\n👤 '
     resulting_text = ''.join([text, delimiter, username])
 
-    entities += [MessageEntity(
+    entities = entities + [MessageEntity(
         length=utf16_cp_len(username),
         offset=utf16_cp_len(text) + utf16_cp_len(delimiter),
         type='italic',

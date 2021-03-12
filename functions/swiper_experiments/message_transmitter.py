@@ -230,6 +230,7 @@ def transmit_message(
         msg=msg,
         receiver_chat_id=receiver_chat_id,
         receiver_bot=receiver_bot,
+        do_append_username=True,
 
         reply_to_message_id=reply_to_msg_id,
         # TODO oleksandr: allow_sending_without_reply=True, ?
@@ -300,6 +301,7 @@ def force_reply(original_msg, original_msg_transmission):
         msg=original_msg,
         receiver_chat_id=original_msg.chat.id,
         receiver_bot=original_msg.bot,
+        do_append_username=False,
 
         reply_to_message_id=reply_to_msg_id,
         reply_markup=ForceReply(),
@@ -355,11 +357,16 @@ def prepare_msg_for_transmission(msg, sender_bot, **kwargs):
     return msg
 
 
-def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
+def _ptb_transmit(msg, receiver_chat_id, receiver_bot, do_append_username, **kwargs):
     transmitted_msg = None
 
+    def _append_username_or_dont(_text, _entities):
+        if do_append_username:
+            return append_username(_text, _entities)
+        return _text, _entities
+
     if msg.text:
-        text, entities = append_username(msg.text, msg.entities)
+        text, entities = _append_username_or_dont(msg.text, msg.entities)
         transmitted_msg = receiver_bot.send_message(
             chat_id=receiver_chat_id,
             text=text,
@@ -379,7 +386,7 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
         if logger.isEnabledFor(logging.INFO):
             logger.info('BIGGEST PHOTO SIZE:\n%s', biggest_photo.to_dict())
 
-        text, entities = append_username(msg.caption, msg.caption_entities)
+        text, entities = _append_username_or_dont(msg.caption, msg.caption_entities)
         transmitted_msg = receiver_bot.send_photo(
             chat_id=receiver_chat_id,
             photo=biggest_photo,
@@ -389,7 +396,7 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
         )
 
     elif msg.animation:
-        text, entities = append_username(msg.caption, msg.caption_entities)
+        text, entities = _append_username_or_dont(msg.caption, msg.caption_entities)
         transmitted_msg = receiver_bot.send_animation(
             chat_id=receiver_chat_id,
             animation=msg.animation,
@@ -399,7 +406,7 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
         )
 
     elif msg.video:
-        text, entities = append_username(msg.caption, msg.caption_entities)
+        text, entities = _append_username_or_dont(msg.caption, msg.caption_entities)
         transmitted_msg = receiver_bot.send_video(
             chat_id=receiver_chat_id,
             video=msg.video,
@@ -409,7 +416,7 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
         )
 
     elif msg.audio:
-        text, entities = append_username(msg.caption, msg.caption_entities)
+        text, entities = _append_username_or_dont(msg.caption, msg.caption_entities)
         transmitted_msg = receiver_bot.send_audio(
             chat_id=receiver_chat_id,
             audio=msg.audio,
@@ -426,7 +433,7 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
         )
 
     elif msg.voice:
-        text, entities = append_username(msg.caption, msg.caption_entities)
+        text, entities = _append_username_or_dont(msg.caption, msg.caption_entities)
         transmitted_msg = receiver_bot.send_voice(
             chat_id=receiver_chat_id,
             voice=msg.voice,
@@ -450,7 +457,7 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
         )
 
     elif msg.document:
-        text, entities = append_username(msg.caption, msg.caption_entities)
+        text, entities = _append_username_or_dont(msg.caption, msg.caption_entities)
         transmitted_msg = receiver_bot.send_document(
             chat_id=receiver_chat_id,
             document=msg.document,
