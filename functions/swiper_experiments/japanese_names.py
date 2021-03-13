@@ -101,7 +101,7 @@ JAPANESE_UNISEX_GIVEN_NAMES = list({
     # 'Tomomi',
     'Toshimi',
     'Tsubasa',
-    'Tsukasa',
+    # 'Tsukasa',
     'Yoshi',
     'Yoshika',
     'Yoshimi',

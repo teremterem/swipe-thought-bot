@@ -13,6 +13,7 @@ from functions.swiper_experiments.constants import CallbackData, Texts, Commands
 from functions.swiper_experiments.message_transmitter import transmit_message, find_original_transmission, \
     force_reply, find_transmissions_by_sender_msg, edit_transmission, prepare_msg_for_transmission, create_topic, \
     create_allogrooming, find_allogrooming
+from functions.swiper_experiments.swiper_username import generate_username
 
 logger = logging.getLogger(__name__)
 
@@ -41,8 +42,9 @@ class SwiperTransparency(BaseSwiperConversation):
         dispatcher.add_error_handler(self.handle_error)
 
     def help(self, update, context):
+        username = generate_username()
         update.effective_chat.send_message(
-            text=Texts.HELP,
+            text=Texts.get_help(username),
             parse_mode=ParseMode.HTML,
             disable_notification=True,
         )
