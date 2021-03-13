@@ -1,5 +1,5 @@
 # https://en.wikipedia.org/wiki/Category:Japanese_unisex_given_names
-JAPANESE_UNISEX_GIVEN_NAMES = {
+JAPANESE_UNISEX_GIVEN_NAMES = list({
     'Akemi',
     'Aki',
     'Akiho',
@@ -108,4 +108,4 @@ JAPANESE_UNISEX_GIVEN_NAMES = {
     'Yu',  # 'Yū',
     'Yuki',
     'Yuri',
-}
+})
