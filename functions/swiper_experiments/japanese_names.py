@@ -1,42 +1,42 @@
 # https://en.wikipedia.org/wiki/Category:Japanese_unisex_given_names
 JAPANESE_GIVEN_UNISEX_NAMES = {
     'Akemi',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
+    'Aki',
+    'Akiho',
+    'Akimi',
+    # 'Akira',  # not sure it's unisex
+    # 'Anri',  # not sure it's unisex
+    'Aoi',
+    # 'Asuka',
+    'Ayumu',
+    # 'Chiaki',  # not sure it's unisex
+    'Chihiro',
+    # 'Hajime',  # not sure it's unisex
+    'Haru',
+    'Haruka',
+    # 'Harumi',  # not sure it's unisex
+    'Hatsu',
+    # 'Hayate',  # not sure it's unisex
+    # 'Hazuki',  # not sure it's unisex
+    'Hibiki',
+    'Hifumi',
+    'Hikari',
+    'Hikaru',  # too similar to previous one ?
+    'Hinata',  # too similar to Nata ?
+    'Hiromi',
+    'Hiromu',  # too similar to previous one ?
+    'Hisaya',
+    'Hiyori',
+    # 'Hotaru',  # not sure it's unisex
+    # 'Ibuki',  # not sure it's unisex
+    'Iori',
+    'Itsuki',
+    # 'Izumi',  # not sure it's unisex
+    'Jun',
+    # 'Kaede',  # not sure it's unisex
+    # 'Kagami',  # not sure it's unisex
+    'Kaname',  # too similar to Name ?
+    'Kaoru',
     '',
     '',
     '',
