@@ -1,5 +1,5 @@
 # https://en.wikipedia.org/wiki/Category:Japanese_unisex_given_names
-JAPANESE_GIVEN_UNISEX_NAMES = {
+JAPANESE_UNISEX_GIVEN_NAMES = {
     'Akemi',
     'Aki',
     'Akiho',
