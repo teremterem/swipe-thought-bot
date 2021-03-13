@@ -4,41 +4,41 @@ JAPANESE_GIVEN_UNISEX_NAMES = {
     'Aki',
     'Akiho',
     'Akimi',
-    # 'Akira',  # not sure it's unisex
-    # 'Anri',  # not sure it's unisex
+    'Akira',
+    'Anri',
     'Aoi',
-    # 'Asuka',
+    'Asuka',
     'Ayumu',
-    # 'Chiaki',  # not sure it's unisex
+    'Chiaki',
     'Chihiro',
-    # 'Hajime',  # not sure it's unisex
+    'Hajime',
     'Haru',
     'Haruka',
-    # 'Harumi',  # not sure it's unisex
+    'Harumi',
     'Hatsu',
-    # 'Hayate',  # not sure it's unisex
-    # 'Hazuki',  # not sure it's unisex
+    'Hayate',
+    'Hazuki',
     'Hibiki',
     'Hifumi',
     'Hikari',
-    'Hikaru',  # too similar to previous one ?
-    'Hinata',  # too similar to Nata ?
+    'Hikaru',
+    'Hinata',
     'Hiromi',
-    'Hiromu',  # too similar to previous one ?
+    'Hiromu',
     'Hisaya',
     'Hiyori',
-    # 'Hotaru',  # not sure it's unisex
-    # 'Ibuki',
+    'Hotaru',
+    'Ibuki',
     'Iori',
     'Itsuki',
-    # 'Izumi',  # not sure it's unisex
+    'Izumi',
     'Jun',
-    # 'Kaede',  # not sure it's unisex
-    # 'Kagami',  # not sure it's unisex
-    'Kaname',  # too similar to Name ?
+    'Kaede',
+    'Kagami',
+    'Kaname',
     'Kaoru',
     'Katsumi',
-    # 'Kayo',  # not sure it's unisex
+    'Kayo',
     'Kazu',
     'Kazumi',
     'Kei',
