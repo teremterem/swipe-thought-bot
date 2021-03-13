@@ -13,7 +13,7 @@ from functions.swiper_experiments.constants import CallbackData, Texts, Commands
 from functions.swiper_experiments.message_transmitter import transmit_message, find_original_transmission, \
     force_reply, find_transmissions_by_sender_msg, edit_transmission, prepare_msg_for_transmission, create_topic, \
     create_allogrooming, find_allogrooming
-from functions.swiper_experiments.swiper_username import generate_username
+from functions.swiper_experiments.swiper_usernames import generate_username
 
 logger = logging.getLogger(__name__)
 
