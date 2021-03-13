@@ -5,7 +5,7 @@ from telegram import MessageEntity
 from functions.swiper_experiments.japanese_names import JAPANESE_UNISEX_GIVEN_NAMES
 
 
-def generate_username():
+def generate_swiper_username():
     japanese_given_name = secrets.choice(JAPANESE_UNISEX_GIVEN_NAMES)
     random_number = secrets.randbelow(9000) + 1000
     username = f"{japanese_given_name}{random_number}"
@@ -24,7 +24,7 @@ def append_username(text, entities):
     text = text or ''
     entities = entities or []
 
-    username = generate_username()
+    username = generate_swiper_username()
     delimiter = '\n\n👤 '
     resulting_text = ''.join([text, delimiter, username])
 
