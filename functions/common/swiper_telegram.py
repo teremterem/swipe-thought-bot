@@ -32,6 +32,9 @@ class Swiper:
     def is_initialized(self):
         return self._swiper_data is not None
 
+    def is_swiper_authorized(self):
+        return bool(self.swiper_data.get(DdbFields.IS_SWIPER_AUTHORIZED))
+
     def persist(self):
         if self.is_initialized():
             # TODO oleksandr: track changes somehow and persist only if data changed ?

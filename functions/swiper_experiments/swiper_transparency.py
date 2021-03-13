@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class SwiperTransparency(BaseSwiperConversation):
     def assert_swiper_authorized(self, update, context):
         # single-threaded environment with non-async update processing
-        if not self.swiper_update.current_swiper.swiper_data.get(DdbFields.IS_SWIPER_AUTHORIZED):
+        if not self.swiper_update.current_swiper.is_swiper_authorized():
             # https://github.com/python-telegram-bot/python-telegram-bot/issues/849#issuecomment-332682845
             raise DispatcherHandlerStop()
 
