@@ -39,7 +39,6 @@ JAPANESE_GIVEN_UNISEX_NAMES = {
     'Kaoru',
     'Katsumi',
     # 'Kayo',  # not sure it's unisex
-
     'Kazu',
     'Kazumi',
     'Kei',
