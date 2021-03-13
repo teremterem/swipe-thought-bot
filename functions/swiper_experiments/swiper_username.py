@@ -8,7 +8,7 @@ from functions.swiper_experiments.japanese_names import JAPANESE_UNISEX_GIVEN_NA
 def generate_username():
     japanese_given_name = secrets.choice(JAPANESE_UNISEX_GIVEN_NAMES)
     random_number = secrets.randbelow(9000) + 1000
-    username = f"{japanese_given_name}-{random_number}"
+    username = f"{japanese_given_name}{random_number}"
     return username
 
 
