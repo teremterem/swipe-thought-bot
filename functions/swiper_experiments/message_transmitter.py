@@ -10,7 +10,7 @@ from functions.common.dynamodb import put_ddb_item, delete_ddb_item, msg_transmi
 from functions.common.s3 import put_s3_object, main_bucket
 from functions.common.utils import fail_safely, generate_uuid
 from functions.swiper_experiments.constants import CallbackData, Texts, BLACK_HEARTS_ARE_SILENT
-from functions.swiper_experiments.swiper_usernames import append_username
+from functions.swiper_experiments.swiper_usernames import append_swiper_username
 
 logger = logging.getLogger(__name__)
 
@@ -362,7 +362,7 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, do_append_username, **kwa
 
     def _append_username_or_dont(_text, _entities):
         if do_append_username:
-            return append_username(_text, _entities)
+            return append_swiper_username(_text, _entities)
         return _text, _entities
 
     if msg.text:
@@ -485,7 +485,7 @@ def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_
     edited_msg = None
 
     if msg.text:
-        text, entities = append_username(msg.text, msg.entities)
+        text, entities = append_swiper_username(msg.text, msg.entities)
         edited_msg = receiver_bot.edit_message_text(
             chat_id=receiver_chat_id,
             message_id=receiver_msg_id,
@@ -498,7 +498,7 @@ def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_
         )
 
     elif msg.caption:
-        text, entities = append_username(msg.caption, msg.caption_entities)
+        text, entities = append_swiper_username(msg.caption, msg.caption_entities)
         edited_msg = receiver_bot.edit_message_caption(
             chat_id=receiver_chat_id,
             message_id=receiver_msg_id,

@@ -20,7 +20,7 @@ def utf16_cp_len(text):
     return len(text.encode('utf-16-le')) // 2
 
 
-def append_username(text, entities):
+def append_swiper_username(text, entities):
     text = text or ''
     entities = entities or []
 
