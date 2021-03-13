@@ -5,8 +5,7 @@ from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ForceReply
 from telegram.error import BadRequest
 
 from functions.common import logging  # force log config of functions/common/__init__.py
-from functions.common.dynamodb import put_ddb_item, delete_ddb_item, msg_transmission_table, DdbFields, topic_table, \
-    allogrooming_table
+from functions.common.dynamodb import msg_transmission_table, DdbFields, topic_table, allogrooming_table
 from functions.common.s3 import put_s3_object, main_bucket
 from functions.common.utils import fail_safely, generate_uuid
 from functions.swiper_experiments.constants import CallbackData, Texts, BLACK_HEARTS_ARE_SILENT
@@ -118,9 +117,8 @@ def create_topic(
 
         DdbFields.SENDER_UPDATE_S3_KEY: swiper_update.telegram_update_s3_key,
     }
-    put_ddb_item(
-        ddb_table=topic_table,
-        item=topic,
+    topic_table.put_item(
+        Item=topic,
     )
     return topic_id
 
@@ -195,9 +193,8 @@ def create_allogrooming(
 
         DdbFields.SENDER_UPDATE_S3_KEY: swiper_update.telegram_update_s3_key,
     }
-    put_ddb_item(
-        ddb_table=allogrooming_table,
-        item=allogrooming,
+    allogrooming_table.put_item(
+        Item=allogrooming,
     )
     return allogrooming_id
 
@@ -272,9 +269,8 @@ def transmit_message(
         DdbFields.SENDER_UPDATE_S3_KEY: swiper_update.telegram_update_s3_key,
         DdbFields.RECEIVER_MSG_S3_KEY: receiver_msg_s3_key,
     }
-    put_ddb_item(
-        ddb_table=msg_transmission_table,
-        item=msg_transmission,
+    msg_transmission_table.put_item(
+        Item=msg_transmission,
     )
 
     if reply_to_msg_id is not None:
@@ -317,15 +313,13 @@ def force_reply(original_msg, original_msg_transmission):
     msg_trans_copy[DdbFields.RECEIVER_CHAT_ID] = int(force_reply_msg.chat.id)
     msg_trans_copy[DdbFields.RECEIVER_BOT_ID] = int(force_reply_msg.bot.id)
 
-    put_ddb_item(
-        ddb_table=msg_transmission_table,
-        item=msg_trans_copy,
+    msg_transmission_table.put_item(
+        Item=msg_trans_copy,
     )
 
     # TODO oleksandr: switch to soft deletes ?
-    delete_ddb_item(
-        ddb_table=msg_transmission_table,
-        key={
+    msg_transmission_table.delete_item(
+        Key={
             DdbFields.ID: original_msg_transmission[DdbFields.ID],
         },
     )

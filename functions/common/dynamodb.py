@@ -1,6 +1,5 @@
 import logging
 import os
-from pprint import pformat
 
 import boto3
 
@@ -30,10 +29,6 @@ class DdbFields:
     CHAT = 'chat'
     IS_SWIPER_AUTHORIZED = 'is_swiper_authorized'
 
-    SWIPER_STATE = 'swiper_state'  # TODO oleksandr: get rid of this
-    PTB_CONVERSATIONS = 'ptb_conversations'  # TODO oleksandr: get rid of this
-    PTB_CHAT_DATA = 'ptb_chat_data'  # TODO oleksandr: get rid of this
-
     TOPIC_ID = 'topic_id'
     ALLOGROOMING_ID = 'allogrooming_id'
     ORIGINAL_MSG_TRANS_ID = 'original_msg_trans_id'
@@ -50,24 +45,3 @@ class DdbFields:
 
     SENDER_UPDATE_S3_KEY = 'sender_update_s3_key'
     RECEIVER_MSG_S3_KEY = 'receiver_msg_s3_key'
-
-
-# TODO oleksandr: get rid of put_ddb_item and delete_ddb_item functions - I don't think you need them
-
-
-def put_ddb_item(ddb_table, item):
-    if logger.isEnabledFor(logging.INFO):
-        logger.info('DDB PUT_ITEM (table: %s):\n%s', ddb_table.name, pformat(item))
-    response = ddb_table.put_item(Item=item)
-    if logger.isEnabledFor(logging.INFO):
-        logger.info('DDB PUT_ITEM RESPONSE:\n%s', pformat(response))
-    return response
-
-
-def delete_ddb_item(ddb_table, key):
-    if logger.isEnabledFor(logging.INFO):
-        logger.info('DDB DELETE_ITEM (table: %s):\n%s', ddb_table.name, pformat(key))
-    response = ddb_table.delete_item(Key=key)
-    if logger.isEnabledFor(logging.INFO):
-        logger.info('DDB DELETE_ITEM RESPONSE:\n%s', pformat(response))
-    return response
