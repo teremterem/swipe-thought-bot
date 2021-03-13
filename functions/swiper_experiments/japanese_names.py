@@ -28,7 +28,7 @@ JAPANESE_GIVEN_UNISEX_NAMES = {
     'Hisaya',
     'Hiyori',
     # 'Hotaru',  # not sure it's unisex
-    # 'Ibuki',  # not sure it's unisex
+    # 'Ibuki',
     'Iori',
     'Itsuki',
     # 'Izumi',  # not sure it's unisex
@@ -37,9 +37,10 @@ JAPANESE_GIVEN_UNISEX_NAMES = {
     # 'Kagami',  # not sure it's unisex
     'Kaname',  # too similar to Name ?
     'Kaoru',
-    '',
-    '',
-    '',
+    'Katsumi',
+    # 'Kayo',  # not sure it's unisex
+
+    'Kazu',
     '',
     '',
     '',
