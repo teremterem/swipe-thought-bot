@@ -19,6 +19,7 @@ flask = "*"
 ipdb = "*"
 jupyterlab-kite = ">=2.0.2"
 ipython = "*"
+requests = "*" # TODO oleksandr: include it into actual lambda depencencies ?
 
 [requires]
 python_version = "3.8"
