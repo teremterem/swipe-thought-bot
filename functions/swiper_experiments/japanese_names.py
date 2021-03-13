@@ -20,7 +20,7 @@ JAPANESE_UNISEX_GIVEN_NAMES = list({
     'Hazuki',
     'Hibiki',
     'Hifumi',
-    'Hikari',
+    # 'Hikari',
     'Hikaru',
     # 'Hinata',
     'Hiromi',
