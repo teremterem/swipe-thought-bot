@@ -7,12 +7,12 @@ from telegram.ext import CommandHandler, DispatcherHandlerStop, Filters, Message
 from functions.common import logging  # force log config of functions/common/__init__.py
 from functions.common.dynamodb import DdbFields
 from functions.common.swiper_chat_data import find_all_active_swiper_chat_ids
-from functions.common.swiper_telegram import BaseSwiperConversation
 from functions.common.utils import send_partitioned_text
 from functions.swiper_experiments.constants import CallbackData, Texts, Commands, BLACK_HEARTS_ARE_SILENT
 from functions.swiper_experiments.message_transmitter import transmit_message, find_original_transmission, \
     force_reply, find_transmissions_by_sender_msg, edit_transmission, prepare_msg_for_transmission, create_topic, \
     create_allogrooming, find_allogrooming
+from functions.swiper_experiments.swiper_telegram import BaseSwiperConversation
 from functions.swiper_experiments.swiper_usernames import generate_swiper_username
 
 logger = logging.getLogger(__name__)
