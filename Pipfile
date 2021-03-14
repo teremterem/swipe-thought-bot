@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-python-telegram-bot = "==13.1" # TODO oleksandr: unfreeze version when you get rid of ConversationHandler hacks
+python-telegram-bot = "*"
 #elasticsearch = ">=7.0.0,<8.0.0" # https://elasticsearch-py.readthedocs.io/en/latest/#compatibility
 #requests-aws4auth = "*"
 simplejson = "*"
