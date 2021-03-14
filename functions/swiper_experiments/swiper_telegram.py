@@ -10,6 +10,7 @@ from functions.common.dynamodb import DdbFields
 from functions.common.s3 import main_bucket
 from functions.common.swiper_chat_data import read_swiper_chat_data, write_swiper_chat_data
 from functions.common.utils import generate_uuid
+from functions.swiper_experiments.swiper_usernames import generate_swiper_username
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ class Swiper:
 
         self._swiper_data = None
         self._swiper_data_original = None
+        self._swiper_username = None
 
     @property
     def swiper_data(self):
@@ -37,6 +39,14 @@ class Swiper:
 
     def is_swiper_authorized(self):
         return bool(self.swiper_data.get(DdbFields.IS_SWIPER_AUTHORIZED))
+
+    @property
+    def swiper_username(self):
+        # TODO oleksandr: do it properly
+        if not self._swiper_username:
+            self._swiper_username = generate_swiper_username()
+            self._swiper_username += 'swipersan'
+        return self._swiper_username
 
     def persist(self):
         if self.is_initialized() and self._swiper_data != self._swiper_data_original:
