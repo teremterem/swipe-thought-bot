@@ -1,3 +1,4 @@
+import copy
 import json
 import logging
 import os
@@ -21,11 +22,13 @@ class Swiper:
         self.bot_id = bot_id
 
         self._swiper_data = None
+        self._swiper_data_original = None
 
     @property
     def swiper_data(self):
         if self._swiper_data is None:
             self._swiper_data = read_swiper_chat_data(chat_id=self.chat_id, bot_id=self.bot_id)
+            self._swiper_data_original = copy.deepcopy(self._swiper_data)
 
         return self._swiper_data
 
@@ -36,9 +39,8 @@ class Swiper:
         return bool(self.swiper_data.get(DdbFields.IS_SWIPER_AUTHORIZED))
 
     def persist(self):
-        if self.is_initialized():
-            # TODO oleksandr: track changes somehow and persist only if data changed ?
-            # TODO oleksandr: versioning and optimistic locking ?
+        if self.is_initialized() and self._swiper_data != self._swiper_data_original:
+            # TODO oleksandr: versioning and optimistic locking ? what for ? chance of conflict is almost non-existent
             write_swiper_chat_data(self._swiper_data)
 
 

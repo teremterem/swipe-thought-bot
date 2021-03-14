@@ -82,7 +82,7 @@ JAPANESE_UNISEX_GIVEN_NAMES = list({
     'Rui',
     # 'Ryo',  # 'Ryō',
     # 'Ryuko',
-    'Sakae',
+    # 'Sakae',
     'Satsuki',
     'Setsuna',
     'Shigeri',
