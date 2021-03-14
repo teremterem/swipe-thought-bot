@@ -28,6 +28,7 @@ class DdbFields:
 
     CHAT = 'chat'
     IS_SWIPER_AUTHORIZED = 'is_swiper_authorized'
+    USERNAME = 'username'
 
     TOPIC_ID = 'topic_id'
     ALLOGROOMING_ID = 'allogrooming_id'
