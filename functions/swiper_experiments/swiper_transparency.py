@@ -114,6 +114,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
             # TODO oleksandr: use thread-workers to broadcast in parallel ? (remember about Telegram limits too)
             edited_at_receiver = edit_transmission(
+                swiper_update=self.swiper_update,  # non-async single-threaded environment
                 msg=msg,
                 receiver_msg_id=msg_transmission[DdbFields.RECEIVER_MSG_ID],
                 receiver_chat_id=msg_transmission[DdbFields.RECEIVER_CHAT_ID],

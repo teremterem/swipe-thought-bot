@@ -13,11 +13,10 @@ def generate_swiper_username():
     return username
 
 
-def append_swiper_username(text, entities):
+def append_swiper_username(text, entities, username):
     text = text or ''
     entities = entities or []
 
-    username = generate_swiper_username()
     delimiter = '\n\n👤 '
     resulting_text = ''.join([text, delimiter, username])
 

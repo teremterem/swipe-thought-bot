@@ -227,7 +227,7 @@ def transmit_message(
         msg=msg,
         receiver_chat_id=receiver_chat_id,
         receiver_bot=receiver_bot,
-        do_append_username=True,
+        username_to_append=swiper_update.current_swiper.swiper_username,
 
         reply_to_message_id=reply_to_msg_id,
         # TODO oleksandr: allow_sending_without_reply=True, ?
@@ -297,7 +297,7 @@ def force_reply(original_msg, original_msg_transmission):
         msg=original_msg,
         receiver_chat_id=original_msg.chat.id,
         receiver_bot=original_msg.bot,
-        do_append_username=False,
+        username_to_append=None,
 
         reply_to_message_id=reply_to_msg_id,
         reply_markup=ForceReply(),
@@ -351,12 +351,12 @@ def prepare_msg_for_transmission(msg, sender_bot, **kwargs):
     return msg
 
 
-def _ptb_transmit(msg, receiver_chat_id, receiver_bot, do_append_username, **kwargs):
+def _ptb_transmit(msg, receiver_chat_id, receiver_bot, username_to_append, **kwargs):
     transmitted_msg = None
 
     def _append_username_or_dont(_text, _entities):
-        if do_append_username:
-            return append_swiper_username(_text, _entities)
+        if username_to_append:
+            return append_swiper_username(_text, _entities, username_to_append)
         return _text, _entities
 
     if msg.text:
@@ -472,14 +472,15 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, do_append_username, **kwa
 
 
 @fail_safely()
-def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_heart, **kwargs):
+def edit_transmission(swiper_update, msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_heart, **kwargs):
     receiver_msg_id = int(receiver_msg_id)
     receiver_chat_id = int(receiver_chat_id)
 
+    swiper_username = swiper_update.current_swiper.swiper_username
     edited_msg = None
 
     if msg.text:
-        text, entities = append_swiper_username(msg.text, msg.entities)
+        text, entities = append_swiper_username(msg.text, msg.entities, swiper_username)
         edited_msg = receiver_bot.edit_message_text(
             chat_id=receiver_chat_id,
             message_id=receiver_msg_id,
@@ -492,7 +493,7 @@ def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_
         )
 
     elif msg.caption:
-        text, entities = append_swiper_username(msg.caption, msg.caption_entities)
+        text, entities = append_swiper_username(msg.caption, msg.caption_entities, swiper_username)
         edited_msg = receiver_bot.edit_message_caption(
             chat_id=receiver_chat_id,
             message_id=receiver_msg_id,
