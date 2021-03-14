@@ -2,6 +2,7 @@ import secrets
 
 from telegram import MessageEntity
 
+from functions.common.utils import utf16_cp_len
 from functions.swiper_experiments.japanese_names import JAPANESE_UNISEX_GIVEN_NAMES
 
 
@@ -10,14 +11,6 @@ def generate_swiper_username():
     random_number = secrets.randbelow(9000) + 1000
     username = f"{japanese_given_name}{random_number}"
     return username
-
-
-def utf16_cp_len(text):
-    """
-    https://stackoverflow.com/a/39280419/2040370
-    https://github.com/python-telegram-bot/python-telegram-bot/issues/400
-    """
-    return len(text.encode('utf-16-le')) // 2
 
 
 def append_swiper_username(text, entities):

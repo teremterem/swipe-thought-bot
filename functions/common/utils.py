@@ -21,6 +21,14 @@ def timestamp_now_ms():
     return int(time.time() * 1000)
 
 
+def utf16_cp_len(text):
+    """
+    https://stackoverflow.com/a/39280419/2040370
+    https://github.com/python-telegram-bot/python-telegram-bot/issues/400
+    """
+    return len(text.encode('utf-16-le')) // 2
+
+
 def split_text(text, limit):
     for i in range(0, len(text), limit):
         yield text[i:i + limit]
