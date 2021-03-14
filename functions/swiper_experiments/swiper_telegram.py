@@ -6,6 +6,7 @@ import os
 from telegram import Bot, Update
 from telegram.ext import Dispatcher
 
+from functions.common.b64_json_utils import b64_encode_json, b64_decode_json_safe
 from functions.common.dynamodb import DdbFields
 from functions.common.s3 import main_bucket
 from functions.common.swiper_chat_data import read_swiper_chat_data, write_swiper_chat_data
@@ -32,6 +33,13 @@ class Swiper:
             self._swiper_data = read_swiper_chat_data(chat_id=self.chat_id, bot_id=self.bot_id)
             self._swiper_data_original = copy.deepcopy(self._swiper_data)
 
+            self._swiper_data[DdbFields.CHAT] = b64_decode_json_safe(
+                self._swiper_data.get(DdbFields.CHAT)
+            )
+            self._swiper_data[DdbFields.SWIPER_USERNAME] = b64_decode_json_safe(
+                self._swiper_data.get(DdbFields.SWIPER_USERNAME)
+            )
+
         return self._swiper_data
 
     def is_initialized(self):
@@ -51,8 +59,17 @@ class Swiper:
         return username
 
     def persist(self):
-        if self.is_initialized() and self._swiper_data != self._swiper_data_original:
-            # TODO oleksandr: versioning and optimistic locking ? what for ? chance of conflict is almost non-existent
+        if not self.is_initialized():
+            return
+
+        self._swiper_data[DdbFields.CHAT] = b64_encode_json(
+            self._swiper_data.get(DdbFields.CHAT)
+        )
+        self._swiper_data[DdbFields.SWIPER_USERNAME] = b64_encode_json(
+            self._swiper_data.get(DdbFields.SWIPER_USERNAME)
+        )
+
+        if self._swiper_data != self._swiper_data_original:
             write_swiper_chat_data(self._swiper_data)
 
 
