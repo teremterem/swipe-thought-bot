@@ -15,9 +15,6 @@ def generate_swiper_username():
     username_obj = {
         DdbFields.USERNAME: username,
         DdbFields.BASE_NAME: japanese_given_name,
-
-        # TODO oleksandr: remove this field from here and put it into a dedicated DDB table
-        DdbFields.USERNAME_LOWER: username.lower(),
     }
     return username_obj
 

@@ -31,7 +31,6 @@ class DdbFields:
     SWIPER_USERNAME = 'swiper_username'
     USERNAME = 'username'
     BASE_NAME = 'base_name'
-    USERNAME_LOWER = 'username_lower'
 
     TOPIC_ID = 'topic_id'
     ALLOGROOMING_ID = 'allogrooming_id'
