@@ -50,10 +50,10 @@ class Swiper:
 
     @property
     def swiper_username(self):
-        username = (self._swiper_data.get(DdbFields.SWIPER_USERNAME) or {}).get(DdbFields.USERNAME)
+        username = (self.swiper_data.get(DdbFields.SWIPER_USERNAME) or {}).get(DdbFields.USERNAME)
         if not username:
             username_obj = generate_swiper_username()
-            self._swiper_data[DdbFields.SWIPER_USERNAME] = username_obj
+            self.swiper_data[DdbFields.SWIPER_USERNAME] = username_obj
             username = username_obj[DdbFields.USERNAME]
         return username
 
