@@ -20,5 +20,5 @@ def b64_decode_json(b64_str):
 def b64_decode_json_safe(probably_b64_str):
     if isinstance(probably_b64_str, str):
         # TODO oleksandr: also check if probably_b64_str actually contains base64-encoded data ?
-        return b64_encode_json(probably_b64_str)
+        return b64_decode_json(probably_b64_str)
     return probably_b64_str
