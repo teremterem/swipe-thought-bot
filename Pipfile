@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-python-telegram-bot = "==13.1" # TODO oleksandr: unfreeze version when you get rid of ConversationHandler hacks
+python-telegram-bot = "*"
 #elasticsearch = ">=7.0.0,<8.0.0" # https://elasticsearch-py.readthedocs.io/en/latest/#compatibility
 #requests-aws4auth = "*"
 simplejson = "*"
@@ -18,6 +18,8 @@ jedi = "<0.18.0" # TODO oleksandr: replace this with !=0.18.0 ? (0.18.0 breaks c
 flask = "*"
 ipdb = "*"
 jupyterlab-kite = ">=2.0.2"
+ipython = "*"
+requests = "*" # TODO oleksandr: include it into actual lambda depencencies ?
 
 [requires]
 python_version = "3.8"

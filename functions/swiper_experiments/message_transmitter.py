@@ -1,13 +1,15 @@
+from pprint import pformat
+
 from boto3.dynamodb.conditions import Key, Attr
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ForceReply
 from telegram.error import BadRequest
 
 from functions.common import logging  # force log config of functions/common/__init__.py
-from functions.common.dynamodb import put_ddb_item, delete_ddb_item, msg_transmission_table, DdbFields, topic_table, \
-    allogrooming_table
+from functions.common.dynamodb import msg_transmission_table, DdbFields, topic_table, allogrooming_table
 from functions.common.s3 import put_s3_object, main_bucket
 from functions.common.utils import fail_safely, generate_uuid
 from functions.swiper_experiments.constants import CallbackData, Texts, BLACK_HEARTS_ARE_SILENT
+from functions.swiper_experiments.swiper_usernames import append_swiper_username
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +84,7 @@ def find_transmissions_by_sender_msg(
         FilterExpression=Attr(DdbFields.SENDER_BOT_ID).eq(sender_bot_id),
     )
     if logger.isEnabledFor(logging.INFO):  # TODO oleksandr: this logging is redundant - get rid of it
-        logger.info('FIND TRANSMISSION (DDB QUERY RESPONSE):\n%s', scan_result)
+        logger.info('FIND TRANSMISSION (DDB QUERY RESPONSE):\n%s', pformat(scan_result))
 
     items = scan_result['Items']
     if not items:
@@ -115,9 +117,8 @@ def create_topic(
 
         DdbFields.SENDER_UPDATE_S3_KEY: swiper_update.telegram_update_s3_key,
     }
-    put_ddb_item(
-        ddb_table=topic_table,
-        item=topic,
+    topic_table.put_item(
+        Item=topic,
     )
     return topic_id
 
@@ -192,9 +193,8 @@ def create_allogrooming(
 
         DdbFields.SENDER_UPDATE_S3_KEY: swiper_update.telegram_update_s3_key,
     }
-    put_ddb_item(
-        ddb_table=allogrooming_table,
-        item=allogrooming,
+    allogrooming_table.put_item(
+        Item=allogrooming,
     )
     return allogrooming_id
 
@@ -227,6 +227,7 @@ def transmit_message(
         msg=msg,
         receiver_chat_id=receiver_chat_id,
         receiver_bot=receiver_bot,
+        username_to_append=swiper_update.current_swiper.swiper_username,
 
         reply_to_message_id=reply_to_msg_id,
         # TODO oleksandr: allow_sending_without_reply=True, ?
@@ -268,9 +269,8 @@ def transmit_message(
         DdbFields.SENDER_UPDATE_S3_KEY: swiper_update.telegram_update_s3_key,
         DdbFields.RECEIVER_MSG_S3_KEY: receiver_msg_s3_key,
     }
-    put_ddb_item(
-        ddb_table=msg_transmission_table,
-        item=msg_transmission,
+    msg_transmission_table.put_item(
+        Item=msg_transmission,
     )
 
     if reply_to_msg_id is not None:
@@ -297,6 +297,7 @@ def force_reply(original_msg, original_msg_transmission):
         msg=original_msg,
         receiver_chat_id=original_msg.chat.id,
         receiver_bot=original_msg.bot,
+        username_to_append=None,
 
         reply_to_message_id=reply_to_msg_id,
         reply_markup=ForceReply(),
@@ -312,15 +313,13 @@ def force_reply(original_msg, original_msg_transmission):
     msg_trans_copy[DdbFields.RECEIVER_CHAT_ID] = int(force_reply_msg.chat.id)
     msg_trans_copy[DdbFields.RECEIVER_BOT_ID] = int(force_reply_msg.bot.id)
 
-    put_ddb_item(
-        ddb_table=msg_transmission_table,
-        item=msg_trans_copy,
+    msg_transmission_table.put_item(
+        Item=msg_trans_copy,
     )
 
     # TODO oleksandr: switch to soft deletes ?
-    delete_ddb_item(
-        ddb_table=msg_transmission_table,
-        key={
+    msg_transmission_table.delete_item(
+        Key={
             DdbFields.ID: original_msg_transmission[DdbFields.ID],
         },
     )
@@ -352,14 +351,20 @@ def prepare_msg_for_transmission(msg, sender_bot, **kwargs):
     return msg
 
 
-def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
+def _ptb_transmit(msg, receiver_chat_id, receiver_bot, username_to_append, **kwargs):
     transmitted_msg = None
 
+    def _append_username_or_dont(_text, _entities):
+        if username_to_append:
+            return append_swiper_username(_text, _entities, username_to_append)
+        return _text, _entities
+
     if msg.text:
+        text, entities = _append_username_or_dont(msg.text, msg.entities)
         transmitted_msg = receiver_bot.send_message(
             chat_id=receiver_chat_id,
-            text=msg.text,
-            entities=msg.entities,
+            text=text,
+            entities=entities,
             **kwargs,
         )
 
@@ -374,38 +379,43 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
         biggest_photo = max(msg.photo, key=lambda p: p['file_size'])
         if logger.isEnabledFor(logging.INFO):
             logger.info('BIGGEST PHOTO SIZE:\n%s', biggest_photo.to_dict())
+
+        text, entities = _append_username_or_dont(msg.caption, msg.caption_entities)
         transmitted_msg = receiver_bot.send_photo(
             chat_id=receiver_chat_id,
             photo=biggest_photo,
-            caption=msg.caption,
-            caption_entities=msg.caption_entities,
+            caption=text,
+            caption_entities=entities,
             **kwargs,
         )
 
     elif msg.animation:
+        text, entities = _append_username_or_dont(msg.caption, msg.caption_entities)
         transmitted_msg = receiver_bot.send_animation(
             chat_id=receiver_chat_id,
             animation=msg.animation,
-            caption=msg.caption,
-            caption_entities=msg.caption_entities,
+            caption=text,
+            caption_entities=entities,
             **kwargs,
         )
 
     elif msg.video:
+        text, entities = _append_username_or_dont(msg.caption, msg.caption_entities)
         transmitted_msg = receiver_bot.send_video(
             chat_id=receiver_chat_id,
             video=msg.video,
-            caption=msg.caption,
-            caption_entities=msg.caption_entities,
+            caption=text,
+            caption_entities=entities,
             **kwargs,
         )
 
     elif msg.audio:
+        text, entities = _append_username_or_dont(msg.caption, msg.caption_entities)
         transmitted_msg = receiver_bot.send_audio(
             chat_id=receiver_chat_id,
             audio=msg.audio,
-            caption=msg.caption,
-            caption_entities=msg.caption_entities,
+            caption=text,
+            caption_entities=entities,
             **kwargs,
         )
 
@@ -417,11 +427,12 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
         )
 
     elif msg.voice:
+        text, entities = _append_username_or_dont(msg.caption, msg.caption_entities)
         transmitted_msg = receiver_bot.send_voice(
             chat_id=receiver_chat_id,
             voice=msg.voice,
-            caption=msg.caption,
-            caption_entities=msg.caption_entities,
+            caption=text,
+            caption_entities=entities,
             **kwargs,
         )
 
@@ -440,11 +451,12 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
         )
 
     elif msg.document:
+        text, entities = _append_username_or_dont(msg.caption, msg.caption_entities)
         transmitted_msg = receiver_bot.send_document(
             chat_id=receiver_chat_id,
             document=msg.document,
-            caption=msg.caption,
-            caption_entities=msg.caption_entities,
+            caption=text,
+            caption_entities=entities,
             **kwargs,
         )
 
@@ -460,18 +472,20 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, **kwargs):
 
 
 @fail_safely()
-def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_heart, **kwargs):
+def edit_transmission(swiper_update, msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_heart, **kwargs):
     receiver_msg_id = int(receiver_msg_id)
     receiver_chat_id = int(receiver_chat_id)
 
+    swiper_username = swiper_update.current_swiper.swiper_username
     edited_msg = None
 
     if msg.text:
+        text, entities = append_swiper_username(msg.text, msg.entities, swiper_username)
         edited_msg = receiver_bot.edit_message_text(
             chat_id=receiver_chat_id,
             message_id=receiver_msg_id,
-            text=msg.text,
-            entities=msg.entities,
+            text=text,
+            entities=entities,
             reply_markup=transmission_kbd_markup(
                 red_heart=red_heart,
             ),
@@ -479,11 +493,12 @@ def edit_transmission(msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_
         )
 
     elif msg.caption:
+        text, entities = append_swiper_username(msg.caption, msg.caption_entities, swiper_username)
         edited_msg = receiver_bot.edit_message_caption(
             chat_id=receiver_chat_id,
             message_id=receiver_msg_id,
-            caption=msg.caption,
-            caption_entities=msg.caption_entities,
+            caption=text,
+            caption_entities=entities,
             reply_markup=transmission_kbd_markup(
                 red_heart=red_heart,
             ),

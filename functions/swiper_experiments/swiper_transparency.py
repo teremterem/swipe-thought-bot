@@ -7,12 +7,12 @@ from telegram.ext import CommandHandler, DispatcherHandlerStop, Filters, Message
 from functions.common import logging  # force log config of functions/common/__init__.py
 from functions.common.dynamodb import DdbFields
 from functions.common.swiper_chat_data import find_all_active_swiper_chat_ids
-from functions.common.swiper_telegram import BaseSwiperConversation
 from functions.common.utils import send_partitioned_text
 from functions.swiper_experiments.constants import CallbackData, Texts, Commands, BLACK_HEARTS_ARE_SILENT
 from functions.swiper_experiments.message_transmitter import transmit_message, find_original_transmission, \
     force_reply, find_transmissions_by_sender_msg, edit_transmission, prepare_msg_for_transmission, create_topic, \
     create_allogrooming, find_allogrooming
+from functions.swiper_experiments.swiper_telegram import BaseSwiperConversation
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class SwiperTransparency(BaseSwiperConversation):
     def assert_swiper_authorized(self, update, context):
         # single-threaded environment with non-async update processing
-        if not self.swiper_update.current_swiper.swiper_data.get(DdbFields.IS_SWIPER_AUTHORIZED):
+        if not self.swiper_update.current_swiper.is_swiper_authorized():
             # https://github.com/python-telegram-bot/python-telegram-bot/issues/849#issuecomment-332682845
             raise DispatcherHandlerStop()
 
@@ -41,8 +41,9 @@ class SwiperTransparency(BaseSwiperConversation):
         dispatcher.add_error_handler(self.handle_error)
 
     def help(self, update, context):
+        swiper_username = self.swiper_update.current_swiper.swiper_username  # non-async single-threaded environment
         update.effective_chat.send_message(
-            text=Texts.HELP,
+            text=Texts.get_help(swiper_username),
             parse_mode=ParseMode.HTML,
             disable_notification=True,
         )
@@ -113,6 +114,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
             # TODO oleksandr: use thread-workers to broadcast in parallel ? (remember about Telegram limits too)
             edited_at_receiver = edit_transmission(
+                swiper_update=self.swiper_update,  # non-async single-threaded environment
                 msg=msg,
                 receiver_msg_id=msg_transmission[DdbFields.RECEIVER_MSG_ID],
                 receiver_chat_id=msg_transmission[DdbFields.RECEIVER_CHAT_ID],
