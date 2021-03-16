@@ -31,7 +31,7 @@ class Texts:
     @staticmethod
     def get_new_topic_started_msg(username):
         _new_topic_started = (
-            f"<i>Ви ({username}) створили нову тему для розмов - очікуйте відповідей ⏳\n"
+            f"<i>Ви ({username}) створили тему для розмов - очікуйте відповідей ⏳\n"
             f"/{Commands.HELP}</i>"
         )
         return _new_topic_started.strip()
