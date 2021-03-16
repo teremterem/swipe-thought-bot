@@ -43,7 +43,7 @@ class SwiperTransparency(BaseSwiperConversation):
     def help(self, update, context):
         swiper_username = self.swiper_update.current_swiper.swiper_username  # non-async single-threaded environment
         update.effective_chat.send_message(
-            text=Texts.get_help(swiper_username),
+            text=Texts.get_help_msg(swiper_username),
             parse_mode=ParseMode.HTML,
             disable_notification=True,
         )
@@ -80,8 +80,9 @@ class SwiperTransparency(BaseSwiperConversation):
                 ) or transmitted
 
         if transmitted:
+            swiper_username = self.swiper_update.current_swiper.swiper_username  # non-async single-threaded environment
             update.effective_chat.send_message(
-                text=Texts.NEW_TOPIC_STARTED,
+                text=Texts.get_new_topic_started_msg(swiper_username),
                 parse_mode=ParseMode.HTML,
                 # reply_to_message_id=msg.message_id,  # TODO oleksandr: are you 100% sure we don't need it ?
                 disable_notification=True,

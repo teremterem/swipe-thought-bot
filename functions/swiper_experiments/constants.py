@@ -22,8 +22,6 @@ class Texts:
     BLACK_HEART = "🖤"
     REPLY = "Відповісти"
     # STOP = "❌Зупинити"
-
-    NEW_TOPIC_STARTED = f"<i>Ви створили нову тему для розмов - очікуйте відповідей ⏳\n/{Commands.HELP}</i>"
     # REVOKE_TOPIC = "⛔️Відкликати"
 
     TALK_NOT_FOUND = f"<i>💔 Розмову не знайдено\n/{Commands.HELP}</i>"
@@ -31,7 +29,15 @@ class Texts:
     FAILED_TO_EDIT_AT_RECEIVER = f"<i>Не вдалося відредагувати у отримувача 😞\n/{Commands.HELP}</i>"
 
     @staticmethod
-    def get_help(username):
+    def get_new_topic_started_msg(username):
+        _new_topic_started = (
+            f"<i>Ви ({username}) створили нову тему для розмов - очікуйте відповідей ⏳\n"
+            f"/{Commands.HELP}</i>"
+        )
+        return _new_topic_started.strip()
+
+    @staticmethod
+    def get_help_msg(username):
         _help = (
             "👋 Вітаю! Мене звати Свайпі🙃\n"
             "\n"
