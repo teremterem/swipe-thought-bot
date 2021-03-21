@@ -276,7 +276,7 @@ class SwiperTransparency(BaseSwiperConversation):
 
         if subtopic_autoshare:
             parent_subtopic_id = (subtopic_by_sender_msg or {}).get(DdbFields.ID)
-            subtopic_id = create_subtopic(
+            child_subtopic_id = create_subtopic(
                 swiper_update=self.swiper_update,  # non-async single-threaded environment
                 msg=msg,
                 sender_bot_id=context.bot.id,
@@ -285,7 +285,7 @@ class SwiperTransparency(BaseSwiperConversation):
                 autoshare=True,
             )
         else:
-            subtopic_id = None
+            child_subtopic_id = None
 
         transmitted = False
         for msg_transmission in transmissions_by_sender_msg:
@@ -301,9 +301,9 @@ class SwiperTransparency(BaseSwiperConversation):
                 receiver_chat_id=msg_transmission[DdbFields.RECEIVER_CHAT_ID],
                 receiver_bot=context.bot,  # msg_transmission[DdbFields.RECEIVER_BOT_ID] is of no use here
                 red_heart=red_heart,
-                shareable=bool(msg_transmission.get(DdbFields.SUBTOPIC_ID)),
+                shareable=bool(not child_subtopic_id and msg_transmission.get(DdbFields.SUBTOPIC_ID)),
                 topic_id=msg_transmission.get(DdbFields.TOPIC_ID),
-                subtopic_id=subtopic_id,
+                subtopic_id=child_subtopic_id,
                 disable_notification=True,
                 allogrooming_id=msg_transmission.get(DdbFields.ALLOGROOMING_ID),
                 reply_to_msg_id=msg_transmission[DdbFields.RECEIVER_MSG_ID],
