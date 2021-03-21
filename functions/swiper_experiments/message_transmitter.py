@@ -213,6 +213,7 @@ def transmit_message(
         disable_notification,
         allogrooming_id=None,
         reply_to_msg_id=None,
+        reply_to_transmission_id=None,
 ):
     sender_msg_id = int(msg.message_id)
     sender_chat_id = int(msg.chat_id)
@@ -266,6 +267,9 @@ def transmit_message(
         DdbFields.RECEIVER_MSG_ID: receiver_msg_id,
         DdbFields.RECEIVER_CHAT_ID: receiver_chat_id,
         DdbFields.RECEIVER_BOT_ID: receiver_bot_id,
+
+        DdbFields.REPLY_TO_MSG_ID: reply_to_msg_id,
+        DdbFields.REPLY_TO_TRANSMISSION_ID: reply_to_transmission_id,
 
         DdbFields.RED_HEART: red_heart,
 

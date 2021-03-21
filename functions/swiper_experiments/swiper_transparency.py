@@ -232,6 +232,7 @@ class SwiperTransparency(BaseSwiperConversation):
                 disable_notification=disable_notification,
                 allogrooming_id=allogrooming_id,
                 reply_to_msg_id=msg_transmission[DdbFields.SENDER_MSG_ID],
+                reply_to_transmission_id=msg_transmission[DdbFields.ID],
             )
             if not transmitted:
                 report_msg_not_transmitted(update)
@@ -273,6 +274,7 @@ class SwiperTransparency(BaseSwiperConversation):
                 disable_notification=True,
                 allogrooming_id=msg_transmission.get(DdbFields.ALLOGROOMING_ID),
                 reply_to_msg_id=msg_transmission[DdbFields.RECEIVER_MSG_ID],
+                reply_to_transmission_id=msg_transmission[DdbFields.ID],
             ) or transmitted  # TODO oleksandr: replace with "and" as in self.edit_message() handler ?
 
         if not transmitted:

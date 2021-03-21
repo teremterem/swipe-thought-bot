@@ -44,6 +44,9 @@ class DdbFields:
     RECEIVER_CHAT_ID = 'receiver_chat_id'
     RECEIVER_BOT_ID = 'receiver_bot_id'
 
+    REPLY_TO_MSG_ID = 'reply_to_msg_id'
+    REPLY_TO_TRANSMISSION_ID = 'reply_to_transmission_id'
+
     RED_HEART = 'red_heart'
 
     SENDER_UPDATE_S3_KEY = 'sender_update_s3_key'
