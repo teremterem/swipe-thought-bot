@@ -262,6 +262,11 @@ class SwiperTransparency(BaseSwiperConversation):
             )
             return
 
+        # subtopic_by_sender_msg = find_subtopic_by_sender_msg(
+        #     sender_msg_id=reply_to_msg.message_id,
+        #     sender_chat_id=reply_to_msg.chat.id,
+        #     sender_bot_id=reply_to_msg.bot.id,
+        # )
         red_heart = len(transmissions_by_sender_msg) < 2
 
         transmitted = False
