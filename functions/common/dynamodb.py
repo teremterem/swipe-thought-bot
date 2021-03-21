@@ -39,6 +39,8 @@ class DdbFields:
     ALLOGROOMING_ID = 'allogrooming_id'
     ORIGINAL_MSG_TRANS_ID = 'original_msg_trans_id'
 
+    AUTOSHARE = 'autoshare'
+
     SENDER_MSG_ID = 'sender_msg_id'
     SENDER_CHAT_ID = 'sender_chat_id'
     SENDER_BOT_ID = 'sender_bot_id'

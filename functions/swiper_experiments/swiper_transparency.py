@@ -71,6 +71,7 @@ class SwiperTransparency(BaseSwiperConversation):
             msg=msg,
             sender_bot_id=context.bot.id,
             topic_id=topic_id,
+            autoshare=True,
         )
 
         transmitted = False

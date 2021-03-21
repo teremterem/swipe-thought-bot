@@ -131,6 +131,7 @@ def create_subtopic(
         msg,
         sender_bot_id,
         topic_id,
+        autoshare=False,
 ):
     sender_msg_id = int(msg.message_id)
     sender_chat_id = int(msg.chat_id)
@@ -145,6 +146,8 @@ def create_subtopic(
         DdbFields.SENDER_BOT_ID: sender_bot_id,
 
         DdbFields.SENDER_UPDATE_S3_KEY: swiper_update.telegram_update_s3_key,
+
+        DdbFields.AUTOSHARE: autoshare,
 
         DdbFields.TOPIC_ID: topic_id,
     }
