@@ -274,6 +274,7 @@ def transmit_message(
         receiver_chat_id,
         receiver_bot,
         red_heart,
+        shareable,
         topic_id,
         disable_notification,
         subtopic_id=None,
@@ -302,7 +303,7 @@ def transmit_message(
         # TODO oleksandr: allow_sending_without_reply=True, ?
         reply_markup=transmission_kbd_markup(
             red_heart=red_heart,
-            show_share=red_heart,  # TODO oleksandr: make sure that the message is actually shareable
+            show_share=shareable,
         ),
         disable_notification=disable_notification,
     )
@@ -339,6 +340,7 @@ def transmit_message(
         DdbFields.REPLY_TO_TRANSMISSION_ID: reply_to_transmission_id,
 
         DdbFields.RED_HEART: red_heart,
+        DdbFields.SHAREABLE: shareable,
 
         DdbFields.SENDER_UPDATE_S3_KEY: swiper_update.telegram_update_s3_key,
         DdbFields.RECEIVER_MSG_S3_KEY: receiver_msg_s3_key,
@@ -546,7 +548,9 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, username_to_append, **kwa
 
 
 @fail_safely()
-def edit_transmission(swiper_update, msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_heart, **kwargs):
+def edit_transmission(
+        swiper_update, msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_heart, shareable, **kwargs
+):
     receiver_msg_id = int(receiver_msg_id)
     receiver_chat_id = int(receiver_chat_id)
 
@@ -562,7 +566,7 @@ def edit_transmission(swiper_update, msg, receiver_msg_id, receiver_chat_id, rec
             entities=entities,
             reply_markup=transmission_kbd_markup(
                 red_heart=red_heart,
-                show_share=red_heart,  # TODO oleksandr: make sure that the message is actually shareable
+                show_share=shareable,
             ),
             **kwargs,
         )
@@ -576,7 +580,7 @@ def edit_transmission(swiper_update, msg, receiver_msg_id, receiver_chat_id, rec
             caption_entities=entities,
             reply_markup=transmission_kbd_markup(
                 red_heart=red_heart,
-                show_share=red_heart,  # TODO oleksandr: make sure that the message is actually shareable
+                show_share=shareable,
             ),
             **kwargs,
         )

@@ -86,6 +86,7 @@ class SwiperTransparency(BaseSwiperConversation):
                     receiver_chat_id=swiper_chat_id,
                     receiver_bot=context.bot,
                     red_heart=False,
+                    shareable=False,
                     topic_id=topic_id,
                     subtopic_id=subtopic_id,
                     disable_notification=BLACK_HEARTS_ARE_SILENT,
@@ -133,6 +134,7 @@ class SwiperTransparency(BaseSwiperConversation):
                 receiver_chat_id=msg_transmission[DdbFields.RECEIVER_CHAT_ID],
                 receiver_bot=context.bot,  # msg_transmission[DdbFields.RECEIVER_BOT_ID] is of no use here
                 red_heart=msg_transmission.get(DdbFields.RED_HEART, red_heart_default),
+                shareable=msg_transmission.get(DdbFields.SHAREABLE, False),
             ) and edited_at_receiver
 
         if not edited_at_receiver:
@@ -237,6 +239,7 @@ class SwiperTransparency(BaseSwiperConversation):
                 receiver_chat_id=msg_transmission[DdbFields.SENDER_CHAT_ID],
                 receiver_bot=context.bot,  # msg_transmission[DdbFields.SENDER_BOT_ID] is of no use here
                 red_heart=True,
+                shareable=bool(msg_transmission.get(DdbFields.SUBTOPIC_ID)),
                 topic_id=topic_id,
                 disable_notification=disable_notification,
                 allogrooming_id=allogrooming_id,
@@ -298,6 +301,7 @@ class SwiperTransparency(BaseSwiperConversation):
                 receiver_chat_id=msg_transmission[DdbFields.RECEIVER_CHAT_ID],
                 receiver_bot=context.bot,  # msg_transmission[DdbFields.RECEIVER_BOT_ID] is of no use here
                 red_heart=red_heart,
+                shareable=bool(msg_transmission.get(DdbFields.SUBTOPIC_ID)),
                 topic_id=msg_transmission.get(DdbFields.TOPIC_ID),
                 subtopic_id=subtopic_id,
                 disable_notification=True,
