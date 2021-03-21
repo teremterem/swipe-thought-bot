@@ -37,7 +37,6 @@ def find_original_transmission(
     receiver_chat_id = int(receiver_chat_id)
     receiver_bot_id = int(receiver_bot_id)
 
-    # TODO oleksandr: paginate ?
     scan_result = msg_transmission_table.query(
         IndexName='byReceiverMsgId',
         KeyConditionExpression=(
@@ -69,6 +68,37 @@ def find_original_transmission(
     return scan_result['Items'][0]
 
 
+def find_subtopic_by_sender_msg(
+        sender_msg_id,
+        sender_chat_id,
+        sender_bot_id,
+):
+    sender_msg_id = int(sender_msg_id)
+    sender_chat_id = int(sender_chat_id)
+    sender_bot_id = int(sender_bot_id)
+
+    scan_result = subtopic_table.query(
+        IndexName='bySenderMsg',
+        KeyConditionExpression=(
+                Key(DdbFields.SENDER_MSG_ID).eq(sender_msg_id) &
+                Key(DdbFields.SENDER_CHAT_ID).eq(sender_chat_id)
+        ),
+        FilterExpression=Attr(DdbFields.SENDER_BOT_ID).eq(sender_bot_id),
+    )
+    if not scan_result['Items']:
+        return None
+
+    if len(scan_result['Items']) > 1:
+        logger.warning(
+            'FIND SUBTOPIC: MORE THAN ONE DDB RESULT was found for '
+            'sender_msg_id=%s ; sender_chat_id=%s ; sender_bot_id=%s',
+            sender_msg_id,
+            sender_chat_id,
+            sender_bot_id,
+        )
+    return scan_result['Items'][0]
+
+
 def find_transmissions_by_sender_msg(
         sender_msg_id,
         sender_chat_id,
@@ -78,6 +108,7 @@ def find_transmissions_by_sender_msg(
     sender_chat_id = int(sender_chat_id)
     sender_bot_id = int(sender_bot_id)
 
+    # TODO oleksandr: paginate !
     scan_result = msg_transmission_table.query(
         IndexName='bySenderMsgId',
         KeyConditionExpression=(
@@ -131,6 +162,7 @@ def create_subtopic(
         msg,
         sender_bot_id,
         topic_id,
+        parent_subtopic_id=None,
         autoshare=False,
 ):
     sender_msg_id = int(msg.message_id)
@@ -150,6 +182,7 @@ def create_subtopic(
         DdbFields.AUTOSHARE: autoshare,
 
         DdbFields.TOPIC_ID: topic_id,
+        DdbFields.PARENT_SUBTOPIC_ID: parent_subtopic_id,
     }
     subtopic_table.put_item(
         Item=subtopic,

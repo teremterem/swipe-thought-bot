@@ -36,6 +36,7 @@ class DdbFields:
 
     TOPIC_ID = 'topic_id'
     SUBTOPIC_ID = 'subtopic_id'
+    PARENT_SUBTOPIC_ID = 'parent_subtopic_id'
     ALLOGROOMING_ID = 'allogrooming_id'
     ORIGINAL_MSG_TRANS_ID = 'original_msg_trans_id'
 

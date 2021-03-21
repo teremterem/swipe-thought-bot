@@ -11,7 +11,8 @@ from functions.common.utils import send_partitioned_text
 from functions.swiper_experiments.constants import CallbackData, Texts, Commands, BLACK_HEARTS_ARE_SILENT
 from functions.swiper_experiments.message_transmitter import transmit_message, find_original_transmission, \
     force_reply, find_transmissions_by_sender_msg, edit_transmission, prepare_msg_for_transmission, \
-    create_allogrooming, find_allogrooming, transmission_kbd_markup, create_topic, create_subtopic
+    create_allogrooming, find_allogrooming, transmission_kbd_markup, create_topic, create_subtopic, \
+    find_subtopic_by_sender_msg
 from functions.swiper_experiments.swiper_telegram import BaseSwiperConversation
 
 logger = logging.getLogger(__name__)
@@ -262,12 +263,26 @@ class SwiperTransparency(BaseSwiperConversation):
             )
             return
 
-        # subtopic_by_sender_msg = find_subtopic_by_sender_msg(
-        #     sender_msg_id=reply_to_msg.message_id,
-        #     sender_chat_id=reply_to_msg.chat.id,
-        #     sender_bot_id=reply_to_msg.bot.id,
-        # )
-        red_heart = len(transmissions_by_sender_msg) < 2
+        subtopic_by_sender_msg = find_subtopic_by_sender_msg(
+            sender_msg_id=reply_to_msg.message_id,
+            sender_chat_id=reply_to_msg.chat.id,
+            sender_bot_id=reply_to_msg.bot.id,
+        )
+        subtopic_autoshare = bool(subtopic_by_sender_msg and subtopic_by_sender_msg[DdbFields.AUTOSHARE])
+        red_heart = not subtopic_autoshare
+
+        if subtopic_autoshare:
+            parent_subtopic_id = (subtopic_by_sender_msg or {}).get(DdbFields.ID)
+            subtopic_id = create_subtopic(
+                swiper_update=self.swiper_update,  # non-async single-threaded environment
+                msg=msg,
+                sender_bot_id=context.bot.id,
+                topic_id=subtopic_by_sender_msg[DdbFields.TOPIC_ID],
+                parent_subtopic_id=parent_subtopic_id,
+                autoshare=True,
+            )
+        else:
+            subtopic_id = None
 
         transmitted = False
         for msg_transmission in transmissions_by_sender_msg:
@@ -284,6 +299,7 @@ class SwiperTransparency(BaseSwiperConversation):
                 receiver_bot=context.bot,  # msg_transmission[DdbFields.RECEIVER_BOT_ID] is of no use here
                 red_heart=red_heart,
                 topic_id=msg_transmission.get(DdbFields.TOPIC_ID),
+                subtopic_id=subtopic_id,
                 disable_notification=True,
                 allogrooming_id=msg_transmission.get(DdbFields.ALLOGROOMING_ID),
                 reply_to_msg_id=msg_transmission[DdbFields.RECEIVER_MSG_ID],
