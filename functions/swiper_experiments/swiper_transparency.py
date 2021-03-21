@@ -10,8 +10,8 @@ from functions.common.swiper_chat_data import find_all_active_swiper_chat_ids
 from functions.common.utils import send_partitioned_text
 from functions.swiper_experiments.constants import CallbackData, Texts, Commands, BLACK_HEARTS_ARE_SILENT
 from functions.swiper_experiments.message_transmitter import transmit_message, find_original_transmission, \
-    force_reply, find_transmissions_by_sender_msg, edit_transmission, prepare_msg_for_transmission, create_topic, \
-    create_allogrooming, find_allogrooming, transmission_kbd_markup
+    force_reply, find_transmissions_by_sender_msg, edit_transmission, prepare_msg_for_transmission, \
+    create_allogrooming, find_allogrooming, transmission_kbd_markup, create_topic, create_subtopic
 from functions.swiper_experiments.swiper_telegram import BaseSwiperConversation
 
 logger = logging.getLogger(__name__)
@@ -66,6 +66,12 @@ class SwiperTransparency(BaseSwiperConversation):
             msg=msg,
             sender_bot_id=context.bot.id,
         )
+        subtopic_id = create_subtopic(
+            swiper_update=self.swiper_update,  # non-async single-threaded environment
+            msg=msg,
+            sender_bot_id=context.bot.id,
+            topic_id=topic_id,
+        )
 
         transmitted = False
         for swiper_chat_id in find_all_active_swiper_chat_ids(context.bot.id):
@@ -79,6 +85,7 @@ class SwiperTransparency(BaseSwiperConversation):
                     receiver_bot=context.bot,
                     red_heart=False,
                     topic_id=topic_id,
+                    subtopic_id=subtopic_id,
                     disable_notification=BLACK_HEARTS_ARE_SILENT,
                 ) or transmitted
 

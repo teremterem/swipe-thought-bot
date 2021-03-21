@@ -130,6 +130,7 @@ def create_subtopic(
         swiper_update,
         msg,
         sender_bot_id,
+        topic_id,
 ):
     sender_msg_id = int(msg.message_id)
     sender_chat_id = int(msg.chat_id)
@@ -144,6 +145,8 @@ def create_subtopic(
         DdbFields.SENDER_BOT_ID: sender_bot_id,
 
         DdbFields.SENDER_UPDATE_S3_KEY: swiper_update.telegram_update_s3_key,
+
+        DdbFields.TOPIC_ID: topic_id,
     }
     subtopic_table.put_item(
         Item=subtopic,
@@ -237,6 +240,7 @@ def transmit_message(
         red_heart,
         topic_id,
         disable_notification,
+        subtopic_id=None,
         allogrooming_id=None,
         reply_to_msg_id=None,
         reply_to_transmission_id=None,
@@ -284,6 +288,7 @@ def transmit_message(
     msg_transmission = {
         DdbFields.ID: msg_transmission_id,
         DdbFields.TOPIC_ID: topic_id,
+        DdbFields.SUBTOPIC_ID: subtopic_id,
         DdbFields.ALLOGROOMING_ID: allogrooming_id,
 
         DdbFields.SENDER_MSG_ID: sender_msg_id,
