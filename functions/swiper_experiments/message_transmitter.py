@@ -5,7 +5,8 @@ from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ForceReply
 from telegram.error import BadRequest
 
 from functions.common import logging  # force log config of functions/common/__init__.py
-from functions.common.dynamodb import msg_transmission_table, DdbFields, topic_table, allogrooming_table
+from functions.common.dynamodb import msg_transmission_table, DdbFields, topic_table, subtopic_table, \
+    allogrooming_table
 from functions.common.s3 import put_s3_object, main_bucket
 from functions.common.utils import fail_safely, generate_uuid
 from functions.swiper_experiments.constants import CallbackData, Texts, BLACK_HEARTS_ARE_SILENT
@@ -123,6 +124,31 @@ def create_topic(
         Item=topic,
     )
     return topic_id
+
+
+def create_subtopic(
+        swiper_update,
+        msg,
+        sender_bot_id,
+):
+    sender_msg_id = int(msg.message_id)
+    sender_chat_id = int(msg.chat_id)
+    sender_bot_id = int(sender_bot_id)
+
+    subtopic_id = generate_uuid()
+    subtopic = {
+        DdbFields.ID: subtopic_id,
+
+        DdbFields.SENDER_MSG_ID: sender_msg_id,
+        DdbFields.SENDER_CHAT_ID: sender_chat_id,
+        DdbFields.SENDER_BOT_ID: sender_bot_id,
+
+        DdbFields.SENDER_UPDATE_S3_KEY: swiper_update.telegram_update_s3_key,
+    }
+    subtopic_table.put_item(
+        Item=subtopic,
+    )
+    return subtopic_id
 
 
 def find_allogrooming(
