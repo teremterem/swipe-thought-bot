@@ -54,7 +54,7 @@ provider:
           Action:
             - "dynamodb:*"
             - "s3:*"
-            - "es:*"
+            #- "es:*"
             #- "comprehend:*"
           Resource: "*"
 
@@ -81,7 +81,6 @@ functions:
           async: true
     timeout: 120 # seconds (default is 6)
     maximumRetryAttempts: 0
-    disableLogs: true # do not control CloudWatch log group from SLS CFN (so it won't be deleted when lambda is deleted)
     layers:
       - { Ref: PythonRequirementsLambdaLayer }
 
@@ -94,7 +93,6 @@ functions:
     events:
       - http: POST /${self:custom.constants.WEBHOOK_TOKEN}/set_webhook
     maximumRetryAttempts: 0
-    disableLogs: true # do not control CloudWatch log group from SLS CFN (so it won't be deleted when lambda is deleted)
     layers:
       - { Ref: PythonRequirementsLambdaLayer }
 
