@@ -5,7 +5,8 @@ from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ForceReply
 from telegram.error import BadRequest
 
 from functions.common import logging  # force log config of functions/common/__init__.py
-from functions.common.dynamodb import msg_transmission_table, DdbFields, topic_table, allogrooming_table
+from functions.common.dynamodb import msg_transmission_table, DdbFields, topic_table, subtopic_table, \
+    allogrooming_table
 from functions.common.s3 import put_s3_object, main_bucket
 from functions.common.utils import fail_safely, generate_uuid
 from functions.swiper_experiments.constants import CallbackData, Texts, BLACK_HEARTS_ARE_SILENT
@@ -14,13 +15,15 @@ from functions.swiper_experiments.swiper_usernames import append_swiper_username
 logger = logging.getLogger(__name__)
 
 
-def transmission_kbd_markup(red_heart):
+def transmission_kbd_markup(red_heart, show_share):
     if red_heart:
         heart = Texts.READ_HEART
     else:
         heart = Texts.BLACK_HEART
 
     kbd_row = [InlineKeyboardButton(f"{heart}{Texts.REPLY}", callback_data=CallbackData.REPLY)]
+    if show_share:
+        kbd_row.append(InlineKeyboardButton(Texts.SHARE, callback_data=CallbackData.SHARE))
     kbd_markup = InlineKeyboardMarkup(inline_keyboard=[kbd_row])
     return kbd_markup
 
@@ -34,7 +37,6 @@ def find_original_transmission(
     receiver_chat_id = int(receiver_chat_id)
     receiver_bot_id = int(receiver_bot_id)
 
-    # TODO oleksandr: paginate ?
     scan_result = msg_transmission_table.query(
         IndexName='byReceiverMsgId',
         KeyConditionExpression=(
@@ -66,6 +68,37 @@ def find_original_transmission(
     return scan_result['Items'][0]
 
 
+def find_subtopic_by_sender_msg(
+        sender_msg_id,
+        sender_chat_id,
+        sender_bot_id,
+):
+    sender_msg_id = int(sender_msg_id)
+    sender_chat_id = int(sender_chat_id)
+    sender_bot_id = int(sender_bot_id)
+
+    scan_result = subtopic_table.query(
+        IndexName='bySenderMsg',
+        KeyConditionExpression=(
+                Key(DdbFields.SENDER_MSG_ID).eq(sender_msg_id) &
+                Key(DdbFields.SENDER_CHAT_ID).eq(sender_chat_id)
+        ),
+        FilterExpression=Attr(DdbFields.SENDER_BOT_ID).eq(sender_bot_id),
+    )
+    if not scan_result['Items']:
+        return None
+
+    if len(scan_result['Items']) > 1:
+        logger.warning(
+            'FIND SUBTOPIC: MORE THAN ONE DDB RESULT was found for '
+            'sender_msg_id=%s ; sender_chat_id=%s ; sender_bot_id=%s',
+            sender_msg_id,
+            sender_chat_id,
+            sender_bot_id,
+        )
+    return scan_result['Items'][0]
+
+
 def find_transmissions_by_sender_msg(
         sender_msg_id,
         sender_chat_id,
@@ -75,6 +108,7 @@ def find_transmissions_by_sender_msg(
     sender_chat_id = int(sender_chat_id)
     sender_bot_id = int(sender_bot_id)
 
+    # TODO oleksandr: paginate !
     scan_result = msg_transmission_table.query(
         IndexName='bySenderMsgId',
         KeyConditionExpression=(
@@ -121,6 +155,39 @@ def create_topic(
         Item=topic,
     )
     return topic_id
+
+
+def create_subtopic(
+        swiper_update,
+        msg,
+        sender_bot_id,
+        topic_id,
+        parent_subtopic_id=None,
+        autoshare=False,
+):
+    sender_msg_id = int(msg.message_id)
+    sender_chat_id = int(msg.chat_id)
+    sender_bot_id = int(sender_bot_id)
+
+    subtopic_id = generate_uuid()
+    subtopic = {
+        DdbFields.ID: subtopic_id,
+
+        DdbFields.SENDER_MSG_ID: sender_msg_id,
+        DdbFields.SENDER_CHAT_ID: sender_chat_id,
+        DdbFields.SENDER_BOT_ID: sender_bot_id,
+
+        DdbFields.SENDER_UPDATE_S3_KEY: swiper_update.telegram_update_s3_key,
+
+        DdbFields.AUTOSHARE: autoshare,
+
+        DdbFields.TOPIC_ID: topic_id,
+        DdbFields.PARENT_SUBTOPIC_ID: parent_subtopic_id,
+    }
+    subtopic_table.put_item(
+        Item=subtopic,
+    )
+    return subtopic_id
 
 
 def find_allogrooming(
@@ -207,10 +274,13 @@ def transmit_message(
         receiver_chat_id,
         receiver_bot,
         red_heart,
+        shareable,
         topic_id,
         disable_notification,
+        subtopic_id=None,
         allogrooming_id=None,
         reply_to_msg_id=None,
+        reply_to_transmission_id=None,
 ):
     sender_msg_id = int(msg.message_id)
     sender_chat_id = int(msg.chat_id)
@@ -233,6 +303,7 @@ def transmit_message(
         # TODO oleksandr: allow_sending_without_reply=True, ?
         reply_markup=transmission_kbd_markup(
             red_heart=red_heart,
+            show_share=shareable,
         ),
         disable_notification=disable_notification,
     )
@@ -254,6 +325,7 @@ def transmit_message(
     msg_transmission = {
         DdbFields.ID: msg_transmission_id,
         DdbFields.TOPIC_ID: topic_id,
+        DdbFields.SUBTOPIC_ID: subtopic_id,
         DdbFields.ALLOGROOMING_ID: allogrooming_id,
 
         DdbFields.SENDER_MSG_ID: sender_msg_id,
@@ -264,7 +336,11 @@ def transmit_message(
         DdbFields.RECEIVER_CHAT_ID: receiver_chat_id,
         DdbFields.RECEIVER_BOT_ID: receiver_bot_id,
 
+        DdbFields.REPLY_TO_MSG_ID: reply_to_msg_id,
+        DdbFields.REPLY_TO_TRANSMISSION_ID: reply_to_transmission_id,
+
         DdbFields.RED_HEART: red_heart,
+        DdbFields.SHAREABLE: shareable,
 
         DdbFields.SENDER_UPDATE_S3_KEY: swiper_update.telegram_update_s3_key,
         DdbFields.RECEIVER_MSG_S3_KEY: receiver_msg_s3_key,
@@ -472,7 +548,9 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, username_to_append, **kwa
 
 
 @fail_safely()
-def edit_transmission(swiper_update, msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_heart, **kwargs):
+def edit_transmission(
+        swiper_update, msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_heart, shareable, **kwargs
+):
     receiver_msg_id = int(receiver_msg_id)
     receiver_chat_id = int(receiver_chat_id)
 
@@ -488,6 +566,7 @@ def edit_transmission(swiper_update, msg, receiver_msg_id, receiver_chat_id, rec
             entities=entities,
             reply_markup=transmission_kbd_markup(
                 red_heart=red_heart,
+                show_share=shareable,
             ),
             **kwargs,
         )
@@ -501,6 +580,7 @@ def edit_transmission(swiper_update, msg, receiver_msg_id, receiver_chat_id, rec
             caption_entities=entities,
             reply_markup=transmission_kbd_markup(
                 red_heart=red_heart,
+                show_share=shareable,
             ),
             **kwargs,
         )

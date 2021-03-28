@@ -1,6 +1,6 @@
 from traceback import format_exception
 
-from telegram import InlineKeyboardMarkup, ParseMode
+from telegram import InlineKeyboardMarkup, ParseMode, InlineKeyboardButton
 from telegram.error import BadRequest
 from telegram.ext import CommandHandler, DispatcherHandlerStop, Filters, MessageHandler, CallbackQueryHandler
 
@@ -10,8 +10,9 @@ from functions.common.swiper_chat_data import find_all_active_swiper_chat_ids
 from functions.common.utils import send_partitioned_text
 from functions.swiper_experiments.constants import CallbackData, Texts, Commands, BLACK_HEARTS_ARE_SILENT
 from functions.swiper_experiments.message_transmitter import transmit_message, find_original_transmission, \
-    force_reply, find_transmissions_by_sender_msg, edit_transmission, prepare_msg_for_transmission, create_topic, \
-    create_allogrooming, find_allogrooming
+    force_reply, find_transmissions_by_sender_msg, edit_transmission, prepare_msg_for_transmission, \
+    create_allogrooming, find_allogrooming, transmission_kbd_markup, create_topic, create_subtopic, \
+    find_subtopic_by_sender_msg
 from functions.swiper_experiments.swiper_telegram import BaseSwiperConversation
 
 logger = logging.getLogger(__name__)
@@ -36,7 +37,10 @@ class SwiperTransparency(BaseSwiperConversation):
         ))
         dispatcher.add_handler(MessageHandler(Filters.reply, self.transmit_reply))
         dispatcher.add_handler(MessageHandler(Filters.all, self.start_topic))
-        dispatcher.add_handler(CallbackQueryHandler(self.force_reply, pattern=CallbackData.REPLY))
+        dispatcher.add_handler(CallbackQueryHandler(self.force_reply, pattern=f"^{CallbackData.REPLY}$"))
+        dispatcher.add_handler(CallbackQueryHandler(self.share, pattern=f"^{CallbackData.SHARE}$"))
+        dispatcher.add_handler(CallbackQueryHandler(self.share2, pattern='^share2$'))  # TODO oleksandr: get rid of this
+        dispatcher.add_handler(CallbackQueryHandler(self.share3, pattern='^share3$'))  # TODO oleksandr: get rid of this
 
         dispatcher.add_error_handler(self.handle_error)
 
@@ -63,6 +67,13 @@ class SwiperTransparency(BaseSwiperConversation):
             msg=msg,
             sender_bot_id=context.bot.id,
         )
+        subtopic_id = create_subtopic(
+            swiper_update=self.swiper_update,  # non-async single-threaded environment
+            msg=msg,
+            sender_bot_id=context.bot.id,
+            topic_id=topic_id,
+            autoshare=True,
+        )
 
         transmitted = False
         for swiper_chat_id in find_all_active_swiper_chat_ids(context.bot.id):
@@ -75,7 +86,9 @@ class SwiperTransparency(BaseSwiperConversation):
                     receiver_chat_id=swiper_chat_id,
                     receiver_bot=context.bot,
                     red_heart=False,
+                    shareable=False,
                     topic_id=topic_id,
+                    subtopic_id=subtopic_id,
                     disable_notification=BLACK_HEARTS_ARE_SILENT,
                 ) or transmitted
 
@@ -121,6 +134,7 @@ class SwiperTransparency(BaseSwiperConversation):
                 receiver_chat_id=msg_transmission[DdbFields.RECEIVER_CHAT_ID],
                 receiver_bot=context.bot,  # msg_transmission[DdbFields.RECEIVER_BOT_ID] is of no use here
                 red_heart=msg_transmission.get(DdbFields.RED_HEART, red_heart_default),
+                shareable=msg_transmission.get(DdbFields.SHAREABLE, False),
             ) and edited_at_receiver
 
         if not edited_at_receiver:
@@ -150,6 +164,38 @@ class SwiperTransparency(BaseSwiperConversation):
             original_msg_transmission=msg_transmission,
         )
         update.effective_message.delete()  # TODO oleksandr: make it failsafe ?
+
+    def share(self, update, context):
+        # TODO oleksandr: implement it properly
+        update.callback_query.answer()  # TODO oleksandr: make it failsafe
+
+        update.effective_message.edit_reply_markup(
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
+                InlineKeyboardButton(f"{Texts.YELLOW_HEART}{Texts.REPLY}", callback_data='share2'),
+            ]]),
+        )
+
+    def share2(self, update, context):
+        # TODO oleksandr: get rid of this method
+        update.callback_query.answer()
+
+        update.effective_message.edit_reply_markup(
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
+                InlineKeyboardButton(f"{Texts.YELLOW_HEART}{Texts.REPLY}", callback_data=CallbackData.REPLY),
+                InlineKeyboardButton(Texts.SHARE, callback_data='share3'),
+            ]]),
+        )
+
+    def share3(self, update, context):
+        # TODO oleksandr: get rid of this method
+        update.callback_query.answer()
+
+        update.effective_message.edit_reply_markup(
+            reply_markup=transmission_kbd_markup(
+                red_heart=True,
+                show_share=True,
+            )
+        )
 
     def transmit_reply(self, update, context):
         reply_to_msg = update.effective_message.reply_to_message
@@ -185,7 +231,6 @@ class SwiperTransparency(BaseSwiperConversation):
                         topic_id=topic_id,
                     )
                     disable_notification = False
-                # TODO oleksandr: notify if new allogrooming
 
             transmitted = transmit_message(
                 swiper_update=self.swiper_update,  # non-async single-threaded environment
@@ -194,13 +239,16 @@ class SwiperTransparency(BaseSwiperConversation):
                 receiver_chat_id=msg_transmission[DdbFields.SENDER_CHAT_ID],
                 receiver_bot=context.bot,  # msg_transmission[DdbFields.SENDER_BOT_ID] is of no use here
                 red_heart=True,
+                shareable=bool(msg_transmission.get(DdbFields.SUBTOPIC_ID)),
                 topic_id=topic_id,
                 disable_notification=disable_notification,
                 allogrooming_id=allogrooming_id,
                 reply_to_msg_id=msg_transmission[DdbFields.SENDER_MSG_ID],
+                reply_to_transmission_id=msg_transmission[DdbFields.ID],
             )
             if not transmitted:
                 report_msg_not_transmitted(update)
+                # TODO oleksandr: what to do with new allogrooming if message was not transmitted ?
             return
 
         transmissions_by_sender_msg = find_transmissions_by_sender_msg(
@@ -218,7 +266,26 @@ class SwiperTransparency(BaseSwiperConversation):
             )
             return
 
-        red_heart = len(transmissions_by_sender_msg) < 2
+        subtopic_by_sender_msg = find_subtopic_by_sender_msg(
+            sender_msg_id=reply_to_msg.message_id,
+            sender_chat_id=reply_to_msg.chat.id,
+            sender_bot_id=reply_to_msg.bot.id,
+        )
+        subtopic_autoshare = bool(subtopic_by_sender_msg and subtopic_by_sender_msg[DdbFields.AUTOSHARE])
+        red_heart = not subtopic_autoshare
+
+        if subtopic_autoshare:
+            parent_subtopic_id = (subtopic_by_sender_msg or {}).get(DdbFields.ID)
+            child_subtopic_id = create_subtopic(
+                swiper_update=self.swiper_update,  # non-async single-threaded environment
+                msg=msg,
+                sender_bot_id=context.bot.id,
+                topic_id=subtopic_by_sender_msg[DdbFields.TOPIC_ID],
+                parent_subtopic_id=parent_subtopic_id,
+                autoshare=True,
+            )
+        else:
+            child_subtopic_id = None
 
         transmitted = False
         for msg_transmission in transmissions_by_sender_msg:
@@ -234,10 +301,13 @@ class SwiperTransparency(BaseSwiperConversation):
                 receiver_chat_id=msg_transmission[DdbFields.RECEIVER_CHAT_ID],
                 receiver_bot=context.bot,  # msg_transmission[DdbFields.RECEIVER_BOT_ID] is of no use here
                 red_heart=red_heart,
+                shareable=bool(not child_subtopic_id and msg_transmission.get(DdbFields.SUBTOPIC_ID)),
                 topic_id=msg_transmission.get(DdbFields.TOPIC_ID),
+                subtopic_id=child_subtopic_id,
                 disable_notification=True,
                 allogrooming_id=msg_transmission.get(DdbFields.ALLOGROOMING_ID),
                 reply_to_msg_id=msg_transmission[DdbFields.RECEIVER_MSG_ID],
+                reply_to_transmission_id=msg_transmission[DdbFields.ID],
             ) or transmitted  # TODO oleksandr: replace with "and" as in self.edit_message() handler ?
 
         if not transmitted:
