@@ -47,14 +47,16 @@ provider:
     AUTHORIZE_STRANGERS_BY_DEFAULT: ${${self:custom.env_file}:AUTHORIZE_STRANGERS_BY_DEFAULT, 'no'}
     BLACK_HEARTS_ARE_SILENT: ${${self:custom.env_file}:BLACK_HEARTS_ARE_SILENT, 'yes'}
 
-  iamRoleStatements:
-    - Effect: "Allow"
-      Action:
-        - "dynamodb:*"
-        - "s3:*"
-        - "es:*"
-        #- "comprehend:*"
-      Resource: "*"
+  iam:
+    role:
+      statements:
+        - Effect: "Allow"
+          Action:
+            - "dynamodb:*"
+            - "s3:*"
+            - "es:*"
+            #- "comprehend:*"
+          Resource: "*"
 
 package:
   individually: true
