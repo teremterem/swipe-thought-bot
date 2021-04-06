@@ -39,8 +39,6 @@ class SwiperTransparency(BaseSwiperConversation):
         dispatcher.add_handler(MessageHandler(Filters.all, self.start_topic))
         dispatcher.add_handler(CallbackQueryHandler(self.force_reply, pattern=f"^{CallbackData.REPLY}$"))
         dispatcher.add_handler(CallbackQueryHandler(self.share, pattern=f"^{CallbackData.SHARE}$"))
-        dispatcher.add_handler(CallbackQueryHandler(self.share2, pattern='^share2$'))  # TODO oleksandr: get rid of this
-        dispatcher.add_handler(CallbackQueryHandler(self.share3, pattern='^share3$'))  # TODO oleksandr: get rid of this
 
         dispatcher.add_error_handler(self.handle_error)
 
@@ -166,30 +164,49 @@ class SwiperTransparency(BaseSwiperConversation):
         update.effective_message.delete()  # TODO oleksandr: make it failsafe ?
 
     def share(self, update, context):
+
+        # TODO TODO TODO
         # TODO oleksandr: implement it properly
+
         update.callback_query.answer()  # TODO oleksandr: make it failsafe
 
-        update.effective_message.edit_reply_markup(
-            reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
-                InlineKeyboardButton(f"{Texts.YELLOW_HEART}{Texts.REPLY}", callback_data='share2'),
-            ]]),
-        )
+        msg = prepare_msg_for_transmission(update.effective_message, context.bot)
 
-    def share2(self, update, context):
-        # TODO oleksandr: get rid of this method
-        update.callback_query.answer()
+        transmitted = False
+        for swiper_chat_id in find_all_active_swiper_chat_ids(context.bot.id):
+            # TODO oleksandr: use thread-workers to broadcast in parallel ? (remember about Telegram limits too)
+            if str(swiper_chat_id) != str(update.effective_chat.id):
+                transmitted = transmit_message(
+                    swiper_update=self.swiper_update,  # non-async single-threaded environment
+                    msg=msg,
+                    sender_bot_id=context.bot.id,
+                    receiver_chat_id=swiper_chat_id,
+                    receiver_bot=context.bot,
+                    red_heart=False,
+                    shareable=False,
+                    topic_id=topic_id,
+                    subtopic_id=subtopic_id,
+                    disable_notification=BLACK_HEARTS_ARE_SILENT,
+                ) or transmitted
 
+        if transmitted:
+            swiper_username = self.swiper_update.current_swiper.swiper_username  # non-async single-threaded environment
+            update.effective_chat.send_message(
+                text=Texts.get_new_topic_started_msg(swiper_username),
+                parse_mode=ParseMode.HTML,
+                # reply_to_message_id=msg.message_id,  # TODO oleksandr: are you 100% sure we don't need it ?
+                disable_notification=True,
+            )
+        else:
+            report_msg_not_transmitted(update)
+
+        # TODO oleksandr: GET RID OF THE PART OF THIS METHOD THAT IS BELOW THIS LINE
         update.effective_message.edit_reply_markup(
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
                 InlineKeyboardButton(f"{Texts.YELLOW_HEART}{Texts.REPLY}", callback_data=CallbackData.REPLY),
                 InlineKeyboardButton(Texts.SHARE, callback_data='share3'),
             ]]),
         )
-
-    def share3(self, update, context):
-        # TODO oleksandr: get rid of this method
-        update.callback_query.answer()
-
         update.effective_message.edit_reply_markup(
             reply_markup=transmission_kbd_markup(
                 red_heart=True,
