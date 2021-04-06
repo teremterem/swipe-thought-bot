@@ -573,7 +573,7 @@ def edit_transmission(
             text=text,
             entities=entities,
             reply_markup=transmission_kbd_markup(
-                red_heart=red_heart,
+                trans_mode=trans_mode,
                 show_share=shareable,
             ),
             **kwargs,
@@ -587,7 +587,7 @@ def edit_transmission(
             caption=text,
             caption_entities=entities,
             reply_markup=transmission_kbd_markup(
-                red_heart=red_heart,
+                trans_mode=trans_mode,
                 show_share=shareable,
             ),
             **kwargs,
