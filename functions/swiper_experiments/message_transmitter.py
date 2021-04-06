@@ -273,7 +273,7 @@ def transmit_message(
         sender_bot_id,
         receiver_chat_id,
         receiver_bot,
-        red_heart,
+        transmission_mode,
         shareable,
         topic_id,
         disable_notification,
@@ -339,7 +339,7 @@ def transmit_message(
         DdbFields.REPLY_TO_MSG_ID: reply_to_msg_id,
         DdbFields.REPLY_TO_TRANSMISSION_ID: reply_to_transmission_id,
 
-        DdbFields.RED_HEART: red_heart,
+        DdbFields.RED_HEART_OBSOLETE: red_heart,
         DdbFields.SHAREABLE: shareable,
 
         DdbFields.SENDER_UPDATE_S3_KEY: swiper_update.telegram_update_s3_key,
@@ -549,7 +549,14 @@ def _ptb_transmit(msg, receiver_chat_id, receiver_bot, username_to_append, **kwa
 
 @fail_safely()
 def edit_transmission(
-        swiper_update, msg, receiver_msg_id, receiver_chat_id, receiver_bot, red_heart, shareable, **kwargs
+        swiper_update,
+        msg,
+        receiver_msg_id,
+        receiver_chat_id,
+        receiver_bot,
+        transmission_mode,
+        shareable,
+        **kwargs,
 ):
     receiver_msg_id = int(receiver_msg_id)
     receiver_chat_id = int(receiver_chat_id)

@@ -131,7 +131,7 @@ class SwiperTransparency(BaseSwiperConversation):
                 receiver_msg_id=msg_transmission[DdbFields.RECEIVER_MSG_ID],
                 receiver_chat_id=msg_transmission[DdbFields.RECEIVER_CHAT_ID],
                 receiver_bot=context.bot,  # msg_transmission[DdbFields.RECEIVER_BOT_ID] is of no use here
-                red_heart=msg_transmission.get(DdbFields.RED_HEART, red_heart_default),
+                red_heart=msg_transmission.get(DdbFields.RED_HEART_OBSOLETE, red_heart_default),
                 shareable=msg_transmission.get(DdbFields.SHAREABLE, False),
             ) and edited_at_receiver
 

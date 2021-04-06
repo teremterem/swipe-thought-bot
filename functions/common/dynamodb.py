@@ -54,7 +54,8 @@ class DdbFields:
     REPLY_TO_MSG_ID = 'reply_to_msg_id'
     REPLY_TO_TRANSMISSION_ID = 'reply_to_transmission_id'
 
-    RED_HEART = 'red_heart'
+    RED_HEART_OBSOLETE = 'red_heart'  # TODO oleksandr: get rid of it or keep it ?
+    TRANSMISSION_MODE = 'trans_mode'
 
     SENDER_UPDATE_S3_KEY = 'sender_update_s3_key'
     RECEIVER_MSG_S3_KEY = 'receiver_msg_s3_key'
