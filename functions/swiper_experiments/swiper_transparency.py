@@ -1,6 +1,6 @@
 from traceback import format_exception
 
-from telegram import InlineKeyboardMarkup, ParseMode, InlineKeyboardButton
+from telegram import InlineKeyboardMarkup, ParseMode
 from telegram.error import BadRequest
 from telegram.ext import CommandHandler, DispatcherHandlerStop, Filters, MessageHandler, CallbackQueryHandler
 
@@ -8,11 +8,12 @@ from functions.common import logging  # force log config of functions/common/__i
 from functions.common.dynamodb import DdbFields
 from functions.common.swiper_chat_data import find_all_active_swiper_chat_ids
 from functions.common.utils import send_partitioned_text
-from functions.swiper_experiments.constants import CallbackData, Texts, Commands, BLACK_HEARTS_ARE_SILENT
+from functions.swiper_experiments.constants import CallbackData, Texts, Commands, BLACK_HEARTS_ARE_SILENT, \
+    TransmissionModes
 from functions.swiper_experiments.message_transmitter import transmit_message, find_original_transmission, \
     force_reply, find_transmissions_by_sender_msg, edit_transmission, prepare_msg_for_transmission, \
-    create_allogrooming, find_allogrooming, transmission_kbd_markup, create_topic, create_subtopic, \
-    find_subtopic_by_sender_msg
+    create_allogrooming, find_allogrooming, create_topic, create_subtopic, \
+    find_subtopic_by_sender_msg, extract_transmission_mode
 from functions.swiper_experiments.swiper_telegram import BaseSwiperConversation
 
 logger = logging.getLogger(__name__)
@@ -83,7 +84,7 @@ class SwiperTransparency(BaseSwiperConversation):
                     sender_bot_id=context.bot.id,
                     receiver_chat_id=swiper_chat_id,
                     receiver_bot=context.bot,
-                    red_heart=False,
+                    trans_mode=TransmissionModes.BLACK,
                     shareable=False,
                     topic_id=topic_id,
                     subtopic_id=subtopic_id,
@@ -119,6 +120,10 @@ class SwiperTransparency(BaseSwiperConversation):
             return
 
         red_heart_default = len(transmissions_by_sender_msg) < 2
+        if red_heart_default:
+            default_trans_mode = TransmissionModes.RED
+        else:
+            default_trans_mode = TransmissionModes.BLACK
 
         edited_at_receiver = True
         for msg_transmission in transmissions_by_sender_msg:
@@ -131,7 +136,10 @@ class SwiperTransparency(BaseSwiperConversation):
                 receiver_msg_id=msg_transmission[DdbFields.RECEIVER_MSG_ID],
                 receiver_chat_id=msg_transmission[DdbFields.RECEIVER_CHAT_ID],
                 receiver_bot=context.bot,  # msg_transmission[DdbFields.RECEIVER_BOT_ID] is of no use here
-                red_heart=msg_transmission.get(DdbFields.RED_HEART_OBSOLETE, red_heart_default),
+                trans_mode=extract_transmission_mode(
+                    msg_transmission=msg_transmission,
+                    default_trans_mode=default_trans_mode,
+                ),
                 shareable=msg_transmission.get(DdbFields.SHAREABLE, False),
             ) and edited_at_receiver
 
@@ -182,7 +190,7 @@ class SwiperTransparency(BaseSwiperConversation):
                     sender_bot_id=context.bot.id,
                     receiver_chat_id=swiper_chat_id,
                     receiver_bot=context.bot,
-                    red_heart=False,
+                    trans_mode=TransmissionModes.YELLOW,
                     shareable=False,
                     topic_id=topic_id,
                     subtopic_id=subtopic_id,
@@ -199,20 +207,6 @@ class SwiperTransparency(BaseSwiperConversation):
             )
         else:
             report_msg_not_transmitted(update)
-
-        # TODO oleksandr: GET RID OF THE PART OF THIS METHOD THAT IS BELOW THIS LINE
-        update.effective_message.edit_reply_markup(
-            reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
-                InlineKeyboardButton(f"{Texts.YELLOW_HEART}{Texts.REPLY}", callback_data=CallbackData.REPLY),
-                InlineKeyboardButton(Texts.SHARE, callback_data='share3'),
-            ]]),
-        )
-        update.effective_message.edit_reply_markup(
-            reply_markup=transmission_kbd_markup(
-                red_heart=True,
-                show_share=True,
-            )
-        )
 
     def transmit_reply(self, update, context):
         reply_to_msg = update.effective_message.reply_to_message
@@ -255,7 +249,7 @@ class SwiperTransparency(BaseSwiperConversation):
                 sender_bot_id=context.bot.id,
                 receiver_chat_id=msg_transmission[DdbFields.SENDER_CHAT_ID],
                 receiver_bot=context.bot,  # msg_transmission[DdbFields.SENDER_BOT_ID] is of no use here
-                red_heart=True,
+                trans_mode=TransmissionModes.RED,
                 shareable=bool(msg_transmission.get(DdbFields.SUBTOPIC_ID)),
                 topic_id=topic_id,
                 disable_notification=disable_notification,
@@ -289,7 +283,11 @@ class SwiperTransparency(BaseSwiperConversation):
             sender_bot_id=reply_to_msg.bot.id,
         )
         subtopic_autoshare = bool(subtopic_by_sender_msg and subtopic_by_sender_msg[DdbFields.AUTOSHARE])
-        red_heart = not subtopic_autoshare
+        if subtopic_autoshare:
+            trans_mode = TransmissionModes.BLACK
+            # TODO oleksandr: what about yellow ?
+        else:
+            trans_mode = TransmissionModes.RED
 
         if subtopic_autoshare:
             parent_subtopic_id = (subtopic_by_sender_msg or {}).get(DdbFields.ID)
@@ -317,7 +315,7 @@ class SwiperTransparency(BaseSwiperConversation):
                 sender_bot_id=context.bot.id,
                 receiver_chat_id=msg_transmission[DdbFields.RECEIVER_CHAT_ID],
                 receiver_bot=context.bot,  # msg_transmission[DdbFields.RECEIVER_BOT_ID] is of no use here
-                red_heart=red_heart,
+                trans_mode=trans_mode,
                 shareable=bool(not child_subtopic_id and msg_transmission.get(DdbFields.SUBTOPIC_ID)),
                 topic_id=msg_transmission.get(DdbFields.TOPIC_ID),
                 subtopic_id=child_subtopic_id,
