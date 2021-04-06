@@ -9,16 +9,18 @@ from functions.common.dynamodb import msg_transmission_table, DdbFields, topic_t
     allogrooming_table
 from functions.common.s3 import put_s3_object, main_bucket
 from functions.common.utils import fail_safely, generate_uuid
-from functions.swiper_experiments.constants import CallbackData, Texts, BLACK_HEARTS_ARE_SILENT
+from functions.swiper_experiments.constants import CallbackData, Texts, BLACK_HEARTS_ARE_SILENT, TransmissionModes
 from functions.swiper_experiments.swiper_usernames import append_swiper_username
 
 logger = logging.getLogger(__name__)
 
 
-def transmission_kbd_markup(red_heart, show_share):
-    if red_heart:
-        heart = Texts.READ_HEART
-    else:
+def transmission_kbd_markup(trans_mode, show_share):
+    if trans_mode == TransmissionModes.RED:
+        heart = Texts.RED_HEART
+    elif trans_mode == TransmissionModes.YELLOW:
+        heart = Texts.YELLOW_HEART
+    else:  # trans_mode == TransmissionModes.BLACK
         heart = Texts.BLACK_HEART
 
     kbd_row = [InlineKeyboardButton(f"{heart}{Texts.REPLY}", callback_data=CallbackData.REPLY)]
@@ -273,7 +275,7 @@ def transmit_message(
         sender_bot_id,
         receiver_chat_id,
         receiver_bot,
-        transmission_mode,
+        trans_mode,
         shareable,
         topic_id,
         disable_notification,
@@ -289,7 +291,6 @@ def transmit_message(
     receiver_chat_id = int(receiver_chat_id)
     receiver_bot_id = int(receiver_bot.id)
 
-    red_heart = bool(red_heart)
     if reply_to_msg_id is not None:
         reply_to_msg_id = int(reply_to_msg_id)
 
@@ -302,7 +303,7 @@ def transmit_message(
         reply_to_message_id=reply_to_msg_id,
         # TODO oleksandr: allow_sending_without_reply=True, ?
         reply_markup=transmission_kbd_markup(
-            red_heart=red_heart,
+            trans_mode=trans_mode,
             show_share=shareable,
         ),
         disable_notification=disable_notification,
@@ -339,7 +340,7 @@ def transmit_message(
         DdbFields.REPLY_TO_MSG_ID: reply_to_msg_id,
         DdbFields.REPLY_TO_TRANSMISSION_ID: reply_to_transmission_id,
 
-        DdbFields.RED_HEART_OBSOLETE: red_heart,
+        DdbFields.TRANSMISSION_MODE: trans_mode,
         DdbFields.SHAREABLE: shareable,
 
         DdbFields.SENDER_UPDATE_S3_KEY: swiper_update.telegram_update_s3_key,
@@ -554,7 +555,7 @@ def edit_transmission(
         receiver_msg_id,
         receiver_chat_id,
         receiver_bot,
-        transmission_mode,
+        trans_mode,
         shareable,
         **kwargs,
 ):

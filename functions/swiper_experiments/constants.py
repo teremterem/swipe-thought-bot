@@ -26,7 +26,7 @@ class Texts:
     READ_MORE = "<i>https://toporok.medium.com/що-таке-swipy-de15d59b1f0b</i>"
 
     BLACK_HEART = "🖤"
-    READ_HEART = "❤️"
+    RED_HEART = "❤️"
     YELLOW_HEART = "💛"
     REPLY = "Відповісти"
     SHARE = "📣Поділитись"
