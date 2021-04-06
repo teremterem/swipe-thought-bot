@@ -15,6 +15,24 @@ from functions.swiper_experiments.swiper_usernames import append_swiper_username
 logger = logging.getLogger(__name__)
 
 
+def extract_transmission_mode(msg_transmission, default_trans_mode=TransmissionModes.BLACK):
+    try:
+        trans_mode = msg_transmission[DdbFields.TRANSMISSION_MODE]
+
+    except KeyError:
+        try:
+            red_heart = msg_transmission[DdbFields.RED_HEART_OBSOLETE]
+            if red_heart:
+                trans_mode = TransmissionModes.RED
+            else:
+                trans_mode = TransmissionModes.BLACK
+
+        except KeyError:
+            trans_mode = default_trans_mode
+
+    return trans_mode
+
+
 def transmission_kbd_markup(trans_mode, show_share):
     if trans_mode == TransmissionModes.RED:
         heart = Texts.RED_HEART
