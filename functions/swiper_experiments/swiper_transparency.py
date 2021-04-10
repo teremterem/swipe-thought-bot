@@ -172,30 +172,56 @@ class SwiperTransparency(BaseSwiperConversation):
         update.effective_message.delete()  # TODO oleksandr: make it failsafe ?
 
     def share(self, update, context):
+        update.callback_query.answer()  # TODO oleksandr: make it failsafe
+
+        transmitted = False  # TODO oleksandr: use it to report about the result
+
+        reply_to_msg = update.effective_message.reply_to_message
+        shareable_transmission = find_original_transmission_by_msg(update.effective_message)
+
+        # case #1: it is a reply to current user's message that is being shared
+        reply_to_transmissions_by_sender_msg = find_transmissions_by_sender_msg(
+            sender_msg_id=reply_to_msg.message_id,
+            sender_chat_id=reply_to_msg.chat.id,
+            sender_bot_id=reply_to_msg.bot.id,
+        )
+        for reply_to_transmission in reply_to_transmissions_by_sender_msg:
+            if str(reply_to_transmission[DdbFields.RECEIVER_CHAT_ID]) == \
+                    str(shareable_transmission[DdbFields.SENDER_CHAT_ID]):
+                continue
+
+            # TODO oleksandr: create subtopic
+
+            # TODO oleksandr: use thread-workers to broadcast in parallel ? (remember about Telegram limits too)
+            transmitted = transmit_message(
+                swiper_update=self.swiper_update,  # non-async single-threaded environment
+
+                # TODO TODO TODO TODO TODO oleksandr: pass the real sender chat and message ids
+                msg=update.effective_message,
+
+                sender_bot_id=context.bot.id,
+                receiver_chat_id=reply_to_transmission[DdbFields.RECEIVER_CHAT_ID],
+                receiver_bot=context.bot,
+                trans_mode=TransmissionModes.YELLOW,
+                shareable=False,
+                topic_id=reply_to_transmission.get(DdbFields.TOPIC_ID),
+                subtopic_id=None,  # TODO TODO TODO TODO TODO oleksandr
+                disable_notification=BLACK_HEARTS_ARE_SILENT,
+                append_username=False,
+                reply_to_msg_id=reply_to_transmission[DdbFields.RECEIVER_MSG_ID],
+
+                # TODO TODO TODO TODO TODO oleksandr: is this correct ?
+                reply_to_transmission_id=reply_to_transmission[DdbFields.ID],
+
+            ) or transmitted
+
+        # TODO oleksandr
+        # # case #2: ... (what kind of case is this ?)
+        # reply_to_transmission = find_original_transmission_by_msg(reply_to_msg)
 
         # TODO TODO TODO
         # TODO oleksandr: implement it properly
-
-        update.callback_query.answer()  # TODO oleksandr: make it failsafe
-
-        msg = prepare_msg_for_transmission(update.effective_message, context.bot)
-
-        transmitted = False
-        for swiper_chat_id in find_all_active_swiper_chat_ids(context.bot.id):
-            # TODO oleksandr: use thread-workers to broadcast in parallel ? (remember about Telegram limits too)
-            if str(swiper_chat_id) != str(update.effective_chat.id):
-                transmitted = transmit_message(
-                    swiper_update=self.swiper_update,  # non-async single-threaded environment
-                    msg=msg,
-                    sender_bot_id=context.bot.id,
-                    receiver_chat_id=swiper_chat_id,
-                    receiver_bot=context.bot,
-                    trans_mode=TransmissionModes.YELLOW,
-                    shareable=False,
-                    topic_id=topic_id,
-                    subtopic_id=subtopic_id,
-                    disable_notification=BLACK_HEARTS_ARE_SILENT,
-                ) or transmitted
+        return
 
         if transmitted:
             swiper_username = self.swiper_update.current_swiper.swiper_username  # non-async single-threaded environment

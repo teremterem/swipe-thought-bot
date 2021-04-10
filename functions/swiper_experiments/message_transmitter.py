@@ -301,6 +301,7 @@ def transmit_message(
         allogrooming_id=None,
         reply_to_msg_id=None,
         reply_to_transmission_id=None,
+        append_username=True,
 ):
     sender_msg_id = int(msg.message_id)
     sender_chat_id = int(msg.chat_id)
@@ -312,11 +313,16 @@ def transmit_message(
     if reply_to_msg_id is not None:
         reply_to_msg_id = int(reply_to_msg_id)
 
+    if append_username:
+        username_to_append = swiper_update.current_swiper.swiper_username
+    else:
+        username_to_append = None
+
     transmitted_msg = _ptb_transmit(
         msg=msg,
         receiver_chat_id=receiver_chat_id,
         receiver_bot=receiver_bot,
-        username_to_append=swiper_update.current_swiper.swiper_username,
+        username_to_append=username_to_append,
 
         reply_to_message_id=reply_to_msg_id,
         # TODO oleksandr: allow_sending_without_reply=True, ?
